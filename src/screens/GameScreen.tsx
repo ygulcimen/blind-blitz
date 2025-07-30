@@ -1,122 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
+import { useBlindGamePhase } from '../hooks/useBlindGamePhase';
 import AnimatedReveal from '../components/AnimatedReveal';
 import LiveBoard from '../components/LiveBoard';
-import { simulateBlindMoves } from '../utils/simulateBlindMoves';
-import type { BlindSequence, MoveLogItem } from '../types/BlindTypes';
+import type { GameResult } from '../components/GameEndModal';
 import PremoveBoardContainer from '../components/PremoveBoard/PremoveBoardContainer';
+import RevealTransitionScreen from '../components/RevealTransitionScreen';
 
-// Enhanced Phase system with ANIMATED_REVEAL
-type Phase = 'P1_INPUT' | 'P2_INPUT' | 'REVEAL' | 'ANIMATED_REVEAL' | 'PLAY';
-
-const TIMER_DURATION = 20;
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 const GameScreen = () => {
-  const [phase, setPhase] = useState<Phase>('P1_INPUT');
-  const [p1Moves, setP1Moves] = useState<BlindSequence>([]);
-  const [resultFen, setResultFen] = useState('');
-  const [resultLog, setResultLog] = useState<MoveLogItem[]>([]);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const {
+    phase,
+    p1Moves,
+    p2Moves,
+    submitMoves,
+    revealedState,
+    timeLeft,
+    timerDuration, // 🔧 Get this from hook instead of hardcoding
+    startNewRound,
+    handleAnimatedRevealComplete,
+    handleMovesUpdate,
+  } = useBlindGamePhase();
 
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
-  const [isTimerActive, setIsTimerActive] = useState(true);
-  const timerRef = useRef<number | null>(null);
-  const currentMovesRef = useRef<BlindSequence>([]);
-
-  // Auto transition from REVEAL to ANIMATED_REVEAL
-  useEffect(() => {
-    if (phase === 'REVEAL') {
-      const timeout = setTimeout(() => {
-        setPhase('ANIMATED_REVEAL');
-      }, 2500); // Show RevealBoard for 2.5 seconds, then start animation
-      return () => clearTimeout(timeout);
-    }
-  }, [phase]);
-
-  useEffect(() => {
-    if (
-      isTimerActive &&
-      timeLeft > 0 &&
-      phase !== 'REVEAL' &&
-      phase !== 'ANIMATED_REVEAL' &&
-      phase !== 'PLAY'
-    ) {
-      timerRef.current = window.setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-    } else if (
-      timeLeft === 0 &&
-      phase !== 'REVEAL' &&
-      phase !== 'ANIMATED_REVEAL' &&
-      phase !== 'PLAY'
-    ) {
-      setIsTimerActive(false);
-      if (phase === 'P1_INPUT') {
-        setP1Moves(currentMovesRef.current);
-        setPhase('P2_INPUT');
-        resetTimer();
-      } else if (phase === 'P2_INPUT') {
-        const { fen, log } = simulateBlindMoves(
-          p1Moves,
-          currentMovesRef.current
-        );
-        setResultFen(fen);
-        setResultLog(log);
-        setPhase('REVEAL');
-      }
-    }
-
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
-  }, [timeLeft, isTimerActive, phase, p1Moves]);
-
-  const handleMovesUpdate = (moves: BlindSequence) => {
-    currentMovesRef.current = moves;
+  // Handle game end from LiveBoard
+  const handleGameEnd = (result: GameResult) => {
+    // Optional: Save game to localStorage, analytics, etc.
   };
 
-  const resetTimer = () => {
-    setTimeLeft(TIMER_DURATION);
-    setIsTimerActive(true);
-    if (timerRef.current) window.clearTimeout(timerRef.current);
+  // Handle rematch - restart the entire blind chess cycle
+  const handleRematch = () => {
+    startNewRound();
   };
 
-  const handleResetAll = () => {
-    setPhase('P1_INPUT');
-    setP1Moves([]);
-    setResultFen('');
-    setResultLog([]);
-    currentMovesRef.current = [];
-    resetTimer();
+  // Handle leave table
+  const handleLeaveTable = () => {
+    startNewRound();
   };
 
-  const handleP1Submit = (seq: BlindSequence) => {
-    if (hasSubmitted) return;
-    setHasSubmitted(true);
-    setIsTimerActive(false);
-    setP1Moves(seq);
-    setPhase('P2_INPUT');
-    resetTimer();
-    setHasSubmitted(false);
+  // Handle abort during live phase
+  const handleAbortGame = () => {
+    startNewRound();
   };
 
-  const handleP2Submit = (seq: BlindSequence) => {
-    if (hasSubmitted) return;
-    setHasSubmitted(true);
-    setIsTimerActive(false);
-    const { fen, log } = simulateBlindMoves(p1Moves, seq);
-    setResultFen(fen);
-    setResultLog(log);
-    setPhase('REVEAL');
-    setHasSubmitted(false);
-  };
-
-  // Handle AnimatedReveal completion
-  const handleAnimatedRevealComplete = () => {
-    setPhase('PLAY');
-  };
-
-  // Enhanced Timer Component with responsive design
+  // Enhanced Timer Component
   const TimerDisplay = () => {
     if (phase === 'REVEAL' || phase === 'ANIMATED_REVEAL' || phase === 'PLAY')
       return null;
@@ -153,17 +78,20 @@ const GameScreen = () => {
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-1 w-full bg-black/20 rounded-full h-1">
             <div
               className="bg-white rounded-full h-1 transition-all duration-1000 ease-linear"
-              style={{ width: `${(timeLeft / TIMER_DURATION) * 100}%` }}
+              style={{ width: `${(timeLeft / timerDuration) * 100}%` }}
             />
           </div>
         </div>
       </div>
     );
   };
+
+  // Render different phases
+  if (phase === 'REVEAL')
+    return <RevealTransitionScreen message="⚔️ Preparing the battlefield..." />;
 
   if (phase === 'P1_INPUT')
     return (
@@ -172,8 +100,8 @@ const GameScreen = () => {
         <PremoveBoardContainer
           key="P1"
           player="P1"
-          onSubmit={handleP1Submit}
-          onReset={handleResetAll}
+          onSubmit={submitMoves}
+          onReset={startNewRound}
           onMovesUpdate={handleMovesUpdate}
         />
       </>
@@ -186,8 +114,8 @@ const GameScreen = () => {
         <PremoveBoardContainer
           key="P2"
           player="P2"
-          onSubmit={handleP2Submit}
-          onReset={handleResetAll}
+          onSubmit={submitMoves}
+          onReset={startNewRound}
           onMovesUpdate={handleMovesUpdate}
         />
       </>
@@ -197,14 +125,23 @@ const GameScreen = () => {
     return (
       <AnimatedReveal
         initialFen={INITIAL_FEN}
-        moveLog={resultLog}
-        finalFen={resultFen}
+        moveLog={revealedState.log}
+        finalFen={revealedState.fen}
         onRevealComplete={handleAnimatedRevealComplete}
       />
     );
 
   if (phase === 'PLAY')
-    return <LiveBoard startingFen={resultFen} blindMoveLog={resultLog} />;
+    return (
+      <LiveBoard
+        startingFen={revealedState.fen}
+        blindMoveLog={revealedState.log}
+        onGameEnd={handleGameEnd}
+        onRematch={handleRematch}
+        onLeaveTable={handleLeaveTable}
+        onAbortGame={handleAbortGame}
+      />
+    );
 
   return null;
 };
