@@ -1,4 +1,4 @@
-// components/LiveBoard.tsx
+// components/LiveBoard.tsx - Enhanced version with PremoveBoard UX
 import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import type { GameResult, BlindMoveStats } from './GameEndModal';
@@ -9,6 +9,8 @@ import GameLayout from './LiveBoard/GameLayout';
 import GameControls from './LiveBoard/GameControls';
 import ConfirmationModal from './LiveBoard/ConfirmationModal';
 import BottomBanner from './LiveBoard/BottomBanner';
+import ViolationToast from './LiveBoard/ViolationToast';
+import { useViolationToast } from './LiveBoard/useViolationToast';
 
 interface MoveLogItem {
   player: 'P1' | 'P2';
@@ -52,6 +54,18 @@ const LiveBoard = ({
   const [drawOffered, setDrawOffered] = useState<'white' | 'black' | null>(
     null
   );
+  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(
+    null
+  );
+
+  // Enhanced UX - Violation system
+  const {
+    violations,
+    showViolation,
+    showViolationTemporarily,
+    clearViolations,
+    createViolation,
+  } = useViolationToast();
 
   // Modal states
   const [showResignConfirm, setShowResignConfirm] = useState(false);
@@ -69,7 +83,7 @@ const LiveBoard = ({
     updateStatus();
   }, [game]);
 
-  // Timer effect
+  // Timer effect with enhanced warnings
   useEffect(() => {
     if (isTimerRunning && !gameEnded) {
       timerRef.current = window.setInterval(() => {
@@ -80,6 +94,12 @@ const LiveBoard = ({
         if (game.turn() === 'w') {
           setWhiteTime((prev) => {
             const newTime = Math.max(0, prev - elapsed);
+
+            // Show time warning when under 30 seconds
+            if (newTime <= 30000 && newTime > 29000 && prev > 30000) {
+              showViolationTemporarily([createViolation.timeRunning()], 1500);
+            }
+
             if (newTime === 0) {
               handleTimeout('black');
             }
@@ -88,6 +108,12 @@ const LiveBoard = ({
         } else {
           setBlackTime((prev) => {
             const newTime = Math.max(0, prev - elapsed);
+
+            // Show time warning when under 30 seconds
+            if (newTime <= 30000 && newTime > 29000 && prev > 30000) {
+              showViolationTemporarily([createViolation.timeRunning()], 1500);
+            }
+
             if (newTime === 0) {
               handleTimeout('white');
             }
@@ -125,23 +151,66 @@ const LiveBoard = ({
     onGameEnd?.(result);
   };
 
+  // Enhanced drop handler with better validation and feedback
   const handleDrop = (source: string, target: string): boolean => {
-    if (gameEnded) return false;
+    if (gameEnded) {
+      showViolationTemporarily([createViolation.gameEnded()]);
+      return false;
+    }
 
     try {
+      // Check if it's the correct player's turn
+      const piece = game.get(source as any); // Type assertion to handle chess.js Square type
+      if (!piece) {
+        showViolationTemporarily([
+          createViolation.invalidMove('No piece on that square!'),
+        ]);
+        return false;
+      }
+
+      const isWhitePiece = piece.color === 'w';
+      const isWhiteTurn = game.turn() === 'w';
+
+      if (isWhitePiece !== isWhiteTurn) {
+        showViolationTemporarily([
+          createViolation.wrongTurn(isWhiteTurn ? 'white' : 'black'),
+        ]);
+        return false;
+      }
+
       // Create a copy of the game to test the move
       const gameCopy = new Chess(game.fen());
-      const move = gameCopy.move({ from: source, to: target, promotion: 'q' });
+      const move = gameCopy.move({
+        from: source as any,
+        to: target as any,
+        promotion: 'q',
+      });
 
-      if (move === null) return false;
+      if (move === null) {
+        showViolationTemporarily([createViolation.invalidMove()]);
+        return false;
+      }
+
+      // If the king would still be in check after this move, it's invalid
+      if (gameCopy.inCheck()) {
+        const kingColor = game.turn() === 'w' ? 'white' : 'black';
+        showViolationTemporarily([createViolation.inCheck(kingColor)]);
+        return false;
+      }
 
       // If move is valid, apply it to the actual game
       const actualMove = game.move({
-        from: source,
-        to: target,
+        from: source as any,
+        to: target as any,
         promotion: 'q',
       });
-      if (actualMove === null) return false;
+      if (actualMove === null) {
+        showViolationTemporarily([createViolation.invalidMove()]);
+        return false;
+      }
+
+      // Store last move for highlighting
+      setLastMove({ from: source, to: target });
 
       // Add increment and switch timer
       if (game.turn() === 'b') {
@@ -152,13 +221,21 @@ const LiveBoard = ({
 
       lastTickRef.current = Date.now();
 
+      // Update game state with smooth animation delay
       setTimeout(() => setFen(game.fen()), 50);
       setLiveMoveHistory((prev) => [...prev, actualMove.san]);
       setDrawOffered(null);
+
+      // Clear any existing violations on successful move
+      clearViolations();
+
       updateStatus();
       return true;
     } catch (error) {
       console.error('Move error:', error);
+      showViolationTemporarily([
+        createViolation.invalidMove('Something went wrong with that move.'),
+      ]);
       return false;
     }
   };
@@ -275,6 +352,10 @@ const LiveBoard = ({
     setGameEnded(false);
     setLiveMoveHistory([]);
     setDrawOffered(null);
+    setLastMove(null);
+
+    // Clear violations
+    clearViolations();
 
     // Reset timers
     setWhiteTime(INITIAL_TIME);
@@ -288,6 +369,7 @@ const LiveBoard = ({
   const handleLeaveTable = () => {
     setGameResult(null);
     setShowModal(false);
+    clearViolations();
     onLeaveTable?.();
   };
 
@@ -311,6 +393,11 @@ const LiveBoard = ({
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-128 h-128 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
+      {/* Enhanced Violation Toast - positioned above everything */}
+      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+        <ViolationToast show={showViolation} violations={violations} />
+      </div>
+
       <div className="relative z-10 pt-8 pb-8 px-4 lg:px-8">
         {/* Game Header */}
         <GameHeader
@@ -319,12 +406,13 @@ const LiveBoard = ({
           inCheck={game.inCheck()}
         />
 
-        {/* Main Game Layout */}
+        {/* Main Game Layout - Enhanced with new props */}
         <GameLayout
           fen={fen}
           onPieceDrop={handleDrop}
           gameEnded={gameEnded}
           currentTurn={game.turn()}
+          lastMove={lastMove}
           whiteTime={whiteTime}
           blackTime={blackTime}
           totalMoves={totalMoves}

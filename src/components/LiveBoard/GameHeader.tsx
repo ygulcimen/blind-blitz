@@ -1,3 +1,4 @@
+// components/LiveBoard/GameHeader.tsx - Responsive & Compact
 import React from 'react';
 import GameStatusBanner from './GameStatusBanner';
 
@@ -13,23 +14,22 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   inCheck,
 }) => {
   return (
-    <div className="text-center mb-12 max-w-6xl mx-auto">
-      <div className="relative inline-block">
-        <h1 className="text-5xl lg:text-7xl font-black mb-6 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent drop-shadow-2xl">
+    <div className="text-center mb-4 lg:mb-6 max-w-4xl mx-auto">
+      {/* Much smaller, more balanced header */}
+      <div className="relative inline-block mb-3">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
           ⚡ LIVE BATTLE ⚡
         </h1>
-        <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 to-red-500/20 blur-xl rounded-full"></div>
       </div>
 
-      <div className="bg-black/30 backdrop-blur-lg rounded-2xl px-8 py-6 border border-white/10 shadow-2xl inline-block">
-        <p className="text-2xl lg:text-3xl text-white font-bold mb-2">
-          🔥 3+2 BLITZ FORMAT 🔥
-        </p>
-        <p className="text-lg text-amber-300 font-semibold">
-          Every millisecond counts in this epic showdown!
+      {/* Compact format info */}
+      <div className="bg-black/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10 shadow-lg inline-block mb-3">
+        <p className="text-sm sm:text-base lg:text-lg text-white font-bold">
+          🔥 3+2 BLITZ 🔥
         </p>
       </div>
 
+      {/* Compact status banner */}
       <GameStatusBanner
         status={status}
         gameEnded={gameEnded}

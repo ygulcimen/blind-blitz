@@ -1,3 +1,4 @@
+// components/LiveBoard/GameControls.tsx - Compact symbol-only buttons
 import React from 'react';
 
 interface GameControlsProps {
@@ -30,57 +31,96 @@ const GameControls: React.FC<GameControlsProps> = ({
   const isOpponentDraw = drawOffered && !isCurrentPlayerDraw;
 
   return (
-    <div className="mt-12 flex flex-wrap gap-4 justify-center">
+    <div className="mt-4 lg:mt-6 flex gap-3 justify-center max-w-2xl mx-auto px-4">
+      {/* Resign Button - Compact */}
       <button
         onClick={onResign}
-        className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-red-500/50 border border-red-400/50"
+        title="Resign Game"
+        className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white 
+                   w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                   rounded-xl lg:rounded-2xl 
+                   font-bold text-lg sm:text-xl lg:text-2xl
+                   transition-all duration-300 transform hover:scale-110 active:scale-95
+                   shadow-lg hover:shadow-red-500/40 border border-red-400/50
+                   flex items-center justify-center"
       >
-        <span className="flex items-center gap-3">
-          🏳️ <span className="group-hover:animate-pulse">RESIGN</span>
-        </span>
+        <span className="group-hover:animate-pulse">🏳️</span>
       </button>
 
+      {/* Draw Offer/Accept/Decline Logic */}
       {!drawOffered ? (
         <button
           onClick={onOfferDraw}
-          className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-blue-500/50 border border-blue-400/50"
+          title="Offer Draw"
+          className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white 
+                     w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                     rounded-xl lg:rounded-2xl 
+                     font-bold text-lg sm:text-xl lg:text-2xl
+                     transition-all duration-300 transform hover:scale-110 active:scale-95
+                     shadow-lg hover:shadow-blue-500/40 border border-blue-400/50
+                     flex items-center justify-center"
         >
-          <span className="flex items-center gap-3">
-            🤝 <span className="group-hover:animate-pulse">OFFER DRAW</span>
-          </span>
+          <span className="group-hover:animate-pulse">🤝</span>
         </button>
       ) : isOpponentDraw ? (
         <div className="flex gap-2">
           <button
             onClick={onAcceptDraw}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-6 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-green-500/50"
+            title="Accept Draw"
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white 
+                       w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                       rounded-xl lg:rounded-2xl 
+                       font-bold text-lg sm:text-xl lg:text-2xl
+                       transition-all duration-300 transform hover:scale-110 active:scale-95
+                       shadow-lg hover:shadow-green-500/40
+                       flex items-center justify-center"
           >
-            ✅ ACCEPT
+            ✅
           </button>
           <button
             onClick={onDeclineDraw}
-            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-6 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-red-500/50"
+            title="Decline Draw"
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white 
+                       w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                       rounded-xl lg:rounded-2xl 
+                       font-bold text-lg sm:text-xl lg:text-2xl
+                       transition-all duration-300 transform hover:scale-110 active:scale-95
+                       shadow-lg hover:shadow-red-500/40
+                       flex items-center justify-center"
           >
-            ❌ DECLINE
+            ❌
           </button>
         </div>
       ) : (
         <button
           disabled
-          className="bg-gradient-to-r from-blue-400 to-blue-500 text-white px-8 py-4 rounded-2xl font-bold text-lg opacity-75 cursor-not-allowed shadow-lg"
+          title="Draw Offered"
+          className="bg-gradient-to-r from-blue-400 to-blue-500 text-white 
+                     w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                     rounded-xl lg:rounded-2xl 
+                     font-bold text-lg sm:text-xl lg:text-2xl
+                     opacity-75 cursor-not-allowed shadow-lg
+                     flex items-center justify-center relative"
         >
-          🤝 DRAW OFFERED
+          🤝
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
         </button>
       )}
 
+      {/* Abort Button - only for early game */}
       {liveMoveCount < 2 && (
         <button
           onClick={onAbort}
-          className="group bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-gray-500/50 border border-gray-400/50"
+          title="Abort Game"
+          className="group bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white 
+                     w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16
+                     rounded-xl lg:rounded-2xl 
+                     font-bold text-lg sm:text-xl lg:text-2xl
+                     transition-all duration-300 transform hover:scale-110 active:scale-95
+                     shadow-lg hover:shadow-gray-500/40 border border-gray-400/50
+                     flex items-center justify-center"
         >
-          <span className="flex items-center gap-3">
-            ⚡ <span className="group-hover:animate-pulse">ABORT</span>
-          </span>
+          <span className="group-hover:animate-pulse">⚡</span>
         </button>
       )}
     </div>

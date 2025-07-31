@@ -1,3 +1,4 @@
+// components/LiveBoard/GameStatusBanner.tsx - Compact version
 import React from 'react';
 
 interface GameStatusBannerProps {
@@ -28,16 +29,14 @@ const GameStatusBanner: React.FC<GameStatusBannerProps> = ({
   };
 
   return (
-    <div className="mt-8">
-      <div
-        className={`bg-gradient-to-r ${getStatusStyles()} backdrop-blur-lg rounded-2xl px-8 py-4 border shadow-2xl inline-block`}
-      >
-        <p className="text-xl lg:text-2xl font-bold text-white flex items-center justify-center gap-3">
-          {getStatusIcon()}
-          {status}
-          {!gameEnded && <span className="animate-pulse">|</span>}
-        </p>
-      </div>
+    <div
+      className={`bg-gradient-to-r ${getStatusStyles()} backdrop-blur-sm rounded-lg px-4 py-2 border shadow-lg inline-block`}
+    >
+      <p className="text-sm sm:text-base font-bold text-white flex items-center justify-center gap-2">
+        {getStatusIcon()}
+        {status}
+        {!gameEnded && <span className="animate-pulse">|</span>}
+      </p>
     </div>
   );
 };
