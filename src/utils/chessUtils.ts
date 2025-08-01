@@ -26,3 +26,12 @@ export const getWhiteBlackMoves = (moves: MoveLogItem[]) => {
   const blackMoves = moves.filter((move) => move.player === 'P2');
   return { whiteMoves, blackMoves };
 };
+
+export const setFenTurn = (fen: string, turn: 'w' | 'b'): string => {
+  const parts = fen.split(' ');
+  if (parts.length >= 2) {
+    parts[1] = turn;
+    return parts.join(' ');
+  }
+  return fen;
+};
