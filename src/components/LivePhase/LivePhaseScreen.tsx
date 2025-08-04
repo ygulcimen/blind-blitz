@@ -1,15 +1,19 @@
-// components/LivePhase/LivePhaseScreen.tsx
+// components/LivePhase/LivePhaseScreen.tsx - FIXED LAYOUT AND BUTTON ALIGNMENT
 import React, { useState, useEffect } from 'react';
 import { UnifiedChessBoard } from '../shared/ChessBoard/UnifiedChessBoard';
 import { useViolations } from '../shared/ViolationSystem';
 import TimerPanel from './TimerPanel';
-import GameControls from './GameControls';
-import MoveHistory from './MoveHistory';
-import GameEndModal from '../GameEndModal';
-import ConfirmationModal from './ConfirmationModal';
+import LichessMoveHistory from './FixedMoveHistory';
+import GameActionButtons from './GameActionButtons';
+import FixedGameEndModal from './FixedGameEndModal';
+import {
+  BeautifulDrawOfferModal,
+  BeautifulResignModal,
+} from './ConfirmationModal';
+import BlindGameSummary from './BlindGameSummary';
 
 interface LivePhaseScreenProps {
-  gameState: any; // GameStateManager instance
+  gameState: any;
 }
 
 interface GameResult {
@@ -21,33 +25,46 @@ interface GameResult {
 const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
   const { showViolations, createViolation, clearViolations } = useViolations();
 
-  // ─────────────────────────────────────────────────────────────
-  // 🏗️ LOCAL STATE
-  // ─────────────────────────────────────────────────────────────
-
-  const [status, setStatus] = useState('');
-  const [showGameEndModal, setShowGameEndModal] = useState(false);
   const [showResignConfirm, setShowResignConfirm] = useState(false);
-  const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+  const [showDrawOfferConfirm, setShowDrawOfferConfirm] = useState(false);
   const [drawOffered, setDrawOffered] = useState<'white' | 'black' | null>(
     null
   );
+  const [gameResult, setGameResult] = useState<GameResult | null>(null);
 
-  const { live, timer, blind } = gameState.gameState;
+  const { live, timer, blind, reveal } = gameState.gameState;
 
   // ─────────────────────────────────────────────────────────────
-  // 🎮 GAME STATUS UPDATES
+  // 🎮 GAME STATUS & EFFECTS
   // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     updateStatus();
   }, [live.game, live.gameEnded]);
 
+  // Listen for timeout events from timer
   useEffect(() => {
-    if (live.gameResult && !showGameEndModal) {
-      setTimeout(() => setShowGameEndModal(true), 2000);
-    }
-  }, [live.gameResult, showGameEndModal]);
+    const handleTimeout = (event: CustomEvent) => {
+      if (live.gameEnded) return;
+
+      const { player } = event.detail;
+      const winner = player === 'white' ? 'black' : 'white';
+      const result: GameResult = {
+        type: 'timeout',
+        winner,
+        reason: 'timeout',
+      };
+      setGameResult(result);
+      gameState.endGame(result);
+    };
+
+    window.addEventListener('chess-timeout', handleTimeout as EventListener);
+    return () =>
+      window.removeEventListener(
+        'chess-timeout',
+        handleTimeout as EventListener
+      );
+  }, [live.gameEnded, gameState]);
 
   const updateStatus = () => {
     if (live.gameEnded) return;
@@ -59,10 +76,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         winner,
         reason: 'checkmate',
       };
-
-      setStatus(
-        `🏆 Checkmate! ${winner === 'white' ? 'White' : 'Black'} wins!`
-      );
+      setGameResult(result);
       gameState.endGame(result);
     } else if (live.game.isDraw()) {
       const result: GameResult = {
@@ -70,17 +84,8 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         winner: 'draw',
         reason: 'stalemate',
       };
-
-      setStatus('🤝 Draw! Game ends in a tie');
+      setGameResult(result);
       gameState.endGame(result);
-    } else if (live.game.inCheck()) {
-      setStatus(
-        `⚠️ ${live.game.turn() === 'w' ? 'White' : 'Black'} is in check!`
-      );
-    } else {
-      setStatus(
-        `${live.game.turn() === 'w' ? '⚪ White' : '⚫ Black'} to move`
-      );
     }
   };
 
@@ -94,7 +99,6 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       return false;
     }
 
-    // Check piece ownership
     const piece = live.game.get(source as any);
     if (!piece) {
       showViolations([createViolation.invalidMove('No piece on that square!')]);
@@ -111,25 +115,15 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       return false;
     }
 
-    // Try the move
     const success = gameState.makeLiveMove(source, target);
-
-    if (!success) {
-      // Check for specific chess violations
-      if (live.game.inCheck()) {
-        showViolations([
-          createViolation.inCheck(live.game.turn() === 'w' ? 'white' : 'black'),
-        ]);
-      } else {
-        showViolations([createViolation.invalidMove()]);
-      }
-      return false;
+    if (success) {
+      clearViolations();
+      setDrawOffered(null);
+    } else {
+      showViolations([createViolation.invalidMove()]);
     }
 
-    // Clear violations on successful move
-    clearViolations();
-    setDrawOffered(null); // Clear any draw offers
-    return true;
+    return success;
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -143,17 +137,19 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       winner,
       reason: 'resignation',
     };
-
+    setGameResult(result);
     gameState.endGame(result);
     setShowResignConfirm(false);
   };
 
   const handleOfferDraw = () => {
+    setShowDrawOfferConfirm(true);
+  };
+
+  const confirmDrawOffer = () => {
     const currentPlayer = live.game.turn() === 'w' ? 'white' : 'black';
     setDrawOffered(currentPlayer);
-    setStatus(
-      `🤝 ${currentPlayer === 'white' ? 'White' : 'Black'} offers a draw`
-    );
+    setShowDrawOfferConfirm(false);
   };
 
   const handleAcceptDraw = () => {
@@ -162,223 +158,206 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       winner: 'draw',
       reason: 'agreement',
     };
-
+    setGameResult(result);
     gameState.endGame(result);
     setDrawOffered(null);
   };
 
   const handleDeclineDraw = () => {
     setDrawOffered(null);
-    updateStatus();
   };
 
-  const handleAbortGame = () => {
-    const result: GameResult = {
-      type: 'abort',
-      winner: 'draw',
-      reason: 'abort',
-    };
-
-    gameState.endGame(result);
-    setShowAbortConfirm(false);
-  };
+  // ─────────────────────────────────────────────────────────────
+  // 🏁 GAME END MODAL HANDLERS
+  // ─────────────────────────────────────────────────────────────
 
   const handleRematch = () => {
-    gameState.resetGame();
-    setShowGameEndModal(false);
+    // Reset game state for new match
+    setGameResult(null);
     setDrawOffered(null);
-    clearViolations();
+    gameState.resetGame();
   };
 
   const handleLeaveTable = () => {
-    gameState.resetGame();
-    setShowGameEndModal(false);
+    // Navigate back to main menu or lobby
+    setGameResult(null);
+    gameState.leaveGame();
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎨 RENDER HELPERS
+  // 📊 DATA PREPARATION FOR COMPONENTS
   // ─────────────────────────────────────────────────────────────
 
-  const formatTime = (milliseconds: number): string => {
-    const totalSeconds = Math.ceil(milliseconds / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+  const getGameData = () => ({
+    blind: {
+      p1Moves: blind.p1Moves,
+      p2Moves: blind.p2Moves,
+      revealLog: reveal.moveLog,
+    },
+    live: {
+      moves: live.moveHistory,
+      currentTurn: live.game.turn(),
+      gameEnded: live.gameEnded,
+    },
+    timers: {
+      whiteTime: timer.whiteTime,
+      blackTime: timer.blackTime,
+      whiteTimeMs: timer.whiteTimeMs || 180000, // 3 minutes default
+      blackTimeMs: timer.blackTimeMs || 180000, // 3 minutes default
+    },
+    drawOffered,
+  });
+
+  const gameData = getGameData();
+
+  // Format time for display
+  const formatTime = (timeMs: number): string => {
+    const minutes = Math.floor(timeMs / 60000);
+    const seconds = Math.floor((timeMs % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const getStatusStyles = () => {
-    if (live.gameEnded) {
-      return 'from-red-500/20 to-orange-500/20 border-red-500/30';
-    }
-    if (live.game.inCheck()) {
-      return 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30';
-    }
-    return 'from-blue-500/20 to-purple-500/20 border-blue-500/30';
-  };
-
   // ─────────────────────────────────────────────────────────────
-  // 🎬 RENDER
+  // 🎬 RENDER - FIXED LAYOUT
   // ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      <div className="relative z-10 pt-8 pb-8 px-4 lg:px-8">
+    <div className="min-h-screen w-full bg-gray-900 text-white overflow-x-hidden">
+      <div className="p-4 scale-[0.92] origin-top mx-auto max-w-[1600px]">
         {/* Header */}
-        <div className="text-center mb-4 lg:mb-6 max-w-4xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-            ⚡ LIVE BATTLE ⚡
-          </h1>
-
-          <div className="bg-black/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10 shadow-lg inline-block mb-3">
-            <p className="text-sm sm:text-base lg:text-lg text-white font-bold">
-              🔥 3+2 BLITZ 🔥
-            </p>
+        <div className="text-center mb-2">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <div className="text-3xl">♟️</div>
+            <h1 className="text-2xl font-bold text-yellow-400">
+              BlindChess Live Battle
+            </h1>
+            <div className="text-3xl">♔</div>
           </div>
-
-          <div
-            className={`bg-gradient-to-r ${getStatusStyles()} backdrop-blur-sm rounded-lg px-4 py-2 border shadow-lg inline-block`}
-          >
-            <p className="text-sm sm:text-base font-bold text-white flex items-center justify-center gap-2">
-              {live.gameEnded ? '🏁' : live.game.inCheck() ? '⚠️' : '⚔️'}
-              {status}
-              {!live.gameEnded && <span className="animate-pulse">|</span>}
-            </p>
-          </div>
+          {live.game.inCheck() && (
+            <div className="text-red-400 font-bold animate-pulse">
+              ⚠️ CHECK! ⚠️
+            </div>
+          )}
+          {live.gameEnded && (
+            <div className="text-green-400 font-bold">🏁 Game Over</div>
+          )}
         </div>
 
-        {/* Main Game Layout */}
-        <div className="max-w-7xl mx-auto px-2 sm:px-4">
-          {/* Mobile/Tablet Layout */}
-          <div className="flex flex-col xl:hidden gap-3 sm:gap-4">
-            {/* Timers */}
-            <div className="flex justify-between gap-2 sm:gap-3">
-              <TimerPanel
-                label="BLACK"
-                time={formatTime(timer.blackTime)}
-                active={live.game.turn() === 'b' && !live.gameEnded}
-                timeMs={timer.blackTime}
-              />
-              <TimerPanel
-                label="WHITE"
-                time={formatTime(timer.whiteTime)}
-                active={live.game.turn() === 'w' && !live.gameEnded}
-                timeMs={timer.whiteTime}
-              />
-            </div>
+        {/* Main Game Layout - FIXED ALIGNMENT */}
+        <div className="grid grid-cols-12 gap-4 h-[540px]">
+          {/* Left Column: Timers & Summary */}
+          <div className="col-span-3 flex flex-col items-center justify-between">
+            <TimerPanel
+              label="BLACK"
+              timeMs={gameData.timers.blackTimeMs}
+              active={
+                gameData.live.currentTurn === 'b' && !gameData.live.gameEnded
+              }
+            />
 
-            {/* Board */}
-            <div className="flex justify-center">
-              <UnifiedChessBoard
-                fen={live.fen}
-                onPieceDrop={handleDrop}
-                boardWidth={Math.min(500, window.innerWidth - 40)}
-                gameEnded={live.gameEnded}
-                currentTurn={live.game.turn()}
-                lastMove={live.lastMove}
-                phase="live"
-              />
-            </div>
+            <BlindGameSummary blindData={gameData.blind} />
 
-            {/* Move History */}
-            <MoveHistory
-              blindMoves={blind.p1Moves.concat(blind.p2Moves)}
-              liveMoves={live.moveHistory}
-              compact={true}
+            <TimerPanel
+              label="WHITE"
+              timeMs={gameData.timers.whiteTimeMs}
+              active={
+                gameData.live.currentTurn === 'w' && !gameData.live.gameEnded
+              }
             />
           </div>
 
-          {/* Desktop Layout */}
-          <div className="hidden xl:grid xl:grid-cols-12 gap-6 items-start">
-            {/* Left Column */}
-            <div className="xl:col-span-3 flex flex-col gap-4">
-              <TimerPanel
-                label="BLACK"
-                time={formatTime(timer.blackTime)}
-                active={live.game.turn() === 'b' && !live.gameEnded}
-                timeMs={timer.blackTime}
+          {/* Center: Chess Board */}
+          <div className="col-span-6 flex items-center justify-center">
+            <UnifiedChessBoard
+              fen={live.fen}
+              onPieceDrop={handleDrop}
+              boardWidth={500}
+              gameEnded={live.gameEnded}
+              currentTurn={live.game.turn()}
+              lastMove={live.lastMove}
+              phase="live"
+            />
+          </div>
+
+          {/* Right Column: Move History + Actions - FIXED ALIGNMENT */}
+          <div className="col-span-3 flex flex-col justify-between h-full">
+            {/* Move History - INCREASED SIZE */}
+            <div className="flex-1 mb-4">
+              <LichessMoveHistory
+                blindMoves={gameData.blind.revealLog}
+                liveMoves={gameData.live.moves}
               />
             </div>
 
-            {/* Center - Board */}
-            <div className="xl:col-span-6 flex justify-center">
-              <UnifiedChessBoard
-                fen={live.fen}
-                onPieceDrop={handleDrop}
-                boardWidth={Math.min(550, window.innerHeight - 200)}
-                gameEnded={live.gameEnded}
-                currentTurn={live.game.turn()}
-                lastMove={live.lastMove}
-                phase="live"
-              />
-            </div>
-
-            {/* Right Column */}
-            <div className="xl:col-span-3 flex flex-col gap-4">
-              <TimerPanel
-                label="WHITE"
-                time={formatTime(timer.whiteTime)}
-                active={live.game.turn() === 'w' && !live.gameEnded}
-                timeMs={timer.whiteTime}
-              />
-              <MoveHistory
-                blindMoves={blind.p1Moves.concat(blind.p2Moves)}
-                liveMoves={live.moveHistory}
-                compact={false}
-              />
+            {/* Action Buttons - ALIGNED WITH BOARD BOTTOM */}
+            <div className="flex-shrink-0">
+              {!gameData.live.gameEnded ? (
+                <GameActionButtons
+                  drawOffered={gameData.drawOffered}
+                  currentTurn={gameData.live.currentTurn}
+                  canAbort={false}
+                  onResign={() => setShowResignConfirm(true)}
+                  onOfferDraw={handleOfferDraw}
+                  onAcceptDraw={handleAcceptDraw}
+                  onDeclineDraw={handleDeclineDraw}
+                  onAbort={() => {}}
+                />
+              ) : (
+                <div className="bg-gray-800 rounded-lg p-3">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRematch}
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg transition-colors flex items-center justify-center text-lg"
+                      title="Request Rematch"
+                    >
+                      🔄
+                    </button>
+                    <button
+                      onClick={handleLeaveTable}
+                      className="flex-1 bg-gray-600 hover:bg-gray-500 text-white py-3 rounded-lg transition-colors flex items-center justify-center text-lg"
+                      title="Leave Game"
+                    >
+                      🚪
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Game Controls */}
-        {!live.gameEnded && (
-          <GameControls
-            drawOffered={drawOffered}
-            currentTurn={live.game.turn()}
-            liveMoveCount={live.moveHistory.length}
-            onResign={() => setShowResignConfirm(true)}
-            onOfferDraw={handleOfferDraw}
-            onAcceptDraw={handleAcceptDraw}
-            onDeclineDraw={handleDeclineDraw}
-            onAbort={() => setShowAbortConfirm(true)}
-          />
-        )}
       </div>
 
       {/* Modals */}
-      {live.gameResult && showGameEndModal && (
-        <GameEndModal
-          result={live.gameResult}
-          onRematch={handleRematch}
-          onLeaveTable={handleLeaveTable}
-          blindMoveStats={{
-            totalBlindMoves: blind.p1Moves.length + blind.p2Moves.length,
-            whiteBlindMoves: blind.p1Moves.length,
-            blackBlindMoves: blind.p2Moves.length,
-          }}
-          liveMoves={live.moveHistory.length}
-          isVisible={showGameEndModal}
-        />
-      )}
-
-      <ConfirmationModal
+      <BeautifulResignModal
         isOpen={showResignConfirm}
-        type="resign"
         onConfirm={handleResign}
         onCancel={() => setShowResignConfirm(false)}
+        currentPlayer={live.game.turn() === 'w' ? 'white' : 'black'}
       />
-
-      <ConfirmationModal
-        isOpen={showAbortConfirm}
-        type="abort"
-        onConfirm={handleAbortGame}
-        onCancel={() => setShowAbortConfirm(false)}
+      <BeautifulDrawOfferModal
+        isOpen={showDrawOfferConfirm}
+        onConfirm={confirmDrawOffer}
+        onCancel={() => setShowDrawOfferConfirm(false)}
+        currentPlayer={live.game.turn() === 'w' ? 'white' : 'black'}
       />
+      {gameResult && (
+        <FixedGameEndModal
+          result={gameResult}
+          onRematch={handleRematch}
+          onLeaveTable={handleLeaveTable}
+          gameHistory={{
+            blindPhaseData: {
+              revealLog: gameData.blind.revealLog,
+              p1BlindMoves: gameData.blind.p1Moves,
+              p2BlindMoves: gameData.blind.p2Moves,
+            },
+            livePhaseData: {
+              moves: gameData.live.moves,
+            },
+          }}
+          isVisible={!!gameResult}
+        />
+      )}
     </div>
   );
 };

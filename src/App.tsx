@@ -1,6 +1,7 @@
-import React from 'react';
+// App.tsx - Updated with PlayerEconomy Provider
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ViolationProvider } from './components/shared/ViolationSystem';
+import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
 import AppLayout from './components/layout/AppLayout';
 import LandingPage from './screens/LandingPage';
 import LobbyPage from './screens/LobbyPage';
@@ -10,20 +11,22 @@ import SettingsPage from './screens/SettingsPage';
 
 function App() {
   return (
-    <ViolationProvider>
-      <Router>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/lobby" element={<LobbyPage />} />
-            <Route path="/game" element={<GameScreen />} />
-            <Route path="/game/:gameId" element={<GameScreen />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </AppLayout>
-      </Router>
-    </ViolationProvider>
+    <PlayerEconomyProvider>
+      <ViolationProvider>
+        <Router>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/lobby" element={<LobbyPage />} />
+              <Route path="/game" element={<GameScreen />} />
+              <Route path="/game/:gameId" element={<GameScreen />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </AppLayout>
+        </Router>
+      </ViolationProvider>
+    </PlayerEconomyProvider>
   );
 }
 

@@ -1,84 +1,188 @@
-// components/LivePhase/TimerPanel.tsx
-import React from 'react';
+// components/LivePhase/TimerPanel.tsx - COMPLETELY ISOLATED TIMER
+import React, { useEffect, useState, useRef } from 'react';
 
 interface TimerPanelProps {
-  label: 'WHITE' | 'BLACK';
-  time: string;
+  label: string;
   active: boolean;
   timeMs: number;
+  compact?: boolean;
 }
 
 const TimerPanel: React.FC<TimerPanelProps> = ({
   label,
-  time,
   active,
   timeMs,
+  compact = false,
 }) => {
-  const isLowTime = timeMs <= 30000; // 30 seconds
-  const isCritical = timeMs <= 10000; // 10 seconds
+  const [currentTimeMs, setCurrentTimeMs] = useState(timeMs);
+  const intervalRef = useRef<number | null>(null);
+  const wasActiveRef = useRef<boolean>(false);
+  const initialTimeSetRef = useRef<boolean>(false);
+  const gameStartTimeRef = useRef<number>(timeMs);
+
+  // 🔧 FIX: Only set initial time once, ignore all subsequent prop changes
+  useEffect(() => {
+    if (!initialTimeSetRef.current) {
+      setCurrentTimeMs(timeMs);
+      gameStartTimeRef.current = timeMs;
+      initialTimeSetRef.current = true;
+    }
+  }, []); // Empty dependency array - only runs once
+
+  // 🔧 FIX: Handle player switching - add increment and switch
+  useEffect(() => {
+    if (wasActiveRef.current && !active) {
+      // Player just made a move, add 2 second increment
+      setCurrentTimeMs((prev) => prev + 2000);
+    }
+    wasActiveRef.current = active;
+  }, [active]); // Only depend on active, not timeMs
+
+  // 🔧 FIX: Independent countdown
+  useEffect(() => {
+    if (intervalRef.current !== null) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (!active) return;
+
+    intervalRef.current = window.setInterval(() => {
+      setCurrentTimeMs((prev) => {
+        const newTime = Math.max(0, prev - 1000);
+
+        if (newTime === 0 && prev > 0) {
+          window.dispatchEvent(
+            new CustomEvent('chess-timeout', {
+              detail: { player: label.toLowerCase() },
+            })
+          );
+        }
+
+        return newTime;
+      });
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [active, label]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  const isCritical = currentTimeMs <= 10000;
+  const isWarning = currentTimeMs <= 30000 && currentTimeMs > 10000;
+  const isWhite = label === 'WHITE';
+
+  const formatCurrentTime = (ms: number): string => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div
       className={`
-        bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-lg
-        rounded-xl shadow-2xl border border-white/10 p-4 lg:p-6
-        transition-all duration-300 transform
-        ${active ? 'scale-105 shadow-blue-500/30 border-blue-400/50' : ''}
-        ${isCritical ? 'animate-pulse bg-red-900/50' : ''}
-        min-w-[160px] lg:min-w-[200px]
+        backdrop-blur-lg rounded-xl border shadow-lg p-2 transition-all duration-300 transform
+        ${active ? 'scale-105 shadow-2xl' : 'scale-100'}
+        ${
+          isCritical && active
+            ? 'animate-pulse border-red-400/70 bg-red-900/30 shadow-red-500/30'
+            : isWarning && active
+            ? 'border-yellow-400/50 bg-yellow-900/20 shadow-yellow-500/20'
+            : active
+            ? 'border-green-400/50 bg-green-900/20 shadow-green-500/20'
+            : 'border-gray-300/20 bg-gray-800/40'
+        }
+        ${
+          isWhite
+            ? 'bg-gradient-to-br from-white/10 to-gray-100/5'
+            : 'bg-gradient-to-br from-gray-900/50 to-black/30'
+        }
+        ${compact ? 'w-[100px] text-[11px]' : 'w-full'}
       `}
     >
-      {/* Player Label */}
-      <div className="text-center mb-3">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div
-            className={`w-3 h-3 rounded-full ${
-              label === 'WHITE'
-                ? 'bg-white'
-                : 'bg-gray-800 border-2 border-white'
-            }`}
-          />
-          <span className="text-white font-bold text-sm lg:text-base">
-            {label}
-          </span>
-        </div>
-      </div>
-
-      {/* Timer Display */}
       <div className="text-center">
+        {/* Player Label */}
         <div
-          className={`
-            text-2xl lg:text-3xl xl:text-4xl font-mono font-bold transition-colors duration-300
-            ${
-              isCritical
-                ? 'text-red-400'
-                : isLowTime
-                ? 'text-yellow-400'
-                : 'text-white'
-            }
-          `}
+          className={`text-xs font-bold mb-1 flex items-center justify-center gap-1 ${
+            isWhite ? 'text-white' : 'text-gray-100'
+          }`}
         >
-          {time}
+          <span className={compact ? 'text-base' : 'text-2xl'}>
+            {isWhite ? '⚪' : '⚫'}
+          </span>
+          <span>{label}</span>
+          {active && (
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          )}
         </div>
 
-        {/* Time Warning */}
-        {isLowTime && (
-          <div className="mt-2">
-            <div
-              className={`text-xs font-bold ${
-                isCritical ? 'text-red-400' : 'text-yellow-400'
-              }`}
-            >
-              {isCritical ? '⚠️ CRITICAL!' : '⏰ Low Time'}
-            </div>
-          </div>
-        )}
+        {/* Time Display */}
+        <div
+          className={`${
+            compact ? 'text-2xl' : 'text-3xl lg:text-4xl'
+          } font-black font-mono tracking-wider mb-1 ${
+            isCritical && active
+              ? 'text-red-400 animate-pulse'
+              : isWarning && active
+              ? 'text-yellow-400'
+              : isWhite
+              ? 'text-white'
+              : 'text-gray-100'
+          }`}
+        >
+          {formatCurrentTime(currentTimeMs)}
+        </div>
 
-        {/* Active Indicator */}
-        {active && (
-          <div className="mt-3 flex justify-center">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+        {/* Progress Bar */}
+        <div
+          className={`w-full rounded-full ${
+            compact ? 'h-2 mb-1' : 'h-3 mb-2'
+          } overflow-hidden ${isWhite ? 'bg-gray-700/50' : 'bg-gray-600/50'}`}
+        >
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ${
+              isCritical
+                ? 'bg-gradient-to-r from-red-500 to-red-600'
+                : isWarning
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500'
+                : 'bg-gradient-to-r from-green-500 to-emerald-500'
+            }`}
+            style={{
+              width: `${Math.max(
+                0,
+                Math.min(100, (currentTimeMs / gameStartTimeRef.current) * 100)
+              )}%`,
+            }}
+          />
+        </div>
+
+        {/* Status Text */}
+        {active ? (
+          <div className="text-xs font-medium flex items-center justify-center gap-1">
+            {isCritical ? (
+              <span className="text-red-400 font-bold animate-bounce">
+                ⚠️ TIME TROUBLE!
+              </span>
+            ) : isWarning ? (
+              <span className="text-yellow-400">⏰ Low Time</span>
+            ) : (
+              <span className="text-green-400">⚡ Active Turn</span>
+            )}
           </div>
+        ) : (
+          <div className="text-xs text-gray-400">Waiting...</div>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-// state/GameStateManager.ts - FIXED LIVE PHASE TURN ISSUE
+// state/GameStateManager.ts - UPDATED FOR ROBOT CHAOS TESTING
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { simulateBlindMoves } from '../utils/simulateBlindMoves';
@@ -52,7 +52,7 @@ export interface GameState {
 }
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const BLIND_TIMER_DURATION = 20;
+const BLIND_TIMER_DURATION = 25;
 const LIVE_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes
 const LIVE_INCREMENT = 2 * 1000; // 2 seconds
 
@@ -218,8 +218,47 @@ export const useGameStateManager = () => {
     currentMovesRef.current = moves;
   }, []);
 
+  // 🎯 UPDATED: submitBlindMoves now accepts optional player parameter for Robot Chaos
   const submitBlindMoves = useCallback(
-    (moves: BlindSequence) => {
+    (moves: BlindSequence, player?: 'P1' | 'P2') => {
+      // If player is explicitly specified (Robot Chaos mode)
+      if (player === 'P1') {
+        p1MovesRef.current = moves;
+        setGameState((prev) => ({
+          ...prev,
+          blind: { ...prev.blind, p1Moves: moves },
+        }));
+        return; // Don't transition yet, wait for P2
+      }
+
+      if (player === 'P2') {
+        setGameState((prev) => ({
+          ...prev,
+          blind: { ...prev.blind, p2Moves: moves },
+        }));
+
+        // Now we have both P1 and P2 moves, proceed to reveal
+        const { fen, log } = simulateBlindMoves(p1MovesRef.current, moves);
+
+        setGameState((prev) => ({
+          ...prev,
+          reveal: {
+            finalFen: fen,
+            moveLog: log,
+            isComplete: false,
+          },
+          live: {
+            ...prev.live,
+            game: new Chess(fen),
+            fen: fen,
+          },
+        }));
+
+        transitionToPhase('REVEAL');
+        return;
+      }
+
+      // 🎯 Original logic for classic mode (no player specified)
       if (gameState.phase === 'BLIND_P1') {
         p1MovesRef.current = moves;
 

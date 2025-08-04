@@ -1,4 +1,4 @@
-// components/shared/ChessBoard/UnifiedChessBoard.tsx
+// components/shared/ChessBoard/UnifiedChessBoard.tsx - SIMPLIFIED LIKE BLIND PHASE
 import React, { useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import type { Chess } from 'chess.js';
@@ -93,7 +93,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       }
     });
 
-    // Last move highlight (for live phase)
+    // Last move highlight (for live phase) - SHOWS OPPONENT'S LAST MOVE
     if (lastMove && phase === 'live') {
       [lastMove.from, lastMove.to].forEach((square) => {
         styles[square] = {
@@ -118,7 +118,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       });
     }
 
-    // Hover effect
+    // Hover effect - SIMPLE LIKE BLIND PHASE
     if (hoveredSquare && !gameEnded) {
       styles[hoveredSquare] = {
         ...styles[hoveredSquare],
@@ -132,7 +132,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎮 INTERACTION HANDLERS
+  // 🎮 INTERACTION HANDLERS - SIMPLE LIKE BLIND PHASE
   // ─────────────────────────────────────────────────────────────
 
   const handlePieceDrop = (
@@ -277,7 +277,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎬 RENDER
+  // 🎬 RENDER - EXACTLY LIKE BLIND PHASE (SIMPLE & WORKING)
   // ─────────────────────────────────────────────────────────────
 
   return (
