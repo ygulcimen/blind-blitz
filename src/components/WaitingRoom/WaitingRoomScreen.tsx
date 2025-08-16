@@ -1,4 +1,4 @@
-// components/WaitingRoom/WaitingRoomScreen.tsx - WITH GAME MODE SUPPORT
+// components/WaitingRoom/WaitingRoomScreen.tsx - MODERNIZED WITH PRESERVED FUNCTIONALITY
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePlayerEconomy } from '../../context/PlayerEconomyConcept';
@@ -135,15 +135,15 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
   };
 
   const handleLeave = () => {
-    navigate('/lobby');
+    navigate('/games');
   };
 
   const allPlayersReady =
     players.length === 2 && players.every((p) => p.isReady);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white">
-      {/* Background Effects */}
+    <div className="min-h-screen bg-black text-white">
+      {/* Modern Background Effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div
           className={`absolute top-1/4 left-1/4 w-96 h-96 ${
@@ -151,14 +151,14 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
           } rounded-full blur-3xl animate-pulse`}
         />
         <div
-          className={`absolute bottom-1/4 right-1/4 w-128 h-128 ${
+          className={`absolute bottom-1/4 right-1/4 w-96 h-96 ${
             modeInfo.color === 'purple' ? 'bg-blue-500/5' : 'bg-purple-500/5'
           } rounded-full blur-3xl animate-pulse delay-1000`}
         />
       </div>
 
       {/* Header */}
-      <div className="relative z-10 pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 pt-8 pb-16 px-6">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <button
@@ -182,7 +182,7 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
           </button>
 
           {/* Main Content */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-12">
             {gameStarting ? (
               <>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6">
@@ -197,7 +197,7 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
                 <div className="text-6xl mb-6 animate-bounce">
                   {modeInfo.icon}
                 </div>
-                <p className="text-2xl text-gray-300 mb-8">
+                <p className="text-2xl text-gray-400 mb-8">
                   {gameMode === 'robot_chaos'
                     ? 'Get ready for robotic mayhem!'
                     : 'Get ready for BlindChess chaos!'}
@@ -215,6 +215,13 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
               </>
             ) : (
               <>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <span className="text-gray-400 text-sm">
+                    Waiting for players
+                  </span>
+                </div>
+
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6">
                   <span
                     className={`bg-gradient-to-r ${modeInfo.theme} bg-clip-text text-transparent`}
@@ -222,34 +229,37 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
                     {modeInfo.name} Room
                   </span>
                 </h1>
-                <p className="text-xl text-gray-300 mb-6">
+                <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
                   {gameMode === 'robot_chaos'
                     ? 'Preparing for robotic warfare! Both players must be ready to begin.'
                     : 'Preparing for BlindChess warfare! Both players must be ready to begin.'}
                 </p>
 
                 {/* Economic Display */}
-                <div className="bg-black/20 backdrop-blur-lg rounded-xl border border-yellow-500/30 p-4 max-w-md mx-auto mb-8">
-                  <h3 className="text-yellow-400 font-bold mb-3 flex items-center justify-center">
+                <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-6 max-w-md mx-auto mb-12">
+                  <h3 className="text-yellow-400 font-bold mb-4 flex items-center justify-center">
                     <span className="text-xl mr-2">💰</span>
                     Economic Stakes
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="text-center">
-                      <div className="text-red-400 font-bold text-lg">
+                      <div className="text-red-400 font-bold text-xl mb-1">
                         {entryFee} 🪙
                       </div>
-                      <div className="text-gray-400">Entry Fee</div>
+                      <div className="text-gray-400 text-sm">Entry Fee</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-green-400 font-bold text-lg">
+                      <div className="text-green-400 font-bold text-xl mb-1">
                         {prizePool} 🪙
                       </div>
-                      <div className="text-gray-400">Prize Pool</div>
+                      <div className="text-gray-400 text-sm">Prize Pool</div>
                     </div>
                   </div>
-                  <div className="mt-3 text-center text-xs text-gray-400">
-                    Winner takes all • Your balance: {economy.gold} gold
+                  <div className="mt-4 pt-4 border-t border-gray-700 text-center text-sm text-gray-400">
+                    Winner takes all • Your balance:{' '}
+                    <span className="text-yellow-400 font-semibold">
+                      {economy.gold} gold
+                    </span>
                   </div>
                 </div>
               </>
@@ -262,11 +272,11 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
               <div
                 key={player.id}
                 className={`
-                  bg-black/20 backdrop-blur-lg rounded-2xl p-8 border transition-all duration-300
+                  bg-gray-900/40 border backdrop-blur-sm rounded-2xl p-8 transition-all duration-300
                   ${
                     player.isReady
-                      ? 'border-green-500/50 shadow-green-500/20 shadow-xl'
-                      : 'border-white/10'
+                      ? 'border-green-500/50 shadow-lg shadow-green-500/20'
+                      : 'border-gray-700 hover:border-gray-600'
                   }
                 `}
               >
@@ -298,7 +308,7 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
                 {/* Player Status */}
                 <div className="text-center">
                   {player.isReady ? (
-                    <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-4 mb-4">
+                    <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-4 mb-6">
                       <div className="text-green-400 text-xl font-bold mb-2">
                         ✅ Ready for Battle!
                       </div>
@@ -307,11 +317,11 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-yellow-900/30 border border-yellow-500/50 rounded-xl p-4 mb-4">
-                      <div className="text-yellow-400 text-xl font-bold mb-2">
+                    <div className="bg-gray-800/40 border border-gray-600/50 rounded-xl p-4 mb-6">
+                      <div className="text-gray-400 text-xl font-bold mb-2">
                         ⏳ Getting Ready...
                       </div>
-                      <div className="text-yellow-300 text-sm">
+                      <div className="text-gray-500 text-sm">
                         {gameMode === 'robot_chaos'
                           ? 'Calibrating chaos protocols...'
                           : 'Click ready when prepared'}
@@ -325,19 +335,15 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
                       onClick={handleReady}
                       disabled={gameStarting}
                       className={`
-                        w-full font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95
+                        w-full font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95
                         ${
                           player.isReady
-                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+                            ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-500/25'
                             : gameMode === 'robot_chaos'
-                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white'
-                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white'
+                            ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25'
+                            : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
                         }
-                        ${
-                          gameStarting
-                            ? 'opacity-50 cursor-not-allowed'
-                            : 'shadow-lg'
-                        }
+                        ${gameStarting ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                     >
                       {player.isReady
@@ -353,72 +359,70 @@ const WaitingRoomScreen: React.FC<WaitingRoomScreenProps> = ({
           </div>
 
           {/* Game Info */}
-          <div className="bg-black/20 backdrop-blur-lg rounded-2xl p-6 border border-white/10 max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-4 text-center flex items-center justify-center">
-              <span className="text-2xl mr-2">{modeInfo.icon}</span>
+          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 max-w-3xl mx-auto backdrop-blur-sm">
+            <h3 className="text-2xl font-bold text-white mb-6 text-center flex items-center justify-center">
+              <span className="text-3xl mr-3">{modeInfo.icon}</span>
               {modeInfo.name} Rules
             </h3>
 
             {gameMode === 'robot_chaos' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">🤖</div>
-                  <div className="text-purple-400 font-bold text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="bg-purple-900/30 border border-purple-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">🤖</div>
+                  <div className="text-purple-400 font-bold mb-2">
                     Robot Phase
                   </div>
-                  <div className="text-purple-300 text-xs">
+                  <div className="text-purple-300 text-sm">
                     AI makes 5 chaotic moves
                   </div>
                 </div>
 
-                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">💬</div>
-                  <div className="text-blue-400 font-bold text-sm">
+                <div className="bg-blue-900/30 border border-blue-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">💬</div>
+                  <div className="text-blue-400 font-bold mb-2">
                     Robot Trolling
                   </div>
-                  <div className="text-blue-300 text-xs">
+                  <div className="text-blue-300 text-sm">
                     Sassy AI commentary
                   </div>
                 </div>
 
-                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">⚔️</div>
-                  <div className="text-green-400 font-bold text-sm">
+                <div className="bg-green-900/30 border border-green-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">⚔️</div>
+                  <div className="text-green-400 font-bold mb-2">
                     Live Battle
                   </div>
-                  <div className="text-green-300 text-xs">
+                  <div className="text-green-300 text-sm">
                     Deal with the chaos
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">🕶️</div>
-                  <div className="text-blue-400 font-bold text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="bg-blue-900/30 border border-blue-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">🕶️</div>
+                  <div className="text-blue-400 font-bold mb-2">
                     Blind Phase
                   </div>
-                  <div className="text-blue-300 text-xs">
+                  <div className="text-blue-300 text-sm">
                     5 moves each, 5s per move
                   </div>
                 </div>
 
-                <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">🎬</div>
-                  <div className="text-purple-400 font-bold text-sm">
+                <div className="bg-purple-900/30 border border-purple-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">🎬</div>
+                  <div className="text-purple-400 font-bold mb-2">
                     Epic Reveal
                   </div>
-                  <div className="text-purple-300 text-xs">
+                  <div className="text-purple-300 text-sm">
                     Watch chaos unfold
                   </div>
                 </div>
 
-                <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                  <div className="text-2xl mb-2">⚔️</div>
-                  <div className="text-red-400 font-bold text-sm">
-                    Live Battle
-                  </div>
-                  <div className="text-red-300 text-xs">3+2 Blitz format</div>
+                <div className="bg-red-900/30 border border-red-500/30 rounded-xl p-6 text-center">
+                  <div className="text-4xl mb-3">⚔️</div>
+                  <div className="text-red-400 font-bold mb-2">Live Battle</div>
+                  <div className="text-red-300 text-sm">3+2 Blitz format</div>
                 </div>
               </div>
             )}

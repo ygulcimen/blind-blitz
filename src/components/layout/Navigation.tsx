@@ -1,9 +1,11 @@
 // src/components/layout/Navigation.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navigation: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
-  const [currentPage, setCurrentPage] = useState('/');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -12,10 +14,10 @@ const Navigation: React.FC = () => {
   }, []);
 
   const handleNavClick = (path: string) => {
-    setCurrentPage(path);
+    navigate(path);
   };
 
-  const isActive = (path: string) => currentPage === path;
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav
@@ -30,7 +32,7 @@ const Navigation: React.FC = () => {
           {/* Logo */}
           <button
             onClick={() => handleNavClick('/')}
-            className="flex items-center gap-3"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
               <span className="text-black font-black text-sm">BC</span>

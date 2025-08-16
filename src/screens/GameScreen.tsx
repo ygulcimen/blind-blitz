@@ -1,4 +1,4 @@
-// screens/GameScreen.tsx - WITH GAME MODE DETECTION
+// screens/GameScreen.tsx - MODERNIZED WITH PRESERVED FUNCTIONALITY
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useGameStateManager } from '../state/GameStateManager';
@@ -139,8 +139,8 @@ const GameScreen: React.FC = () => {
     if (phase === 'LIVE') return null;
 
     return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Game Info */}
             <div className="flex items-center space-x-4">
@@ -164,10 +164,10 @@ const GameScreen: React.FC = () => {
                 </svg>
               </button>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <span className="text-2xl">{modeInfo.icon}</span>
                 <div>
-                  <div className="text-white font-bold">
+                  <div className="text-white font-bold text-lg">
                     BlindChess {modeInfo.name}
                   </div>
                   <div className="text-gray-400 text-sm">
@@ -205,7 +205,7 @@ const GameScreen: React.FC = () => {
 
             {/* Game Mode Badge */}
             <div
-              className={`px-3 py-1 rounded-lg border text-sm font-medium ${
+              className={`px-4 py-2 rounded-lg border text-sm font-medium ${
                 modeInfo.color === 'blue'
                   ? 'bg-blue-900/30 border-blue-500/50 text-blue-400'
                   : 'bg-purple-900/30 border-purple-500/50 text-purple-400'
@@ -221,7 +221,7 @@ const GameScreen: React.FC = () => {
 
   const handleExitGame = () => {
     setShowExitModal(false);
-    navigate('/lobby');
+    navigate('/games');
   };
 
   const handleContinueGame = () => {
@@ -229,11 +229,11 @@ const GameScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 text-white relative overflow-hidden">
-      {/* Animated Background */}
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Modern Background Effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-128 h-128 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
       </div>
 
@@ -263,7 +263,7 @@ const GameScreen: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// 🎬 REVEAL TRANSITION SCREEN - UPDATED WITH GAME MODE
+// 🎬 REVEAL TRANSITION SCREEN - MODERNIZED
 // ─────────────────────────────────────────────────────────────
 
 const RevealTransitionScreen: React.FC<{ gameMode: GameMode }> = ({
@@ -272,13 +272,19 @@ const RevealTransitionScreen: React.FC<{ gameMode: GameMode }> = ({
   const isRobotMode = gameMode === 'robot_chaos';
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      {/* Background Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="relative z-10 text-center max-w-2xl mx-auto px-6">
         <div className="text-8xl mb-8 animate-spin">
           {isRobotMode ? '🤖' : '⚔️'}
         </div>
 
-        <h2 className="text-4xl lg:text-5xl font-black mb-4">
+        <h2 className="text-4xl lg:text-5xl font-black mb-6">
           <span
             className={`bg-gradient-to-r ${
               isRobotMode
@@ -290,7 +296,7 @@ const RevealTransitionScreen: React.FC<{ gameMode: GameMode }> = ({
           </span>
         </h2>
 
-        <p className="text-xl text-gray-300 mb-8">
+        <p className="text-xl text-gray-400 mb-12 leading-relaxed">
           {isRobotMode
             ? 'The robots have finished their mayhem! 🤖💥'
             : 'The blind moves are about to collide! ⚡'}
@@ -298,17 +304,17 @@ const RevealTransitionScreen: React.FC<{ gameMode: GameMode }> = ({
 
         <div className="flex justify-center space-x-4">
           <div
-            className={`w-3 h-3 ${
+            className={`w-4 h-4 ${
               isRobotMode ? 'bg-purple-500' : 'bg-blue-500'
             } rounded-full animate-bounce delay-0`}
           ></div>
           <div
-            className={`w-3 h-3 ${
+            className={`w-4 h-4 ${
               isRobotMode ? 'bg-blue-500' : 'bg-purple-500'
             } rounded-full animate-bounce delay-200`}
           ></div>
           <div
-            className={`w-3 h-3 ${
+            className={`w-4 h-4 ${
               isRobotMode ? 'bg-green-500' : 'bg-red-500'
             } rounded-full animate-bounce delay-400`}
           ></div>
@@ -319,7 +325,7 @@ const RevealTransitionScreen: React.FC<{ gameMode: GameMode }> = ({
 };
 
 // ─────────────────────────────────────────────────────────────
-// 🚪 EXIT GAME MODAL - UPDATED WITH GAME MODE
+// 🚪 EXIT GAME MODAL - MODERNIZED
 // ─────────────────────────────────────────────────────────────
 
 const ExitGameModal: React.FC<{
@@ -333,27 +339,29 @@ const ExitGameModal: React.FC<{
       : { name: 'Classic Blind', icon: '🕶️' };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-white/20 p-8 max-w-md w-full">
-        <div className="text-center mb-6">
-          <div className="text-4xl mb-3">🚪</div>
-          <h3 className="text-xl font-bold text-white mb-2">Exit Game?</h3>
-          <p className="text-gray-300 text-sm">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900/90 border border-gray-700 rounded-2xl shadow-2xl backdrop-blur-sm p-8 max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4">🚪</div>
+          <h3 className="text-2xl font-bold text-white mb-3">Exit Game?</h3>
+          <p className="text-gray-400 leading-relaxed">
             Are you sure you want to leave this {modeInfo.name} battle? Your
             progress and any entry fees will be lost.
           </p>
-          <div className="mt-3 text-gray-400 text-xs">
-            {modeInfo.icon} {modeInfo.name} Mode
+          <div className="mt-4 inline-flex items-center gap-2 bg-gray-800/60 border border-gray-600 rounded-lg px-3 py-2">
+            <span className="text-xl">{modeInfo.icon}</span>
+            <span className="text-gray-300 text-sm font-medium">
+              {modeInfo.name} Mode
+            </span>
           </div>
         </div>
 
         <div className="flex gap-4">
           <button
             onClick={onContinue}
-            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500
-                       text-white font-bold py-3 px-4 rounded-xl 
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl 
                        transition-all duration-300 transform hover:scale-105 active:scale-95
-                       shadow-lg hover:shadow-green-500/30"
+                       shadow-lg hover:shadow-green-500/25"
           >
             {gameMode === 'robot_chaos'
               ? '🤖 Continue Chaos'
@@ -361,10 +369,9 @@ const ExitGameModal: React.FC<{
           </button>
           <button
             onClick={onExit}
-            className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600
-                       text-white font-bold py-3 px-4 rounded-xl 
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl 
                        transition-all duration-300 transform hover:scale-105 active:scale-95
-                       shadow-lg hover:shadow-red-500/30"
+                       shadow-lg hover:shadow-red-500/25"
           >
             🏃 Exit to Lobby
           </button>

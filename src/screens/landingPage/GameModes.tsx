@@ -1,10 +1,21 @@
 // src/components/landingPage/GameModes.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const GameModes: React.FC = () => {
   const [selectedMode, setSelectedMode] = useState<'classical' | 'robochaos'>(
     'classical'
   );
+  const navigate = useNavigate();
+
+  const handleChooseMode = () => {
+    // Navigate to games page with selected mode as query parameter
+    navigate(`/games?mode=${selectedMode}`);
+  };
+
+  const handlePlayMode = (mode: 'classical' | 'robochaos') => {
+    navigate(`/games?mode=${mode}&quickStart=true`);
+  };
 
   return (
     <section className="relative py-24 overflow-hidden">
@@ -169,6 +180,14 @@ const GameModes: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Quick Play Button */}
+                <button
+                  onClick={() => handlePlayMode('classical')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                  Play Classical Now
+                </button>
               </div>
 
               <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6">
@@ -245,6 +264,14 @@ const GameModes: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Quick Play Button */}
+                <button
+                  onClick={() => handlePlayMode('robochaos')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                >
+                  Play RoboChaos Now
+                </button>
               </div>
 
               <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6 relative overflow-hidden">
@@ -288,7 +315,10 @@ const GameModes: React.FC = () => {
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <button className="bg-white text-black font-semibold px-8 py-4 rounded-lg text-lg hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleChooseMode}
+            className="bg-white text-black font-semibold px-8 py-4 rounded-lg text-lg hover:bg-gray-100 transition-colors hover:scale-105 transform transition-transform duration-200"
+          >
             Choose Your Mode
           </button>
         </div>

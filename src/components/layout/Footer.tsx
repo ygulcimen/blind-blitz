@@ -1,7 +1,14 @@
 // src/components/layout/Footer.tsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Footer: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <footer className="relative bg-black border-t border-gray-800">
       {/* Main Footer Content */}
@@ -9,7 +16,10 @@ const Footer: React.FC = () => {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
+            <button
+              onClick={() => handleNavigation('/')}
+              className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                 <span className="text-black font-black text-sm">BC</span>
               </div>
@@ -19,7 +29,7 @@ const Footer: React.FC = () => {
                   Chess with real stakes
                 </div>
               </div>
-            </div>
+            </button>
 
             <p className="text-gray-400 leading-relaxed max-w-md mb-6">
               Revolutionary chess platform where every move costs gold. Master
@@ -45,22 +55,34 @@ const Footer: React.FC = () => {
             <h3 className="text-white font-semibold mb-4">Game</h3>
             <ul className="space-y-3">
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/games?mode=classical')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   Play Classical
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/games?mode=robochaos')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   Play RoboChaos
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/tournaments')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   Tournaments
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/leaderboard')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   Leaderboard
                 </button>
               </li>
@@ -72,22 +94,28 @@ const Footer: React.FC = () => {
             <h3 className="text-white font-semibold mb-4">Learn</h3>
             <ul className="space-y-3">
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/about')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   How to Play
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Strategy Guide
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Economy Rules
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => handleNavigation('/faq')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
                   FAQ
                 </button>
               </li>
@@ -99,22 +127,22 @@ const Footer: React.FC = () => {
             <h3 className="text-white font-semibold mb-4">Support</h3>
             <ul className="space-y-3">
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Contact Us
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Bug Reports
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Privacy Policy
                 </button>
               </li>
               <li>
-                <button className="text-gray-400 hover:text-white transition-colors text-sm">
+                <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   Terms of Service
                 </button>
               </li>
