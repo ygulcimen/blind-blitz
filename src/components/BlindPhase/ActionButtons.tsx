@@ -1,5 +1,6 @@
 import React from 'react';
 import type { BlindSequence } from '../../types/BlindTypes';
+import { Undo, RotateCcw, Send, Zap, Rocket, EyeOff } from 'lucide-react';
 
 interface ActionButtonsProps {
   moves: BlindSequence;
@@ -20,97 +21,118 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const hasMoves = moves.length > 0;
 
   return (
-    <div className="w-full space-y-2">
-      {/* Top Row: Undo and Reset - COMPACT */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Undo Button */}
+    <div className="w-full space-y-3">
+      {/* 🎨 COMPACT: Control Buttons Row */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* 🔥 COMPACT Undo Button */}
         <button
           onClick={onUndo}
           disabled={!hasMoves}
-          className="group bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 
-                     disabled:from-gray-600 disabled:to-gray-700 disabled:opacity-50 disabled:cursor-not-allowed
-                     px-3 py-2 rounded-lg text-white font-bold shadow-lg
-                     transition-all duration-300 transform hover:scale-105 active:scale-95
-                     flex items-center justify-center gap-1.5 text-xs
-                     border border-amber-500/30 hover:border-amber-400/50 disabled:border-gray-600/30"
-          title="Undo Last Move"
+          className={`group relative px-4 py-2 rounded-lg font-bold text-sm shadow-lg transition-all duration-300 transform border overflow-hidden ${
+            hasMoves
+              ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 border-amber-500/50 hover:border-amber-400/70 hover:scale-105 active:scale-95 shadow-amber-500/30'
+              : 'bg-gradient-to-r from-slate-600 to-slate-700 border-slate-500/30 opacity-50 cursor-not-allowed'
+          }`}
         >
-          <span className="text-lg group-hover:rotate-[-30deg] transition-transform duration-300">
-            ↶
-          </span>
-          <span>Undo</span>
+          {/* Shine Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+          <div className="relative flex items-center justify-center gap-2">
+            <Undo
+              className={`w-4 h-4 transition-transform duration-300 ${
+                hasMoves ? 'group-hover:rotate-[-30deg]' : ''
+              }`}
+            />
+            <span>UNDO</span>
+          </div>
         </button>
 
-        {/* Reset Button */}
+        {/* 🔥 COMPACT Reset Button */}
         <button
           onClick={onReset}
-          className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600
-                     px-3 py-2 rounded-lg text-white font-bold shadow-lg
-                     transition-all duration-300 transform hover:scale-105 active:scale-95
-                     flex items-center justify-center gap-1.5 text-xs
-                     border border-red-500/30 hover:border-red-400/50"
-          title="Reset All Moves"
+          className="group relative bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 px-4 py-2 rounded-lg text-white font-bold text-sm shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 border border-red-500/50 hover:border-red-400/70 shadow-red-500/30 overflow-hidden"
         >
-          <span className="text-lg group-hover:rotate-180 transition-transform duration-500">
-            🔄
-          </span>
-          <span>Reset</span>
+          {/* Shine Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+          <div className="relative flex items-center justify-center gap-2">
+            <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+            <span>RESET</span>
+          </div>
         </button>
       </div>
 
-      {/* Bottom Row: Submit Button - COMPACT */}
+      {/* 🚀 COMPACT Submit Button */}
       <button
         onClick={() => onSubmit(moves)}
         disabled={moves.length === 0}
-        className={`w-full px-4 py-3 rounded-lg text-white font-bold shadow-xl
-                   transition-all duration-300 transform hover:scale-105 active:scale-95
-                   disabled:opacity-50 disabled:cursor-not-allowed 
-                   flex items-center justify-center gap-2 text-sm
-                   border ${
-                     isComplete
-                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 border-green-500/30 hover:border-green-400/50 animate-pulse shadow-green-500/30'
-                       : moves.length > 0
-                       ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 border-blue-500/30 hover:border-blue-400/50'
-                       : 'bg-gradient-to-r from-gray-600 to-gray-700 border-gray-500/30 cursor-not-allowed'
-                   }`}
-        title={
+        className={`w-full px-6 py-3 rounded-lg text-white font-bold text-base shadow-lg transition-all duration-300 transform border relative overflow-hidden ${
           isComplete
-            ? 'Launch your complete attack!'
-            : `Submit ${moves.length} moves`
-        }
+            ? 'bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 hover:from-green-500 hover:via-emerald-500 hover:to-green-600 border-green-500/50 hover:border-green-400/70 animate-pulse shadow-green-500/40 hover:scale-105 active:scale-95'
+            : moves.length > 0
+            ? 'bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-500 hover:via-blue-500 hover:to-indigo-500 border-purple-500/50 hover:border-purple-400/70 shadow-purple-500/40 hover:scale-105 active:scale-95'
+            : 'bg-gradient-to-r from-slate-600 to-slate-700 border-slate-500/30 opacity-50 cursor-not-allowed shadow-slate-500/20'
+        }`}
       >
-        {isComplete ? (
-          <>
-            <span className="text-xl animate-bounce">🚀</span>
-            <span>Launch Attack!</span>
-          </>
-        ) : moves.length > 0 ? (
-          <>
-            <span className="text-xl">⚡</span>
-            <span>
-              Submit ({moves.length}/{maxMoves})
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="text-xl opacity-50">⚡</span>
-            <span>Make Your Moves</span>
-          </>
+        {/* Epic Shine Effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+        {/* Pulsing Background for Complete State */}
+        {isComplete && (
+          <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 animate-pulse" />
         )}
+
+        <div className="relative flex items-center justify-center gap-3">
+          {isComplete ? (
+            <>
+              <Rocket className="w-5 h-5 animate-bounce" />
+              <span className="text-lg">LAUNCH BLIND ATTACK!</span>
+            </>
+          ) : moves.length > 0 ? (
+            <>
+              <Send className="w-4 h-4" />
+              <span>
+                SUBMIT {moves.length} MOVE{moves.length > 1 ? 'S' : ''}
+              </span>
+            </>
+          ) : (
+            <>
+              <Zap className="w-4 h-4 opacity-50" />
+              <span>MAKE YOUR BLIND MOVES</span>
+            </>
+          )}
+        </div>
       </button>
 
-      {/* Move Counter Visual - COMPACT */}
+      {/* 🎨 COMPACT Move Progress Visualization */}
       <div className="flex justify-center">
-        <div className="flex gap-1">
+        <div className="flex items-center gap-2">
           {Array.from({ length: maxMoves }).map((_, i) => (
             <div
               key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                i < moves.length
-                  ? 'bg-blue-400 shadow-lg shadow-blue-400/50 scale-110'
-                  : 'bg-gray-600'
+              className={`relative transition-all duration-500 ${
+                i < moves.length ? 'scale-125' : 'scale-100'
               }`}
-            />
+            >
+              {/* Main Dot */}
+              <div
+                className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                  i < moves.length
+                    ? 'bg-gradient-to-r from-purple-400 to-blue-500 shadow-md shadow-purple-400/50'
+                    : 'bg-slate-600 border border-slate-500'
+                }`}
+              />
+
+              {/* Pulsing Ring for Active Moves */}
+              {i < moves.length && (
+                <div className="absolute inset-0 rounded-full bg-purple-400/30 animate-ping" />
+              )}
+
+              {/* Current Move Indicator */}
+              {i === moves.length - 1 && (
+                <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
+              )}
+            </div>
           ))}
         </div>
       </div>

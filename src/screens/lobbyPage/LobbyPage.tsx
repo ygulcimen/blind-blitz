@@ -112,10 +112,7 @@ const LobbyPage: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header Section */}
-        <LobbyHeader
-          playerGold={playerGold}
-          onCreateRoom={() => setShowCreateRoom(true)}
-        />
+        <LobbyHeader playerGold={playerGold} />
 
         {/* Quick Match Card */}
         <QuickMatchCard
@@ -128,6 +125,7 @@ const LobbyPage: React.FC = () => {
           filters={filters}
           onFiltersChange={setFilters}
           roomCount={filteredRooms.length}
+          onCreateRoom={() => setShowCreateRoom(true)} // ✅ Add this line
         />
 
         {/* Rooms Grid */}

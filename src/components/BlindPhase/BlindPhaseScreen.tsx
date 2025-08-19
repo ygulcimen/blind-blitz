@@ -1,4 +1,3 @@
-// components/BlindPhase/BlindPhaseScreen.tsx - FIXED BOARD STATE ISSUE
 import React, { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { UnifiedChessBoard } from '../shared/ChessBoard/UnifiedChessBoard';
@@ -9,13 +8,23 @@ import {
   VisualFeedbackHelper,
 } from '../../services/chess';
 import type { BlindSequence } from '../../types/BlindTypes';
-import MoveLogPanel from './MoveLogPanel';
-import ActionButtons from './ActionButtons';
-import LegendPanel from './LegendPanel';
+import {
+  ArrowLeft,
+  EyeOff,
+  Undo,
+  RotateCcw,
+  Send,
+  Rocket,
+  Zap,
+  Target,
+  Shield,
+  Crown,
+  Star,
+} from 'lucide-react';
 
 interface BlindPhaseScreenProps {
   player: 'P1' | 'P2';
-  gameState: any; // Will be properly typed with GameStateManager
+  gameState: any;
 }
 
 const MAX_MOVES = 5;
@@ -30,54 +39,52 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
   const colourLetter = isWhite ? 'w' : 'b';
   const { showViolations, createViolation, clearViolations } = useViolations();
 
-  // ─────────────────────────────────────────────────────────────
-  // 🏗️ LOCAL STATE - EACH PLAYER GETS FRESH BOARD!
-  // ─────────────────────────────────────────────────────────────
+  // Mock player data (replace with real data)
+  const currentPlayer = {
+    name: isWhite ? 'ChessKnight' : 'GrandSlayer',
+    rating: isWhite ? 1650 : 1847,
+    isHost: isWhite,
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATE - Keep all original logic
+  // ═══════════════════════════════════════════════════════════════
 
   const [game, setGame] = useState(() => {
-    // 🔧 FIX: Always start with fresh initial position
     const g = new Chess(INITIAL_FEN);
-    // Set turn to current player so they can move their pieces
     if (!isWhite) {
-      // For black player, we need to flip the FEN to make it black's turn
       const fenParts = g.fen().split(' ');
-      fenParts[1] = 'b'; // Set active color to black
+      fenParts[1] = 'b';
       g.load(fenParts.join(' '));
     }
     return g;
   });
 
   const [queuedMoves, setQueuedMoves] = useState<BlindSequence>([]);
-
   const [pieceTracker] = useState(
     () => new EnhancedPieceTracker(MAX_PER_PIECE, MAX_MOVES)
   );
-
   const [ruleEngine] = useState(
     () => new BlindChessRuleEngine(MAX_PER_PIECE, MAX_MOVES)
   );
-
   const [pieceIndicators, setPieceIndicators] = useState<{
     [square: string]: any;
   }>({});
 
-  // ─────────────────────────────────────────────────────────────
-  // 🔄 EFFECTS
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
+  // EFFECTS - Keep all original logic
+  // ═══════════════════════════════════════════════════════════════
 
-  // Update piece indicators when game state changes
   useEffect(() => {
     setPieceIndicators(
       VisualFeedbackHelper.getPieceIndicators(game, ruleEngine, colourLetter)
     );
   }, [game, ruleEngine, colourLetter]);
 
-  // Notify parent of moves update
   useEffect(() => {
     gameState.updateBlindMoves(queuedMoves);
   }, [queuedMoves, gameState]);
 
-  // 🔧 FIX: Reset board when player changes
   useEffect(() => {
     const freshGame = new Chess(INITIAL_FEN);
     if (!isWhite) {
@@ -92,12 +99,11 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
     clearViolations();
   }, [player, isWhite, pieceTracker, ruleEngine, clearViolations]);
 
-  // ─────────────────────────────────────────────────────────────
-  // 🎮 MOVE HANDLING
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
+  // HANDLERS - Keep all original logic
+  // ═══════════════════════════════════════════════════════════════
 
   const handleDrop = (from: string, to: string, piece: string): boolean => {
-    // Check move limit
     if (queuedMoves.length >= MAX_MOVES) {
       showViolations([
         createViolation.moveLimit(queuedMoves.length, MAX_MOVES),
@@ -105,13 +111,11 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
       return false;
     }
 
-    // Check piece ownership
     if ((isWhite && piece[0] !== 'w') || (!isWhite && piece[0] !== 'b')) {
       showViolations([createViolation.wrongTurn(isWhite ? 'white' : 'black')]);
       return false;
     }
 
-    // Validate move with rule engine
     const testMove = { from, to, promotion: 'q' as const };
     const validation = ruleEngine.validateMove(game, testMove);
 
@@ -120,7 +124,7 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
         switch (violation.type) {
           case 'PIECE_EXHAUSTED':
             return createViolation.pieceExhausted(
-              piece.slice(1), // piece type
+              piece.slice(1),
               violation.pieceId
                 ? pieceTracker.getPieceMoveCount(game.get(from as any), from)
                 : 0,
@@ -134,12 +138,10 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
             return createViolation.invalidMove();
         }
       });
-
       showViolations(displayViolations);
       return false;
     }
 
-    // Execute the move on the player's own board
     const next = new Chess(game.fen());
     const mv = next.move(testMove);
 
@@ -148,12 +150,10 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
       return false;
     }
 
-    // 🔧 FIX: Keep the turn the same so player can keep making moves
     const fenParts = next.fen().split(' ');
-    fenParts[1] = colourLetter; // Keep it as current player's turn
+    fenParts[1] = colourLetter;
     next.load(fenParts.join(' '));
 
-    // Update tracking
     pieceTracker.recordMove(next, from, to, mv.san, queuedMoves.length + 1);
     ruleEngine.processMove(
       next,
@@ -161,44 +161,33 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
       queuedMoves.length + 1
     );
 
-    // Update state
     setGame(next);
     setQueuedMoves((prev) => [...prev, { from, to, san: mv.san }]);
     clearViolations();
-
     return true;
   };
 
   const handleUndo = () => {
     if (!queuedMoves.length) return;
-
     const newQueue = queuedMoves.slice(0, -1);
-
-    // Rebuild game state from scratch
     const g = new Chess(INITIAL_FEN);
     if (!isWhite) {
       const fenParts = g.fen().split(' ');
       fenParts[1] = 'b';
       g.load(fenParts.join(' '));
     }
-
     pieceTracker.reset();
     ruleEngine.reset();
-
-    // Replay moves
     newQueue.forEach((move, index) => {
       const tempMove = g.move({ from: move.from, to: move.to, promotion: 'q' });
       if (tempMove) {
-        // Keep turn as current player
         const fenParts = g.fen().split(' ');
         fenParts[1] = colourLetter;
         g.load(fenParts.join(' '));
-
         pieceTracker.recordMove(g, move.from, move.to, move.san, index + 1);
         ruleEngine.processMove(g, move, index + 1);
       }
     });
-
     setGame(g);
     setQueuedMoves(newQueue);
     clearViolations();
@@ -211,22 +200,231 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
       fenParts[1] = 'b';
       g.load(fenParts.join(' '));
     }
-
     setGame(g);
     setQueuedMoves([]);
     pieceTracker.reset();
     ruleEngine.reset();
     clearViolations();
-    // Don't call gameState.resetGame() - that would reset the entire game
   };
 
   const handleSubmit = () => {
     gameState.submitBlindMoves(queuedMoves);
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // 📊 COMPUTED VALUES
-  // ─────────────────────────────────────────────────────────────
+  const handleLobbyReturn = () => {
+    // Show resignation warning
+    if (
+      window.confirm(
+        '⚠️ SURRENDER WARNING ⚠️\n\nReturning to lobby will count as a RESIGNATION and you will lose this battle!\n\nAre you sure you want to surrender?'
+      )
+    ) {
+      window.location.href = '/games';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🎮 EPIC COMPONENTS
+  // ═══════════════════════════════════════════════════════════════
+
+  const EpicTimer: React.FC = () => {
+    const { timer } = gameState.gameState;
+    const timeLeft = isWhite ? timer.whiteTime : timer.blackTime;
+    const percentage = (timeLeft / timer.duration) * 100;
+    const isCritical = timeLeft <= 5;
+    const isWarning = timeLeft <= 10 && timeLeft > 5;
+
+    return (
+      <div className="relative">
+        {/* Glow effect */}
+        <div
+          className={`absolute inset-0 rounded-2xl blur-xl transition-all duration-300 ${
+            isCritical
+              ? 'bg-red-500/40 animate-pulse'
+              : isWarning
+              ? 'bg-yellow-500/30'
+              : 'bg-blue-500/20'
+          }`}
+        />
+
+        <div
+          className={`relative px-8 py-6 rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 ${
+            isCritical
+              ? 'bg-red-900/30 border-red-400/50 shadow-lg shadow-red-500/25'
+              : isWarning
+              ? 'bg-yellow-900/30 border-yellow-400/50 shadow-lg shadow-yellow-500/25'
+              : 'bg-blue-900/30 border-blue-400/50 shadow-lg shadow-blue-500/25'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className={`text-4xl ${isCritical ? 'animate-bounce' : ''}`}>
+                {isWhite ? '👑' : '⚔️'}
+              </div>
+              {isCritical && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+              )}
+            </div>
+
+            <div className="flex-1 text-center">
+              <div className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">
+                {isWhite ? 'WHITE EMPIRE' : 'BLACK LEGION'} • BLIND ASSAULT
+              </div>
+              <div className="text-3xl font-black text-white leading-none mb-2">
+                {Math.ceil(timeLeft)}s
+              </div>
+
+              {/* Epic progress bar */}
+              <div className="relative w-full h-2 bg-black/50 rounded-full overflow-hidden">
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-linear ${
+                    isCritical
+                      ? 'bg-gradient-to-r from-red-400 to-red-600'
+                      : isWarning
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                      : 'bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400'
+                  }`}
+                  style={{ width: `${percentage}%` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+              </div>
+            </div>
+
+            <EyeOff
+              className={`w-6 h-6 text-white ${
+                isCritical ? 'animate-pulse' : ''
+              }`}
+            />
+          </div>
+
+          {isCritical && (
+            <div className="mt-3 text-center text-red-300 text-sm font-bold uppercase tracking-wider animate-pulse">
+              ⚡ FINAL MOMENTS! ⚡
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const PlayerCard: React.FC = () => (
+    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/80 backdrop-blur-sm border-2 border-purple-500/50 rounded-xl p-4 shadow-2xl shadow-purple-500/20 relative">
+      {/* Host Crown */}
+      {currentPlayer.isHost && (
+        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 py-1 rounded-lg text-xs font-black shadow-lg">
+          HOST
+        </div>
+      )}
+
+      {/* Player Avatar - Compact */}
+      <div className="text-center">
+        <div className="relative inline-block mb-2">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-xl flex items-center justify-center shadow-xl">
+            <span className="text-white font-black text-lg drop-shadow-lg">
+              {currentPlayer.name[0]}
+            </span>
+          </div>
+          {currentPlayer.isHost && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
+              <Crown className="w-3 h-3 text-white fill-current" />
+            </div>
+          )}
+        </div>
+
+        <h3 className="text-sm font-black mb-1 tracking-wide text-white">
+          {currentPlayer.name}
+        </h3>
+
+        <div className="flex items-center justify-center gap-1 mb-2">
+          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+          <span className="text-yellow-400 font-bold text-sm">
+            {currentPlayer.rating}
+          </span>
+          <div className="px-1 py-0.5 bg-slate-700/60 rounded text-xs text-slate-300 font-bold">
+            {currentPlayer.rating > 1800
+              ? 'MASTER'
+              : currentPlayer.rating > 1600
+              ? 'EXPERT'
+              : 'WARRIOR'}
+          </div>
+        </div>
+
+        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-900/40 text-purple-300 text-xs">
+          {currentPlayer.isHost ? (
+            <Shield className="w-3 h-3" />
+          ) : (
+            <Target className="w-3 h-3" />
+          )}
+          <span className="font-bold">
+            {currentPlayer.isHost ? 'Master' : 'Challenger'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const BattleSequence: React.FC = () => (
+    <div className="space-y-2">
+      <div className="text-center mb-3">
+        <h3 className="text-lg font-black text-white flex items-center justify-center gap-2 mb-1">
+          <Target className="w-5 h-5 text-blue-400" />
+          Battle Sequence
+        </h3>
+        <div className="text-xs text-gray-400">
+          {queuedMoves.length}/{MAX_MOVES} strikes planned
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {Array.from({ length: MAX_MOVES }).map((_, i) => {
+          const move = queuedMoves[i];
+          const isActive = i < queuedMoves.length;
+          const isCurrent = i === queuedMoves.length - 1;
+
+          return (
+            <div
+              key={i}
+              className={`relative p-2 rounded-lg border transition-all duration-300 ${
+                isActive
+                  ? isCurrent
+                    ? 'bg-blue-900/40 border-blue-400/50 shadow-lg shadow-blue-500/20'
+                    : 'bg-gray-800/60 border-gray-600/50'
+                  : 'bg-gray-900/30 border-gray-700/30'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isActive
+                        ? isCurrent
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-600 text-white'
+                        : 'bg-gray-800 text-gray-500'
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+
+                  <span
+                    className={`font-mono text-sm font-bold ${
+                      isActive ? 'text-white' : 'text-gray-500'
+                    }`}
+                  >
+                    {move?.san ?? '—'}
+                  </span>
+                  {isActive && <Zap className="w-3 h-3 text-yellow-400" />}
+                </div>
+
+                {isCurrent && (
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const moveSummary = pieceTracker.getMovementSummary();
   const remainingMoves = MAX_MOVES - moveSummary.totalMoves;
@@ -235,216 +433,192 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
     pieceTracker,
     colourLetter
   );
-
-  // Get timer values from gameState
-  const { timer } = gameState.gameState;
-  const timeLeft = isWhite ? timer.whiteTime : timer.blackTime;
-
-  // ─────────────────────────────────────────────────────────────
-  // 🕐 TIMER COMPONENT
-  // ─────────────────────────────────────────────────────────────
-
-  const BlindTimer: React.FC = () => {
-    const percentage = (timeLeft / timer.duration) * 100;
-    const isCritical = timeLeft <= 3;
-    const isWarning = timeLeft <= 5 && timeLeft > 3;
-
-    return (
-      <div className="fixed top-4 right-4 z-50">
-        <div
-          className={`
-          px-6 py-4 rounded-2xl font-bold shadow-2xl transition-all duration-300 transform
-          ${
-            isCritical
-              ? 'bg-gradient-to-r from-red-500 to-red-600 animate-pulse scale-110 border-2 border-red-300'
-              : isWarning
-              ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 border-2 border-yellow-300'
-              : 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-white/20'
-          }
-          text-white backdrop-blur-lg
-        `}
-        >
-          <div className="flex items-center gap-3">
-            <div className="text-2xl animate-bounce">
-              {isWhite ? '⚪' : '⚫'}
-            </div>
-            <div className="text-center">
-              <div className="text-xs opacity-90 leading-tight">
-                {isWhite ? 'White' : 'Black'} Turn
-              </div>
-              <div className="text-2xl font-black leading-tight">
-                {Math.ceil(timeLeft)}s
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-2 w-full bg-black/30 rounded-full h-2">
-            <div
-              className="bg-white rounded-full h-2 transition-all duration-1000 ease-linear"
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-
-          {isCritical && (
-            <div className="text-center text-xs mt-1 animate-pulse font-bold">
-              ⚠️ TIME RUNNING OUT!
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // 🎨 RENDER
-  // ─────────────────────────────────────────────────────────────
+  const isComplete = queuedMoves.length === MAX_MOVES;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-128 h-128 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex overflow-hidden relative">
+      {/* Epic animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/[0.07] rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/[0.05] rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-3/4 left-3/4 w-64 h-64 bg-emerald-500/[0.04] rounded-full blur-3xl animate-pulse delay-2000" />
+
+        {/* Grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
       </div>
 
-      {/* 🕐 BEAUTIFUL TIMER - Top Right */}
-      <BlindTimer />
+      {/* Left: Battle Sequence */}
+      <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-white/10 p-4 flex flex-col relative">
+        {/* Panel glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-purple-500/5 to-transparent pointer-events-none" />
 
-      <div className="relative z-10 pt-20 pb-8 px-4 lg:px-8">
-        {/* Beautiful Header */}
-        <div className="text-center mb-8 max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div
-              className={`w-6 h-6 lg:w-8 lg:h-8 rounded-full border-2 ${
-                isWhite
-                  ? 'bg-white border-white shadow-white/50'
-                  : 'bg-gray-800 border-white shadow-white/30'
-              } shadow-lg animate-pulse`}
-            />
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black">
-              <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-red-500 bg-clip-text text-transparent">
-                {isWhite ? 'White' : 'Black'} Blind Attack
-              </span>
-            </h1>
-            <div
-              className={`w-6 h-6 lg:w-8 lg:h-8 rounded-full border-2 ${
-                isWhite
-                  ? 'bg-white border-white shadow-white/50'
-                  : 'bg-gray-800 border-white shadow-white/30'
-              } shadow-lg animate-pulse`}
-            />
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Player Card - Compact */}
+          <div className="mb-4">
+            <PlayerCard />
           </div>
 
-          {/* Enhanced Status Bar */}
-          <div className="bg-black/20 backdrop-blur-lg rounded-2xl px-6 py-4 border border-white/10 shadow-xl max-w-3xl mx-auto">
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 lg:gap-8 text-sm lg:text-base">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
-                <span className="text-gray-300">Max 2 moves per piece</span>
+          {/* Battle Sequence - Compact to show all 5 */}
+          <div className="flex-1">
+            <BattleSequence />
+          </div>
+
+          {/* Bottom Stats */}
+          <div className="mt-4 p-3 border-t border-white/10 bg-gradient-to-r from-gray-900/50 to-black/50 rounded-lg">
+            <div className="text-center">
+              <div className="text-xs text-gray-300 font-medium mb-1">
+                ⚔️ Battle Rules ⚔️
               </div>
+              <div className="text-xs text-gray-500">
+                Max 2 strikes per piece • {remainingMoves} remaining
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div className="hidden sm:block w-px h-6 bg-gray-600"></div>
+      {/* Center: Epic Chess Board */}
+      <div className="flex-1 flex items-center justify-center p-8 relative">
+        {/* Board glow effect */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[700px] h-[700px] bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 rounded-3xl blur-3xl" />
+        </div>
 
-              <div
-                className={`flex items-center gap-3 font-bold ${
-                  remainingMoves === 0
-                    ? 'text-red-400'
-                    : remainingMoves <= 1
-                    ? 'text-yellow-400'
-                    : 'text-green-400'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-full animate-pulse ${
-                    remainingMoves === 0
-                      ? 'bg-red-400'
-                      : remainingMoves <= 1
-                      ? 'bg-yellow-400'
-                      : 'bg-green-400'
+        <div className="relative z-10">
+          <UnifiedChessBoard
+            fen={game.fen()}
+            game={game}
+            isFlipped={!isWhite}
+            onPieceDrop={handleDrop}
+            pieceIndicators={pieceIndicators}
+            customSquareStyles={squareStyles}
+            phase="blind"
+            boardWidth={Math.min(
+              700,
+              window.innerWidth * 0.5,
+              window.innerHeight * 0.85
+            )}
+          />
+        </div>
+      </div>
+
+      {/* Right: Controls */}
+      <div className="w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 flex flex-col relative">
+        {/* Panel glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-blue-500/5 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Epic Timer */}
+          <div className="p-6">
+            <EpicTimer />
+          </div>
+
+          {/* Progress Section */}
+          <div className="px-6 pb-6">
+            <div className="bg-gray-900/50 border border-gray-700/50 rounded-xl p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-green-400" />
+                  Mission Progress
+                </span>
+                <span
+                  className={`text-sm font-bold px-3 py-1 rounded-lg ${
+                    isComplete
+                      ? 'bg-green-900/50 text-green-400 border border-green-500/30'
+                      : 'text-gray-400'
                   }`}
-                ></div>
-                <span>
-                  {moveSummary.totalMoves}/{MAX_MOVES} moves • {remainingMoves}{' '}
-                  remaining
+                >
+                  {moveSummary.totalMoves}/{MAX_MOVES}
                 </span>
               </div>
 
-              <div className="hidden sm:block w-px h-6 bg-gray-600"></div>
+              <div className="flex gap-1">
+                {Array.from({ length: MAX_MOVES }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`flex-1 h-3 rounded-full transition-all duration-500 ${
+                      i < queuedMoves.length
+                        ? 'bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 shadow-lg shadow-blue-500/50'
+                        : 'bg-gray-700/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
 
-              {/* Timer Info in Header */}
-              <div
-                className={`flex items-center gap-2 font-bold ${
-                  timeLeft <= 3
-                    ? 'text-red-400'
-                    : timeLeft <= 5
-                    ? 'text-yellow-400'
-                    : 'text-green-400'
+          {/* Icon-Only Action Buttons */}
+          <div className="px-6 pb-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleUndo}
+                disabled={queuedMoves.length === 0}
+                title="Undo Last Strike"
+                className={`relative overflow-hidden p-4 rounded-xl transition-all duration-300 ${
+                  queuedMoves.length > 0
+                    ? 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:scale-105 hover:shadow-amber-500/40'
+                    : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/50'
                 }`}
               >
-                <div className="text-lg animate-bounce">⏰</div>
-                <span>{Math.ceil(timeLeft)}s left</span>
-              </div>
+                <Undo className="w-6 h-6 mx-auto" />
+              </button>
+
+              <button
+                onClick={handleReset}
+                title="Reset All Strikes"
+                className="relative overflow-hidden p-4 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl transition-all duration-300 shadow-lg shadow-red-500/25 hover:scale-105 hover:shadow-red-500/40"
+              >
+                <RotateCcw className="w-6 h-6 mx-auto" />
+              </button>
             </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={queuedMoves.length === 0}
+              className={`w-full relative overflow-hidden py-6 px-6 rounded-xl transition-all duration-300 ${
+                isComplete
+                  ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-400 hover:via-emerald-400 hover:to-green-500 text-white animate-pulse shadow-xl shadow-green-500/40 hover:scale-105'
+                  : queuedMoves.length > 0
+                  ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-500 hover:via-purple-500 hover:to-blue-600 text-white shadow-lg shadow-blue-500/30 hover:scale-105'
+                  : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/50'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                {isComplete ? (
+                  <Rocket className="w-8 h-8" />
+                ) : queuedMoves.length > 0 ? (
+                  <Send className="w-7 h-7" />
+                ) : (
+                  <EyeOff className="w-7 h-7" />
+                )}
+              </div>
+
+              {/* Epic button glow */}
+              {(isComplete || queuedMoves.length > 0) && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+              )}
+            </button>
           </div>
 
-          {/* 🔧 DEBUG INFO - Remove in production */}
-          <div className="mt-4 bg-purple-900/20 border border-purple-500/30 rounded-lg p-2 text-xs">
-            <div className="text-purple-300">
-              🧪 Debug: Player {player} | Turn: {game.turn()} | Moves:{' '}
-              {queuedMoves.length}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content - Better Layout */}
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-            {/* Chess Board - Center Column */}
-            <div className="xl:col-span-7 flex flex-col items-center space-y-6">
-              {/* Chess Board */}
-              <div className="w-full max-w-2xl">
-                <UnifiedChessBoard
-                  fen={game.fen()}
-                  game={game}
-                  isFlipped={!isWhite}
-                  onPieceDrop={handleDrop}
-                  pieceIndicators={pieceIndicators}
-                  customSquareStyles={squareStyles}
-                  phase="blind"
-                  boardWidth={Math.min(550, window.innerWidth - 80)}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <ActionButtons
-                moves={queuedMoves}
-                onUndo={handleUndo}
-                onReset={handleReset}
-                onSubmit={handleSubmit}
-                maxMoves={MAX_MOVES}
-              />
-
-              {/* Legend - For mobile */}
-              <div className="xl:hidden w-full max-w-2xl">
-                <LegendPanel />
-              </div>
-            </div>
-
-            {/* Right Sidebar */}
-            <div className="xl:col-span-5 space-y-6">
-              {/* Move Log */}
-              <MoveLogPanel
-                moves={queuedMoves}
-                maxMoves={MAX_MOVES}
-                moveSummary={moveSummary}
-              />
-
-              {/* Legend - For desktop */}
-              <div className="hidden xl:block">
-                <LegendPanel />
-              </div>
-            </div>
+          {/* Return to Lobby Button - Bottom Right */}
+          <div className="px-6 pb-6 mt-auto">
+            <button
+              onClick={handleLobbyReturn}
+              className="group flex items-center justify-center gap-2 px-4 py-3 bg-slate-800/60 hover:bg-red-600/60 border border-slate-600/50 hover:border-red-500/50 rounded-xl transition-all duration-300 backdrop-blur-sm w-full"
+              title="⚠️ Warning: This counts as surrender!"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-bold text-sm">Return to Lobby</span>
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
-// components/LivePhase/FixedMoveHistory.tsx - FIXED INVALID MOVE VISIBILITY
+// components/LivePhase/WarMoveHistory.tsx - FIXED LIKE OLD VERSION
 import React from 'react';
+import { Swords } from 'lucide-react';
 
 interface MoveLogItem {
   player: 'P1' | 'P2';
@@ -7,17 +8,17 @@ interface MoveLogItem {
   isInvalid: boolean;
 }
 
-interface LichessMoveHistoryProps {
-  blindMoves: MoveLogItem[];
+interface WarMoveHistoryProps {
   liveMoves: string[];
+  blindMoves: MoveLogItem[];
 }
 
-const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
-  blindMoves,
+export const WarMoveHistory: React.FC<WarMoveHistoryProps> = ({
   liveMoves,
+  blindMoves,
 }) => {
   // ─────────────────────────────────────────────────────────────
-  // 📊 PROCESS BLIND PHASE MOVES - FIXED MAPPING
+  // 📊 PROCESS BLIND PHASE MOVES - SAME AS OLD VERSION
   // ─────────────────────────────────────────────────────────────
 
   const processBlindMoves = () => {
@@ -143,35 +144,32 @@ const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
   const allMoves = [...blindPairs, ...livePairs];
 
   // ─────────────────────────────────────────────────────────────
-  // 🎨 RENDER MOVE PAIR - ENHANCED INVALID MOVE VISIBILITY
+  // 🎨 RENDER MOVE PAIR - WAR STYLE
   // ─────────────────────────────────────────────────────────────
 
   const renderMove = (move: any, isWhite: boolean) => {
-    if (!move) return <span className="w-16 text-center text-gray-500">-</span>;
-
-    const baseClasses =
-      'w-16 text-sm font-mono cursor-pointer px-2 py-1 rounded text-center block transition-all duration-200';
+    if (!move)
+      return (
+        <span className="w-16 text-center text-gray-500 font-mono text-sm">
+          —
+        </span>
+      );
 
     if (!move.isValid) {
       return (
         <span
-          className={`${baseClasses} text-red-300 line-through bg-red-900/40 border border-red-600/50 animate-pulse`}
+          className="w-16 text-center text-red-400 line-through font-mono text-sm font-bold"
           title="❌ Invalid move - rejected during blind phase"
         >
-          <span className="relative">
-            {move.san}
-            <span className="absolute -top-1 -right-1 text-xs">❌</span>
-          </span>
+          {move.san}
         </span>
       );
     }
 
     return (
       <span
-        className={`${baseClasses} ${
-          isWhite
-            ? 'text-white hover:bg-gray-600 bg-gray-700/30'
-            : 'text-gray-200 hover:bg-gray-600 bg-gray-700/20'
+        className={`w-16 text-center font-mono text-sm font-bold ${
+          isWhite ? 'text-white' : 'text-gray-300'
         }`}
         title={`${isWhite ? 'White' : 'Black'}: ${move.san}`}
       >
@@ -189,51 +187,47 @@ const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
     return (
       <div
         key={`${pair.isBlindPhase ? 'blind' : 'live'}-${pair.number}`}
-        className={`flex items-center gap-2 py-1.5 px-2 rounded transition-colors ${
+        className={`flex items-center justify-between p-2 rounded-lg transition-all duration-300 ${
           isCurrentMove
-            ? 'bg-blue-900/40 border border-blue-600/30'
-            : hasInvalidMove
-            ? 'bg-red-900/20 border border-red-800/30'
-            : 'hover:bg-gray-700/30'
+            ? 'bg-red-900/40 border border-red-400/50 shadow-lg shadow-red-500/20'
+            : pair.isBlindPhase
+            ? 'bg-purple-900/30 border border-purple-600/30'
+            : 'bg-red-900/20 border border-red-600/20'
         }`}
       >
         {/* Move Number */}
-        <span
-          className={`text-sm font-mono w-6 text-right font-bold ${
-            hasInvalidMove ? 'text-red-400' : 'text-gray-400'
-          }`}
-        >
-          {pair.number}.
-        </span>
-
-        {/* White Move */}
-        {renderMove(pair.white, true)}
-
-        {/* Black Move */}
-        {renderMove(pair.black, false)}
-
-        {/* Phase Indicator */}
-        <span className="text-xs ml-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={`font-bold text-sm w-6 ${
+              hasInvalidMove
+                ? 'text-red-400'
+                : pair.isBlindPhase
+                ? 'text-purple-400'
+                : 'text-red-400'
+            }`}
+          >
+            {pair.number}.
+          </span>
           {pair.isBlindPhase ? (
-            <span className="text-blue-400" title="Blind phase move">
-              👁️‍🗨️
-            </span>
+            <div
+              className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"
+              title="Blind move"
+            />
           ) : (
-            <span className="text-green-400" title="Live phase move">
-              ⚡
-            </span>
+            <div
+              className="w-2 h-2 bg-red-400 rounded-full animate-pulse"
+              title="Live move"
+            />
           )}
-        </span>
+        </div>
+
+        <div className="flex gap-6 flex-1 justify-center">
+          {renderMove(pair.white, true)}
+          {renderMove(pair.black, false)}
+        </div>
 
         {/* Invalid Move Indicator */}
-        {hasInvalidMove && (
-          <span
-            className="text-red-400 text-xs animate-pulse"
-            title="Contains invalid move(s)"
-          >
-            ⚠️
-          </span>
-        )}
+        {hasInvalidMove && <span className="text-red-400 text-sm">❌</span>}
       </div>
     );
   };
@@ -246,55 +240,41 @@ const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
     blindTotal: blindMoves.length,
     blindValid: blindMoves.filter((m) => !m.isInvalid).length,
     blindInvalid: blindMoves.filter((m) => m.isInvalid).length,
-    blindWhite: blindMoves.filter((m) => m.player === 'P1').length,
-    blindBlack: blindMoves.filter((m) => m.player === 'P2').length,
     liveTotal: liveMoves.length,
     totalMoves: blindMoves.length + liveMoves.length,
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // 🎬 RENDER - INCREASED SIZE
-  // ─────────────────────────────────────────────────────────────
-
   return (
-    <div className="bg-gray-800 rounded-lg flex-1 max-h-96">
-      {/* Header */}
-      <div className="p-3 border-b border-gray-700">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2">
-            <span>📋</span> Game Moves
-          </h3>
-          <div className="text-xs text-gray-400 flex items-center gap-2">
-            <span>{stats.totalMoves} total</span>
-            {stats.blindInvalid > 0 && (
-              <span className="text-red-400 font-bold">
-                {stats.blindInvalid} ❌
-              </span>
-            )}
-          </div>
+    <div className="space-y-3">
+      <div className="text-center">
+        <h3 className="text-lg font-black text-white flex items-center justify-center gap-2 mb-1">
+          <Swords className="w-5 h-5 text-red-400" />
+          War Log
+        </h3>
+        <div className="text-sm text-gray-400">
+          {stats.totalMoves} total strikes
         </div>
       </div>
 
-      {/* Move List - INCREASED HEIGHT */}
-      <div className="p-2 max-h-72 overflow-y-auto custom-scrollbar">
+      <div className="bg-gray-900/50 border border-gray-700/50 rounded-xl p-3 backdrop-blur-sm max-h-80 overflow-y-auto">
         {allMoves.length === 0 ? (
-          <div className="text-gray-400 text-sm text-center py-8">
-            <div className="text-2xl mb-2">🎭</div>
-            <div>No moves yet</div>
-            <div className="text-xs mt-1">Game will start soon...</div>
+          <div className="text-center text-gray-500 py-6">
+            <div className="text-3xl mb-2">⚔️</div>
+            <div className="text-sm font-bold">No strikes yet...</div>
+            <div className="text-xs text-gray-600 mt-1">
+              The war awaits your move!
+            </div>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {/* Blind Phase Header */}
             {blindPairs.length > 0 && (
-              <div className="text-xs text-blue-300 font-bold mb-1 flex items-center gap-1 px-2">
-                <span>👁️‍🗨️</span> Blind Phase ({stats.blindWhite}⚪ +{' '}
-                {stats.blindBlack}⚫)
-                {stats.blindInvalid > 0 && (
-                  <span className="text-red-400 ml-2">
-                    {stats.blindInvalid} invalid ❌
-                  </span>
-                )}
+              <div className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1 px-2 border-b border-purple-600/30 pb-1">
+                <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                <span>
+                  Blind Phase ({stats.blindValid} valid, {stats.blindInvalid}{' '}
+                  invalid)
+                </span>
               </div>
             )}
 
@@ -303,8 +283,9 @@ const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
 
             {/* Live Phase Header */}
             {livePairs.length > 0 && (
-              <div className="text-xs text-green-300 font-bold mb-1 mt-2 flex items-center gap-1 px-2 border-t border-gray-600 pt-2">
-                <span>⚡</span> Live Phase ({stats.liveTotal} moves)
+              <div className="text-xs text-red-300 font-bold mb-2 mt-3 flex items-center gap-1 px-2 border-t border-red-600/30 pt-2">
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                <span>Live Combat ({stats.liveTotal} moves)</span>
               </div>
             )}
 
@@ -316,29 +297,13 @@ const LichessMoveHistory: React.FC<LichessMoveHistoryProps> = ({
         )}
       </div>
 
-      {/* Footer Stats - ENHANCED */}
-      {stats.totalMoves > 0 && (
-        <div className="p-2 border-t border-gray-700 text-xs text-gray-400">
-          <div className="flex justify-between items-center">
-            <span className="flex items-center gap-2">
-              👁️‍🗨️ {stats.blindValid}/{stats.blindTotal}
-              {stats.blindTotal > 0 && (
-                <span className="text-yellow-400">
-                  ({Math.round((stats.blindValid / stats.blindTotal) * 100)}%)
-                </span>
-              )}
-              {stats.blindInvalid > 0 && (
-                <span className="text-red-400 font-bold">
-                  {stats.blindInvalid} ❌
-                </span>
-              )}
-            </span>
-            <span>⚡ {stats.liveTotal}</span>
-          </div>
+      {/* War Status */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 bg-red-900/30 border border-red-600/30 rounded-lg px-3 py-1">
+          <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+          <span className="text-xs text-red-300 font-bold">LIVE COMBAT</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
-
-export default LichessMoveHistory;

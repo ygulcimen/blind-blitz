@@ -11,7 +11,7 @@ const SettingsPage: React.FC = () => {
     autoPromoteQueen: true,
     showCoordinates: true,
     highlightMoves: true,
-    blindTimer: 5,
+    blindTimer: 30,
     notifications: true,
   });
 

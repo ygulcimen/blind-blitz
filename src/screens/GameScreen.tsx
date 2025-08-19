@@ -1,4 +1,4 @@
-// screens/GameScreen.tsx - MODERNIZED WITH PRESERVED FUNCTIONALITY
+// screens/GameScreen.tsx - FIXED: No header during blind phases
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useGameStateManager } from '../state/GameStateManager';
@@ -135,8 +135,15 @@ const GameScreen: React.FC = () => {
     const { phase } = gameState.gameState;
     const modeInfo = getGameModeInfo(gameMode);
 
-    // Don't show header during live phase (it has its own)
-    if (phase === 'LIVE') return null;
+    // 🎯 FIXED: Don't show header during ANY game phase - only during REVEAL transition
+    if (
+      phase === 'LIVE' ||
+      phase === 'BLIND_P1' ||
+      phase === 'BLIND_P2' ||
+      phase === 'ANIMATED_REVEAL'
+    ) {
+      return null;
+    }
 
     return (
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/10">
@@ -180,26 +187,7 @@ const GameScreen: React.FC = () => {
             {/* Phase Indicator */}
             <div className="text-center">
               <div className="text-white font-bold">
-                {phase === 'BLIND_P1' && (
-                  <>
-                    <span className="text-2xl mr-2">⚪</span>
-                    White {gameMode === 'robot_chaos' ? 'Robot' : 'Blind'} Phase
-                  </>
-                )}
-                {phase === 'BLIND_P2' && (
-                  <>
-                    <span className="text-2xl mr-2">⚫</span>
-                    Black {gameMode === 'robot_chaos' ? 'Robot' : 'Blind'} Phase
-                  </>
-                )}
                 {phase === 'REVEAL' && '🎬 Revealing Moves...'}
-                {phase === 'ANIMATED_REVEAL' && (
-                  <>
-                    {gameMode === 'robot_chaos'
-                      ? '🤖 Robot Chaos Unfolds'
-                      : '⚔️ Battle Unfolds'}
-                  </>
-                )}
               </div>
             </div>
 
@@ -237,7 +225,7 @@ const GameScreen: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
       </div>
 
-      {/* Game Header */}
+      {/* Game Header - Only shows during REVEAL and ANIMATED_REVEAL phases */}
       {renderGameHeader()}
 
       {/* Main Game Content */}

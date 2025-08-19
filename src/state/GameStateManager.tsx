@@ -52,7 +52,7 @@ export interface GameState {
 }
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const BLIND_TIMER_DURATION = 25;
+const BLIND_TIMER_DURATION = 100;
 const LIVE_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes
 const LIVE_INCREMENT = 2 * 1000; // 2 seconds
 
