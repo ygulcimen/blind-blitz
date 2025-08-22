@@ -12,8 +12,6 @@ interface WarActionsProps {
   onDeclineDraw: () => void;
   onRematch: () => void;
   onLeave: () => void;
-  /** NEW: show/hide the abandon button here (we'll move it global) */
-  showLeave?: boolean;
 }
 
 export const WarActions: React.FC<WarActionsProps> = ({
@@ -26,7 +24,6 @@ export const WarActions: React.FC<WarActionsProps> = ({
   onDeclineDraw,
   onRematch,
   onLeave,
-  showLeave = false, // default: hidden
 }) => {
   if (gameEnded) {
     return (
@@ -60,6 +57,7 @@ export const WarActions: React.FC<WarActionsProps> = ({
 
   return (
     <div className="space-y-3">
+      {/* Draw Offer Status */}
       {drawOffered && (
         <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-xl p-3 animate-pulse">
           <div className="text-center text-yellow-400 font-bold text-sm mb-2 flex items-center justify-center gap-2">
@@ -88,6 +86,7 @@ export const WarActions: React.FC<WarActionsProps> = ({
         </div>
       )}
 
+      {/* War Actions - ICON ONLY */}
       <div className="space-y-2">
         <button
           onClick={onOfferDraw}
@@ -107,17 +106,15 @@ export const WarActions: React.FC<WarActionsProps> = ({
         </button>
       </div>
 
-      {/* NEW: Abandon button only if explicitly requested */}
-      {showLeave && (
-        <button
-          onClick={onLeave}
-          className="w-full flex items-center justify-center gap-2 p-3 bg-slate-800/60 hover:bg-red-600/60 border border-slate-600/50 hover:border-red-500/50 rounded-xl transition-all duration-300 text-white font-bold text-sm"
-          title="⚠️ Warning: This counts as surrender!"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Abandon Battlefield
-        </button>
-      )}
+      {/* Return to Lobby - WARNING */}
+      <button
+        onClick={onLeave}
+        className="w-full flex items-center justify-center gap-2 p-3 bg-slate-800/60 hover:bg-red-600/60 border border-slate-600/50 hover:border-red-500/50 rounded-xl transition-all duration-300 text-white font-bold text-sm"
+        title="⚠️ Warning: This counts as surrender!"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Abandon Battlefield
+      </button>
     </div>
   );
 };

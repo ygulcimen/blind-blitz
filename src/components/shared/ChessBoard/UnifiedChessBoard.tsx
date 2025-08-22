@@ -1,12 +1,8 @@
-// components/shared/ChessBoard/UnifiedChessBoard.tsx - SIMPLIFIED LIKE BLIND PHASE
-import React, { useState } from 'react';
+// components/shared/ChessBoard/UnifiedChessBoard.tsx - OPTIMIZED FOR PERFORMANCE
+import React, { useState, useMemo, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import type { Chess } from 'chess.js';
 import type { SquareIndicator } from '../../../services/chess';
-
-// ═══════════════════════════════════════════════════════════════
-// 🎯 UNIFIED CHESS BOARD COMPONENT
-// ═══════════════════════════════════════════════════════════════
 
 interface UnifiedChessBoardProps {
   // Core chess props
@@ -47,198 +43,299 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
   lastMove = null,
   phase = 'live',
   currentTurn = 'w',
-  animationDuration = 200,
+  animationDuration = 150,
   showMoveEffect = false,
 }) => {
-  const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
+  // State
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [legalMoves, setLegalMoves] = useState<string[]>([]);
 
-  // ─────────────────────────────────────────────────────────────
-  // 🎨 SQUARE STYLING SYSTEM
-  // ─────────────────────────────────────────────────────────────
+  // Legal moves calculation
+  const getPossibleMoves = useCallback(
+    (square: string): string[] => {
+      if (!game || gameEnded) return [];
 
-  const getEnhancedSquareStyles = (): { [square: string]: any } => {
-    const styles: { [square: string]: any } = { ...customSquareStyles };
+      try {
+        const moves = game.moves({ square: square as any, verbose: true });
+        return moves.map((move) => move.to);
+      } catch {
+        return [];
+      }
+    },
+    [game, gameEnded]
+  );
 
-    // Base transition for all squares
-    const baseStyle = {
-      transition: 'all 0.3s ease',
-      borderRadius: '4px',
-    };
+  // Square click handler
+  const handleSquareClick = useCallback(
+    (square: string) => {
+      if (gameEnded) return;
 
-    // Piece indicators (for blind phase)
-    Object.entries(pieceIndicators).forEach(([square, indicator]) => {
-      switch (indicator.status) {
-        case 'exhausted':
-          styles[square] = {
-            ...baseStyle,
-            backgroundColor: 'rgba(239, 68, 68, 0.3)',
-            border: '2px solid #ef4444',
-            boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
-          };
-          break;
-        case 'warning':
-          styles[square] = {
-            ...baseStyle,
-            backgroundColor: 'rgba(245, 158, 11, 0.3)',
-            border: '2px solid #f59e0b',
-            boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
-          };
-          break;
-        default:
-          styles[square] = {
-            ...baseStyle,
-            backgroundColor: 'rgba(34, 197, 94, 0.2)',
-            border: '2px solid #22c55e',
-          };
+      // If clicking on selected square, deselect
+      if (selectedSquare === square) {
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        return;
+      }
+
+      // If a piece is selected and clicking on legal move, make the move
+      if (selectedSquare && legalMoves.includes(square)) {
+        const piece = game?.get(selectedSquare as any);
+        if (piece && onPieceDrop) {
+          const success = onPieceDrop(
+            selectedSquare,
+            square,
+            piece.color + piece.type
+          );
+          if (success) {
+            setSelectedSquare(null);
+            setLegalMoves([]);
+            return;
+          }
+        }
+      }
+
+      // Select new square and show its legal moves
+      const piece = game?.get(square as any);
+      if (piece && !gameEnded) {
+        // Check if it's the correct player's turn in live phase
+        if (phase === 'live' && game) {
+          const currentPlayer = game.turn();
+          const pieceColor = piece.color;
+          if (
+            (currentPlayer === 'w' && pieceColor !== 'w') ||
+            (currentPlayer === 'b' && pieceColor !== 'b')
+          ) {
+            // Wrong player's piece, don't select
+            setSelectedSquare(null);
+            setLegalMoves([]);
+            return;
+          }
+        }
+
+        setSelectedSquare(square);
+        const moves = getPossibleMoves(square);
+        setLegalMoves(moves);
+      } else {
+        setSelectedSquare(null);
+        setLegalMoves([]);
+      }
+
+      onSquareClick?.(square);
+    },
+    [
+      selectedSquare,
+      legalMoves,
+      gameEnded,
+      game,
+      onPieceDrop,
+      getPossibleMoves,
+      onSquareClick,
+      phase,
+    ]
+  );
+
+  // Piece drop handler - strict validation
+  const handlePieceDrop = useCallback(
+    (from: string, to: string, piece: string): boolean => {
+      if (gameEnded || !onPieceDrop) {
+        // Clear selection and prevent drop
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        return false;
+      }
+
+      // STRICT: Only allow drops on legal moves (prevents error messages)
+      if (!legalMoves.includes(to)) {
+        // Silently reject - no error, no move
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        return false;
+      }
+
+      // Proceed with the actual move
+      const result = onPieceDrop(from, to, piece);
+
+      // Clear selection regardless of result
+      setSelectedSquare(null);
+      setLegalMoves([]);
+
+      return result;
+    },
+    [gameEnded, onPieceDrop, legalMoves]
+  );
+
+  // Drag begin handler
+  const handlePieceDragBegin = useCallback(
+    (piece: string, square: string) => {
+      if (gameEnded) return false;
+
+      // Check if it's the correct player's turn in live phase
+      if (phase === 'live' && game) {
+        const currentPlayer = game.turn();
+        const pieceColor = piece[0];
+        if (
+          (currentPlayer === 'w' && pieceColor !== 'w') ||
+          (currentPlayer === 'b' && pieceColor !== 'b')
+        ) {
+          return false;
+        }
+      }
+
+      // Show legal moves for the piece being dragged
+      setSelectedSquare(square);
+      const moves = getPossibleMoves(square);
+      setLegalMoves(moves);
+
+      return true;
+    },
+    [gameEnded, phase, game, getPossibleMoves]
+  );
+
+  // Drag end handler
+  const handlePieceDragEnd = useCallback(() => {
+    setSelectedSquare(null);
+    setLegalMoves([]);
+  }, []);
+
+  // Draggable piece validation
+  const isDraggablePiece = useCallback(
+    ({ piece, sourceSquare }: { piece: string; sourceSquare: string }) => {
+      if (gameEnded) return false;
+
+      // In live phase, only allow current player's pieces
+      if (phase === 'live' && game) {
+        const currentPlayer = game.turn();
+        const pieceColor = piece[0];
+        return (
+          (currentPlayer === 'w' && pieceColor === 'w') ||
+          (currentPlayer === 'b' && pieceColor === 'b')
+        );
+      }
+
+      // In blind phase, allow all pieces (but check turn validation in drag begin)
+      return true;
+    },
+    [gameEnded, phase, game]
+  );
+
+  // Square styles
+  const getSquareStyles = useMemo((): { [square: string]: any } => {
+    const styles: { [square: string]: any } = {};
+
+    // Apply custom styles from props
+    Object.assign(styles, customSquareStyles);
+
+    // Last move highlight (live phase only)
+    if (lastMove && phase === 'live') {
+      styles[lastMove.from] = {
+        backgroundColor: 'rgba(255, 255, 0, 0.15)', // Subtle yellow
+      };
+      styles[lastMove.to] = {
+        backgroundColor: 'rgba(255, 255, 0, 0.25)', // More visible destination
+      };
+    }
+
+    // Selected piece highlight
+    if (selectedSquare) {
+      styles[selectedSquare] = {
+        backgroundColor: 'rgba(0, 150, 255, 0.3)', // Blue
+        border: '2px solid rgba(0, 150, 255, 0.6)',
+      };
+    }
+
+    // Legal move hints
+    legalMoves.forEach((square) => {
+      if (square !== selectedSquare) {
+        styles[square] = {
+          ...styles[square],
+          backgroundColor: 'rgba(0, 255, 0, 0.12)', // Subtle green dots
+          borderRadius: '50%',
+          transform: 'scale(0.9)',
+        };
       }
     });
 
-    // Last move highlight (for live phase) - SHOWS OPPONENT'S LAST MOVE
-    if (lastMove && phase === 'live') {
-      [lastMove.from, lastMove.to].forEach((square) => {
+    // Blind phase piece indicators
+    if (phase === 'blind') {
+      Object.entries(pieceIndicators).forEach(([square, indicator]) => {
+        const opacity =
+          indicator.status === 'exhausted'
+            ? 0.4
+            : indicator.status === 'warning'
+            ? 0.3
+            : 0.2;
+
         styles[square] = {
           ...styles[square],
-          backgroundColor: 'rgba(59, 130, 246, 0.5)',
-          border: '3px solid #3b82f6',
-          boxShadow: '0 0 20px rgba(59, 130, 246, 0.6)',
+          backgroundColor: `rgba(${
+            indicator.status === 'exhausted'
+              ? '255, 0, 0'
+              : indicator.status === 'warning'
+              ? '255, 165, 0'
+              : '0, 255, 0'
+          }, ${opacity})`,
         };
       });
-    }
-
-    // Move effect animation (for animated reveal)
-    if (showMoveEffect && lastMove) {
-      [lastMove.from, lastMove.to].forEach((square) => {
-        styles[square] = {
-          ...styles[square],
-          backgroundColor: 'rgba(255, 215, 0, 0.6)',
-          border: '3px solid #ffd700',
-          boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)',
-          transform: 'scale(1.05)',
-        };
-      });
-    }
-
-    // Hover effect - SIMPLE LIKE BLIND PHASE
-    if (hoveredSquare && !gameEnded) {
-      styles[hoveredSquare] = {
-        ...styles[hoveredSquare],
-        backgroundColor: 'rgba(168, 85, 247, 0.3)',
-        border: '2px solid #a855f7',
-        cursor: 'pointer',
-      };
     }
 
     return styles;
-  };
+  }, [
+    customSquareStyles,
+    lastMove,
+    phase,
+    selectedSquare,
+    legalMoves,
+    pieceIndicators,
+  ]);
 
-  // ─────────────────────────────────────────────────────────────
-  // 🎮 INTERACTION HANDLERS - SIMPLE LIKE BLIND PHASE
-  // ─────────────────────────────────────────────────────────────
+  // Board styling
+  const boardContainerClass = useMemo(() => {
+    return 'relative rounded-lg shadow-xl bg-gradient-to-br from-amber-50 to-amber-100';
+  }, []);
 
-  const handlePieceDrop = (
-    from: string,
-    to: string,
-    piece: string
-  ): boolean => {
-    if (gameEnded || !onPieceDrop) return false;
-
-    const result = onPieceDrop(from, to, piece);
-
-    if (result && phase === 'blind') {
-      // Show brief success effect for blind phase
-      setHoveredSquare(to);
-      setTimeout(() => setHoveredSquare(null), 500);
-    }
-
-    return result;
-  };
-
-  const handleSquareClick = (square: string) => {
-    if (gameEnded) return;
-
-    setHoveredSquare(square);
-    setTimeout(() => setHoveredSquare(null), 300);
-
-    onSquareClick?.(square);
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // 🎨 BOARD STYLING BY PHASE
-  // ─────────────────────────────────────────────────────────────
-
-  const getBoardContainerStyle = () => {
-    const baseClasses = 'relative bg-gradient-to-br rounded-xl shadow-2xl';
-
-    switch (phase) {
-      case 'blind':
-        return `${baseClasses} from-amber-100 to-amber-200 p-4`;
-      case 'reveal':
-        return `${baseClasses} from-blue-100 to-purple-200 p-4`;
-      case 'live':
-        return `${baseClasses} from-slate-100 to-slate-200 p-4`;
-      default:
-        return `${baseClasses} from-gray-100 to-gray-200 p-4`;
-    }
-  };
-
-  const getBoardStyle = () => {
-    const baseStyle = {
+  const boardStyle = useMemo(
+    () => ({
       borderRadius: '8px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-    };
+    }),
+    []
+  );
 
-    if (phase === 'reveal' || showMoveEffect) {
-      return {
-        ...baseStyle,
-        boxShadow:
-          '0 0 40px rgba(59, 130, 246, 0.4), 0 8px 32px rgba(0,0,0,0.3)',
-      };
-    }
-
-    return baseStyle;
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // 🎯 PIECE MOVE INDICATORS (for blind phase)
-  // ─────────────────────────────────────────────────────────────
-
-  const renderPieceIndicators = () => {
+  // Piece indicators for blind phase
+  const renderPieceIndicators = useMemo(() => {
     if (phase !== 'blind' || Object.keys(pieceIndicators).length === 0) {
       return null;
     }
 
     return (
-      <div className="absolute inset-4 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none z-10">
         {Object.entries(pieceIndicators).map(([square, indicator]) => {
           const file = square.charCodeAt(0) - 97;
           const rank = parseInt(square[1]) - 1;
-          const x = isFlipped
-            ? (7 - file) * (boardWidth / 8)
-            : file * (boardWidth / 8);
-          const y = isFlipped
-            ? rank * (boardWidth / 8)
-            : (7 - rank) * (boardWidth / 8);
+          const squareSize = boardWidth / 8;
+          const x = isFlipped ? (7 - file) * squareSize : file * squareSize;
+          const y = isFlipped ? rank * squareSize : (7 - rank) * squareSize;
 
           return (
             <div
               key={square}
-              className={`
-                absolute text-white text-xs font-bold rounded-full px-2 py-1 
-                shadow-lg transition-all duration-300 transform hover:scale-110
+              className={`absolute text-white text-xs font-bold rounded-full 
                 ${
                   indicator.status === 'exhausted'
-                    ? 'bg-red-600 animate-pulse'
+                    ? 'bg-red-500'
                     : indicator.status === 'warning'
-                    ? 'bg-yellow-600'
-                    : 'bg-green-600'
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500'
                 }
               `}
               style={{
-                left: `${x + (boardWidth / 8) * 0.7}px`,
-                top: `${y + (boardWidth / 8) * 0.15}px`,
+                left: x + squareSize * 0.75,
+                top: y + squareSize * 0.1,
+                width: '16px',
+                height: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontSize: '10px',
-                minWidth: '20px',
-                textAlign: 'center',
                 zIndex: 10,
               }}
             >
@@ -248,55 +345,34 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
         })}
       </div>
     );
-  };
+  }, [phase, pieceIndicators, boardWidth, isFlipped]);
 
-  // ─────────────────────────────────────────────────────────────
-  // 🎭 PHASE-SPECIFIC OVERLAYS
-  // ─────────────────────────────────────────────────────────────
-
-  const renderPhaseOverlay = () => {
-    if (phase === 'reveal' && showMoveEffect) {
-      return (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-red-500/20 rounded-lg animate-pulse" />
-        </div>
-      );
-    }
-
-    if (gameEnded) {
-      return (
-        <div className="absolute inset-0 bg-black/20 rounded-lg pointer-events-none flex items-center justify-center">
-          <div className="bg-white/90 rounded-lg px-4 py-2">
-            <span className="text-gray-800 font-bold text-lg">Game Over</span>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // 🎬 RENDER - EXACTLY LIKE BLIND PHASE (SIMPLE & WORKING)
-  // ─────────────────────────────────────────────────────────────
-
+  // Render
   return (
-    <div className={getBoardContainerStyle()}>
-      {renderPhaseOverlay()}
-
+    <div className={boardContainerClass}>
       <Chessboard
         boardOrientation={isFlipped ? 'black' : 'white'}
         position={fen}
         onPieceDrop={handlePieceDrop}
+        onPieceDragBegin={handlePieceDragBegin}
+        onPieceDragEnd={handlePieceDragEnd}
         onSquareClick={handleSquareClick}
+        isDraggablePiece={isDraggablePiece}
         boardWidth={boardWidth}
-        customSquareStyles={getEnhancedSquareStyles()}
-        customBoardStyle={getBoardStyle()}
+        customSquareStyles={getSquareStyles}
+        customBoardStyle={boardStyle}
         animationDuration={animationDuration}
         arePiecesDraggable={!gameEnded}
+        customDarkSquareStyle={{ backgroundColor: '#b58863' }}
+        customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
+        showBoardNotation={false}
       />
 
-      {renderPieceIndicators()}
+      {renderPieceIndicators}
+
+      {gameEnded && (
+        <div className="absolute inset-0 bg-black/10 rounded-lg pointer-events-none" />
+      )}
     </div>
   );
 };

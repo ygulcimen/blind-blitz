@@ -1,13 +1,12 @@
-// components/LivePhase/LivePhaseScreen.tsx - COMPLETE WAR MODE WITH FIXES
+// Enhanced LivePhaseScreen with better game end handling
 import React, { useState, useEffect } from 'react';
 import { UnifiedChessBoard } from '../shared/ChessBoard/UnifiedChessBoard';
 import { useViolations } from '../shared/ViolationSystem';
 import { WarriorCard } from './WarriorCard';
-import { WarStatus } from './WarStatus';
 import { WarMoveHistory } from './WarMoveHistory';
 import { WarActions } from './WarActions';
 import { WarModal } from './WarModal';
-import { WarEndModal } from './WarEndModal';
+import { EnhancedWarEndModal } from './EnhancedWarEndModal';
 
 interface LivePhaseScreenProps {
   gameState: any;
@@ -29,6 +28,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
   );
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showGameEndModal, setShowGameEndModal] = useState(false);
+  const [gameEndStatus, setGameEndStatus] = useState<string | null>(null); // New status display
 
   const { live, timer, blind, reveal } = gameState.gameState;
 
@@ -39,7 +39,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎮 GAME STATUS & EFFECTS
+  // 🎮 ENHANCED GAME STATUS & EFFECTS
   // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -52,8 +52,16 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       const { player } = event.detail;
       const winner = player === 'white' ? 'black' : 'white';
       const result: GameResult = { type: 'timeout', winner, reason: 'timeout' };
+
+      // Show status first, then modal after delay
+      setGameEndStatus(`⏰ ${winner.toUpperCase()} WINS BY TIME!`);
       setGameResult(result);
-      setShowGameEndModal(true);
+
+      setTimeout(() => {
+        setShowGameEndModal(true);
+        setGameEndStatus(null);
+      }, 1500); // Show status for 1.5 seconds
+
       gameState.endGame(result);
     };
 
@@ -75,8 +83,16 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         winner,
         reason: 'checkmate',
       };
+
+      // Show status first, then modal after delay
+      setGameEndStatus(`👑 ${winner.toUpperCase()} WINS BY CHECKMATE!`);
       setGameResult(result);
-      setShowGameEndModal(true);
+
+      setTimeout(() => {
+        setShowGameEndModal(true);
+        setGameEndStatus(null);
+      }, 2000); // Show status for 2 seconds
+
       gameState.endGame(result);
     } else if (live.game.isDraw()) {
       const result: GameResult = {
@@ -84,14 +100,21 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         winner: 'draw',
         reason: 'stalemate',
       };
+
+      setGameEndStatus('⚖️ DRAW!');
       setGameResult(result);
-      setShowGameEndModal(true);
+
+      setTimeout(() => {
+        setShowGameEndModal(true);
+        setGameEndStatus(null);
+      }, 1500);
+
       gameState.endGame(result);
     }
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎮 MOVE HANDLING
+  // 🎮 MOVE HANDLING (same as before)
   // ─────────────────────────────────────────────────────────────
 
   const handleDrop = (source: string, target: string): boolean => {
@@ -127,7 +150,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎯 GAME ACTIONS
+  // 🎯 GAME ACTIONS (same as before)
   // ─────────────────────────────────────────────────────────────
 
   const handleResign = () => {
@@ -167,6 +190,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
     setGameResult(null);
     setShowGameEndModal(false);
     setDrawOffered(null);
+    setGameEndStatus(null);
     gameState.resetGame();
   };
 
@@ -181,7 +205,7 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 🎬 WAR MODE RENDER
+  // 🎬 ENHANCED WAR MODE RENDER
   // ─────────────────────────────────────────────────────────────
 
   return (
@@ -193,46 +217,60 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         <div className="absolute top-3/4 left-3/4 w-64 h-64 bg-yellow-500/[0.04] rounded-full blur-3xl animate-pulse delay-2000" />
       </div>
 
-      {/* WAR LAYOUT: Left Warriors (aligned to board), Center Board, Right Actions */}
+      {/* 🎯 COMPACT GAME END STATUS OVERLAY */}
+      {gameEndStatus && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl blur-lg animate-pulse" />
+            <div className="relative bg-gray-900/95 border border-red-500/50 rounded-xl px-6 py-4 shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">
+                  {gameResult?.type === 'checkmate'
+                    ? '👑'
+                    : gameResult?.type === 'timeout'
+                    ? '⏰'
+                    : '⚖️'}
+                </div>
+                <h1 className="text-xl font-bold text-white">
+                  {gameEndStatus}
+                </h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Left: Warriors - ALIGNED TO BOARD EDGES */}
+      {/* Left: Warriors */}
       <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col justify-between relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
-
         <div className="relative z-10 flex flex-col justify-between h-full">
-          {/* Top Warrior - Black (aligned to board top) */}
           <div className="flex justify-end">
             <WarriorCard
               player="black"
               playerData={players.black}
-              timeMs={timer.blackTimeMs || 180000}
+              timeMs={timer.blackTime}
               active={live.game?.turn() === 'b' && !live.gameEnded}
             />
           </div>
-
-          {/* Bottom Warrior - White (aligned to board bottom) */}
           <div className="flex justify-end">
             <WarriorCard
               player="white"
               playerData={players.white}
-              timeMs={timer.whiteTimeMs || 180000}
+              timeMs={timer.whiteTime}
               active={live.game?.turn() === 'w' && !live.gameEnded}
             />
           </div>
         </div>
       </div>
 
-      {/* Center: MASSIVE BATTLEFIELD */}
+      {/* Center: BATTLEFIELD */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-        {/* WAR STATUS */}
-
-        {/* MASSIVE BATTLEFIELD */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 rounded-3xl blur-xl animate-pulse" />
-
           <div className="relative z-10">
             <UnifiedChessBoard
               fen={live.fen}
+              game={live.game} // FIXED: Added game prop
               onPieceDrop={handleDrop}
               boardWidth={Math.min(
                 700,
@@ -251,17 +289,13 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
       {/* Right: War Move History + Actions */}
       <div className="w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 p-6 flex flex-col relative">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
-
         <div className="relative z-10 flex flex-col h-full">
-          {/* War Move History */}
           <div className="flex-1 mb-6">
             <WarMoveHistory
               liveMoves={live.moveHistory || []}
               blindMoves={reveal.moveLog || []}
             />
           </div>
-
-          {/* War Actions */}
           <div className="flex-shrink-0">
             <WarActions
               gameEnded={live.gameEnded}
@@ -301,7 +335,8 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
         icon="🤝"
       />
 
-      <WarEndModal
+      {/* ENHANCED GAME END MODAL */}
+      <EnhancedWarEndModal
         isOpen={showGameEndModal}
         gameResult={gameResult}
         onRematch={handleRematch}
@@ -310,5 +345,4 @@ const LivePhaseScreen: React.FC<LivePhaseScreenProps> = ({ gameState }) => {
     </div>
   );
 };
-
 export default LivePhaseScreen;

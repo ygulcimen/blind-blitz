@@ -226,12 +226,18 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
   // 🎮 EPIC COMPONENTS
   // ═══════════════════════════════════════════════════════════════
 
+  // In BlindPhaseScreen.tsx - Fix the EpicTimer component
+
   const EpicTimer: React.FC = () => {
     const { timer } = gameState.gameState;
-    const timeLeft = isWhite ? timer.whiteTime : timer.blackTime;
-    const percentage = (timeLeft / timer.duration) * 100;
-    const isCritical = timeLeft <= 5;
-    const isWarning = timeLeft <= 10 && timeLeft > 5;
+    const timeLeftMs = isWhite ? timer.whiteTime : timer.blackTime;
+
+    // Convert milliseconds to seconds for display
+    const timeLeft = Math.ceil(timeLeftMs / 1000); // Convert ms to seconds
+
+    const percentage = (timeLeftMs / timer.duration) * 100;
+    const isCritical = timeLeft <= 5; // 5 seconds
+    const isWarning = timeLeft <= 10 && timeLeft > 5; // 10 seconds
 
     return (
       <div className="relative">
@@ -270,7 +276,7 @@ const BlindPhaseScreen: React.FC<BlindPhaseScreenProps> = ({
                 {isWhite ? 'WHITE EMPIRE' : 'BLACK LEGION'} • BLIND ASSAULT
               </div>
               <div className="text-3xl font-black text-white leading-none mb-2">
-                {Math.ceil(timeLeft)}s
+                {timeLeft}s {/* Now shows seconds like "100s, 99s, 98s..." */}
               </div>
 
               {/* Epic progress bar */}

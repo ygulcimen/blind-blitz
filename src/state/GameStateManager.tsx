@@ -52,9 +52,10 @@ export interface GameState {
 }
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const BLIND_TIMER_DURATION = 100;
-const LIVE_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes
-const LIVE_INCREMENT = 2 * 1000; // 2 seconds
+// Change these constants to use milliseconds:
+const BLIND_TIMER_DURATION = 100 * 1000; // 100 seconds in milliseconds
+const LIVE_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
+const LIVE_INCREMENT = 2 * 1000; // 2 seconds in milliseconds
 
 export const useGameStateManager = () => {
   const [gameState, setGameState] = useState<GameState>(() => ({
@@ -419,7 +420,7 @@ export const useGameStateManager = () => {
 
       setGameState((prev) => {
         if (prev.phase === 'BLIND_P1') {
-          const newTime = Math.max(0, prev.timer.whiteTime - elapsed / 1000);
+          const newTime = Math.max(0, prev.timer.whiteTime - elapsed); // Now both in milliseconds
           if (newTime === 0) {
             setTimeout(() => submitBlindMoves(currentMovesRef.current), 100);
           }
@@ -428,7 +429,7 @@ export const useGameStateManager = () => {
             timer: { ...prev.timer, whiteTime: newTime },
           };
         } else if (prev.phase === 'BLIND_P2') {
-          const newTime = Math.max(0, prev.timer.blackTime - elapsed / 1000);
+          const newTime = Math.max(0, prev.timer.blackTime - elapsed); // Now both in milliseconds
           if (newTime === 0) {
             setTimeout(() => submitBlindMoves(currentMovesRef.current), 100);
           }
@@ -437,6 +438,7 @@ export const useGameStateManager = () => {
             timer: { ...prev.timer, blackTime: newTime },
           };
         } else if (prev.phase === 'LIVE') {
+          // Live phase logic stays the same (already in milliseconds)
           const isWhiteTurn = prev.live.game.turn() === 'w';
 
           if (isWhiteTurn) {
