@@ -41,6 +41,7 @@ const MultiplayerBlindPhaseScreen: React.FC<
 > = ({ gameState, gameId }) => {
   const { showViolations, createViolation, clearViolations } = useViolations();
   const { playerData: currentUser } = useCurrentUser();
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
 
   // Get my color and moves from the game state
   const myColor = gameState.gameState.blind.myColor;
@@ -222,7 +223,13 @@ const MultiplayerBlindPhaseScreen: React.FC<
   }, [myMoves, isWhite, colourLetter, pieceTracker, ruleEngine]);
 
   // Handle piece drop
+  // Handle piece drop with OPTIMISTIC UI
   const handleDrop = (from: string, to: string, piece: string): boolean => {
+    if (isProcessingMove) {
+      console.log('🚫 Move in progress, ignoring');
+      return false;
+    }
+    setIsProcessingMove(true);
     if (myMoves.length >= MAX_MOVES) {
       showViolations([createViolation.moveLimit(myMoves.length, MAX_MOVES)]);
       return false;
@@ -276,17 +283,116 @@ const MultiplayerBlindPhaseScreen: React.FC<
     fenParts[1] = colourLetter;
     next.load(fenParts.join(' '));
 
+    console.log(
+      `🎯 Making optimistic blind move: ${from} to ${to} (${mv.san})`
+    );
+
+    // ✅ OPTIMISTIC UI: Update local state immediately
     pieceTracker.recordMove(next, from, to, mv.san, myMoves.length + 1);
     ruleEngine.processMove(next, { from, to, san: mv.san }, myMoves.length + 1);
-
-    // Save move to database asynchronously (don't wait for it)
-    gameState.saveBlindMove({ from, to, san: mv.san }).catch((error: any) => {
-      console.error('Failed to save move:', error);
-      showViolations([createViolation.invalidMove('Failed to save move')]);
-    });
-
     setGame(next);
     clearViolations();
+
+    // ✅ Save to database asynchronously with error handling
+    gameState
+      .saveBlindMove({ from, to, san: mv.san })
+      .then((success: boolean) => {
+        if (success) {
+          console.log('✅ Blind move saved to database:', mv.san);
+        } else {
+          console.error('❌ Failed to save blind move - reverting');
+
+          // ❌ REVERT: Database save failed
+          // Rebuild the game state without this move
+          const revertedGame = new Chess(INITIAL_FEN);
+          const fenParts = revertedGame.fen().split(' ');
+          fenParts[1] = colourLetter;
+          revertedGame.load(fenParts.join(' '));
+
+          // Reset trackers
+          pieceTracker.reset();
+          ruleEngine.reset();
+
+          // Replay all moves except the failed one
+          const currentMoves = gameState.gameState.blind.myMoves;
+          currentMoves.forEach(
+            (
+              move: { from: string; to: string; san: string },
+              index: number
+            ) => {
+              const tempMove = revertedGame.move({
+                from: move.from,
+                to: move.to,
+                promotion: 'q',
+              });
+              if (tempMove) {
+                const fenParts = revertedGame.fen().split(' ');
+                fenParts[1] = colourLetter;
+                revertedGame.load(fenParts.join(' '));
+                pieceTracker.recordMove(
+                  revertedGame,
+                  move.from,
+                  move.to,
+                  move.san,
+                  index + 1
+                );
+                ruleEngine.processMove(revertedGame, move, index + 1);
+              }
+            }
+          );
+
+          setGame(revertedGame);
+          showViolations([
+            createViolation.invalidMove(
+              'Failed to save move - please try again'
+            ),
+          ]);
+        }
+      })
+      .catch((error: any) => {
+        console.error('❌ Network error saving blind move:', error);
+
+        // Same revert logic for network errors
+        const revertedGame = new Chess(INITIAL_FEN);
+        const fenParts = revertedGame.fen().split(' ');
+        fenParts[1] = colourLetter;
+        revertedGame.load(fenParts.join(' '));
+
+        pieceTracker.reset();
+        ruleEngine.reset();
+
+        const currentMoves = gameState.gameState.blind.myMoves;
+        currentMoves.forEach(
+          (move: { from: string; to: string; san: string }, index: number) => {
+            const tempMove = revertedGame.move({
+              from: move.from,
+              to: move.to,
+              promotion: 'q',
+            });
+            if (tempMove) {
+              const fenParts = revertedGame.fen().split(' ');
+              fenParts[1] = colourLetter;
+              revertedGame.load(fenParts.join(' '));
+              pieceTracker.recordMove(
+                revertedGame,
+                move.from,
+                move.to,
+                move.san,
+                index + 1
+              );
+              ruleEngine.processMove(revertedGame, move, index + 1);
+            }
+          }
+        );
+
+        setGame(revertedGame);
+        showViolations([
+          createViolation.invalidMove('Network error - please try again'),
+        ]);
+      });
+    setTimeout(() => {
+      setIsProcessingMove(false);
+    }, 150);
     return true;
   };
 

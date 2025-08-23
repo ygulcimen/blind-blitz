@@ -8,6 +8,7 @@ import {
 } from '../services/blindMovesService';
 import type { BlindSequence, MoveLogItem } from '../types/BlindTypes';
 import { liveMovesService } from '../services/liveMovesService';
+import { supabase } from '../lib/supabase';
 
 // Updated phases - no more P1/P2!
 export type GamePhase =
@@ -149,6 +150,41 @@ export const useGameStateManager = (gameId?: string) => {
       );
     }
   }, [gameId]);
+  const updateRoomStatus = useCallback(
+    async (
+      roomId: string,
+      status: 'waiting' | 'in_progress' | 'completed' | 'abandoned',
+      winnerId?: string,
+      gameResult?: any
+    ) => {
+      try {
+        const updateData: any = {
+          room_status: status,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (status === 'completed') {
+          updateData.completed_at = new Date().toISOString();
+          if (winnerId) updateData.winner_id = winnerId;
+          if (gameResult) updateData.game_result = gameResult;
+        }
+
+        const { error } = await supabase
+          .from('game_rooms')
+          .update(updateData)
+          .eq('room_id', roomId);
+
+        if (error) {
+          console.error('❌ Failed to update room status:', error);
+        } else {
+          console.log(`✅ Room ${roomId} status updated to: ${status}`);
+        }
+      } catch (error) {
+        console.error('❌ Error updating room status:', error);
+      }
+    },
+    []
+  );
 
   // ✅ Save a blind move to database
   const saveBlindMove = useCallback(
@@ -274,6 +310,9 @@ export const useGameStateManager = (gameId?: string) => {
             fen
           );
         }
+
+        // ✅ Mark room as in progress
+        await updateRoomStatus(gameId, 'in_progress');
       }
 
       setGameState((prev) => ({
@@ -281,10 +320,10 @@ export const useGameStateManager = (gameId?: string) => {
         phase: 'REVEAL',
         reveal: { finalFen: fen, moveLog: log, isComplete: false },
         live: { ...prev.live, game: new Chess(fen), fen: fen },
-        timer: { ...prev.timer, isRunning: false },
+        timer: { ...prev.timer, isRunning: false }, // Stop timer during reveal
       }));
     },
-    [gameId]
+    [gameId, updateRoomStatus]
   );
 
   // ✅ FIX: Handle blind game state updates from real-time - MOVED OUTSIDE OF USEEFFECT
@@ -438,17 +477,30 @@ export const useGameStateManager = (gameId?: string) => {
     [gameState.phase, gameState.live.gameEnded, gameState.live.fen]
   );
 
-  const endGame = useCallback((result: any) => {
-    setGameState((prev) => ({
-      ...prev,
-      live: {
-        ...prev.live,
-        gameEnded: true,
-        gameResult: result,
-      },
-      timer: { ...prev.timer, isRunning: false },
-    }));
-  }, []);
+  const endGame = useCallback(
+    (result: any) => {
+      console.log('🏁 Game ending with result:', result);
+
+      setGameState((prev) => ({
+        ...prev,
+        live: {
+          ...prev.live,
+          gameEnded: true,
+          gameResult: result,
+        },
+        timer: {
+          ...prev.timer,
+          isRunning: false, // ✅ STOP TIMER WHEN GAME ENDS
+        },
+      }));
+
+      // ✅ Update room status when game ends
+      if (gameId) {
+        updateRoomStatus(gameId, 'completed', result.winner, result);
+      }
+    },
+    [gameId, updateRoomStatus]
+  );
 
   // ✅ FIX: Setup real-time subscription with proper dependencies
   useEffect(() => {
@@ -507,7 +559,16 @@ export const useGameStateManager = (gameId?: string) => {
 
   // Timer management
   useEffect(() => {
-    if (!gameState.timer.isRunning) return;
+    if (!gameState.timer.isRunning) {
+      // If timer is not running, make sure interval is cleared
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+
+    console.log('⏰ Starting timer for phase:', gameState.phase);
 
     timerRef.current = window.setInterval(() => {
       const now = Date.now();
@@ -520,12 +581,34 @@ export const useGameStateManager = (gameId?: string) => {
           const newWhiteTime = Math.max(0, prev.timer.whiteTime - elapsed);
           const newBlackTime = Math.max(0, prev.timer.blackTime - elapsed);
 
-          if (newWhiteTime === 0 || newBlackTime === 0) {
-            // Time's up! Auto-submit if not already submitted
+          // ✅ FIXED: When time runs out in blind phase - STOP TIMER
+          if (
+            (newWhiteTime === 0 || newBlackTime === 0) &&
+            prev.timer.isRunning
+          ) {
+            console.log(
+              '⏰ BLIND PHASE TIME UP - Auto-submitting and STOPPING timer!'
+            );
+
+            // Auto-submit if not already submitted
             if (!prev.blind.mySubmitted) {
-              console.log('⏰ Time up - auto-submitting moves!');
-              setTimeout(() => submitBlindMoves(), 100);
+              setTimeout(() => {
+                submitBlindMoves().then(() => {
+                  console.log('✅ Auto-submitted due to timeout');
+                });
+              }, 100);
             }
+
+            // ✅ STOP THE TIMER COMPLETELY
+            return {
+              ...prev,
+              timer: {
+                ...prev.timer,
+                whiteTime: 0,
+                blackTime: 0,
+                isRunning: false, // ✅ CRITICAL: STOP TIMER
+              },
+            };
           }
 
           return {
@@ -537,15 +620,57 @@ export const useGameStateManager = (gameId?: string) => {
             },
           };
         } else if (prev.phase === 'LIVE') {
+          // Don't run timer if game is already ended
+          if (prev.live.gameEnded) {
+            return {
+              ...prev,
+              timer: { ...prev.timer, isRunning: false },
+            };
+          }
+
           const isWhiteTurn = prev.live.game.turn() === 'w';
 
           if (isWhiteTurn) {
             const newTime = Math.max(0, prev.timer.whiteTime - elapsed);
-            if (newTime === 0) {
-              setTimeout(
-                () => endGame({ type: 'timeout', winner: 'black' }),
-                100
-              );
+            if (newTime === 0 && prev.timer.isRunning) {
+              console.log('⏰ WHITE TIMEOUT - Black wins! STOPPING timer!');
+
+              // ✅ PROPERLY END THE GAME
+              setTimeout(() => {
+                endGame({
+                  type: 'timeout',
+                  winner: 'black',
+                  reason: 'White ran out of time',
+                });
+
+                // ✅ UPDATE ROOM STATUS IN DATABASE
+                if (gameId) {
+                  updateRoomStatus(gameId, 'completed', undefined, {
+                    type: 'timeout',
+                    winner: 'black',
+                    reason: 'White ran out of time',
+                  });
+                }
+              }, 100);
+
+              // ✅ STOP THE TIMER IMMEDIATELY
+              return {
+                ...prev,
+                timer: {
+                  ...prev.timer,
+                  whiteTime: 0,
+                  isRunning: false, // ✅ CRITICAL: STOP TIMER
+                },
+                live: {
+                  ...prev.live,
+                  gameEnded: true,
+                  gameResult: {
+                    type: 'timeout',
+                    winner: 'black',
+                    reason: 'White ran out of time',
+                  },
+                },
+              };
             }
             return {
               ...prev,
@@ -553,11 +678,45 @@ export const useGameStateManager = (gameId?: string) => {
             };
           } else {
             const newTime = Math.max(0, prev.timer.blackTime - elapsed);
-            if (newTime === 0) {
-              setTimeout(
-                () => endGame({ type: 'timeout', winner: 'white' }),
-                100
-              );
+            if (newTime === 0 && prev.timer.isRunning) {
+              console.log('⏰ BLACK TIMEOUT - White wins! STOPPING timer!');
+
+              // ✅ PROPERLY END THE GAME
+              setTimeout(() => {
+                endGame({
+                  type: 'timeout',
+                  winner: 'white',
+                  reason: 'Black ran out of time',
+                });
+
+                // ✅ UPDATE ROOM STATUS IN DATABASE
+                if (gameId) {
+                  updateRoomStatus(gameId, 'completed', undefined, {
+                    type: 'timeout',
+                    winner: 'white',
+                    reason: 'Black ran out of time',
+                  });
+                }
+              }, 100);
+
+              // ✅ STOP THE TIMER IMMEDIATELY
+              return {
+                ...prev,
+                timer: {
+                  ...prev.timer,
+                  blackTime: 0,
+                  isRunning: false, // ✅ CRITICAL: STOP TIMER
+                },
+                live: {
+                  ...prev.live,
+                  gameEnded: true,
+                  gameResult: {
+                    type: 'timeout',
+                    winner: 'white',
+                    reason: 'Black ran out of time',
+                  },
+                },
+              };
             }
             return {
               ...prev,
@@ -569,12 +728,22 @@ export const useGameStateManager = (gameId?: string) => {
       });
     }, 100);
 
+    // ✅ CLEANUP: Always clear interval on unmount or when timer stops
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [gameState.timer.isRunning, gameState.phase, submitBlindMoves, endGame]);
+  }, [
+    gameState.timer.isRunning,
+    gameState.phase,
+    gameState.live.gameEnded,
+    submitBlindMoves,
+    endGame,
+    gameId,
+    updateRoomStatus,
+  ]);
 
   // Auto-transition from REVEAL to ANIMATED_REVEAL
   useEffect(() => {
@@ -600,5 +769,6 @@ export const useGameStateManager = (gameId?: string) => {
     makeLiveMove,
     endGame,
     transitionToPhase,
+    updateRoomStatus,
   };
 };

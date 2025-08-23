@@ -44,6 +44,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [myColor, setMyColor] = useState<'white' | 'black' | null>(null);
   const [opponentData, setOpponentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
 
   // UI State
   const [showResignConfirm, setShowResignConfirm] = useState(false);
@@ -273,6 +274,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   // ═══════════════════════════════════════════════════════════════
 
   const handleDrop = (from: string, to: string, piece: string): boolean => {
+    // ✅ ANTI-SPAM: Prevent rapid-fire moves
+    if (isProcessingMove) {
+      console.log('🚫 Move in progress, ignoring rapid click');
+      return false;
+    }
+
     if (!liveGameState || !chessGame || !myColor) return false;
 
     if (liveGameState.game_ended) {
@@ -303,26 +310,121 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       return false;
     }
 
-    console.log(`🎯 Making move: ${from} to ${to}`);
+    console.log(`🎯 Making optimistic move: ${from} to ${to}`);
 
-    // Make the move asynchronously but return immediately
+    // ✅ SET PROCESSING FLAG
+    setIsProcessingMove(true);
+
+    // ✅ OPTIMISTIC UI: Update state immediately for instant feedback
+    setLiveGameState((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        current_fen: testChess.fen(),
+        current_turn: prev.current_turn === 'white' ? 'black' : 'white',
+        move_count: prev.move_count + 1,
+      };
+    });
+
+    // ✅ Update chess game immediately
+    setChessGame(new Chess(testChess.fen()));
+
+    // ✅ Add optimistic move to moves list
+    const optimisticMove: LiveMove = {
+      id: `optimistic-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      game_id: gameId!,
+      move_number: liveGameState.move_count + 1,
+      player_color: myColor,
+      player_id: currentUser!.id,
+      move_from: from,
+      move_to: to,
+      move_san: testMove.san,
+      move_fen: testChess.fen(),
+      is_check: testChess.inCheck(),
+      is_checkmate: testChess.isCheckmate(),
+      is_draw: testChess.isDraw(),
+      time_taken_ms: 2000,
+      time_remaining_ms:
+        myColor === 'white'
+          ? liveGameState.white_time_ms
+          : liveGameState.black_time_ms,
+    };
+
+    setLiveMoves((prev) => [...prev, optimisticMove]);
+
+    // ✅ Send to server asynchronously (fire and forget)
     liveMovesService
       .makeMove(gameId!, from, to, 'q')
       .then((result) => {
         if (result.success) {
-          console.log('✅ Move successful:', result.move?.move_san);
+          console.log('✅ Server confirmed move:', result.move?.move_san);
+
+          // Replace optimistic move with real move
+          if (result.move) {
+            setLiveMoves((prev) =>
+              prev.map((move) =>
+                move.id === optimisticMove.id ? result.move! : move
+              )
+            );
+          }
+
           clearViolations();
         } else {
-          console.error('❌ Move failed:', result.error);
+          console.error('❌ Server rejected move, reverting:', result.error);
+
+          // ❌ REVERT: Server rejected the move
+          setLiveGameState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              current_fen: chessGame.fen(), // Revert to original FEN
+              current_turn: myColor, // Revert turn
+              move_count: prev.move_count - 1, // Revert move count
+            };
+          });
+
+          // Revert chess game
+          setChessGame(new Chess(chessGame.fen()));
+
+          // Remove optimistic move
+          setLiveMoves((prev) =>
+            prev.filter((move) => move.id !== optimisticMove.id)
+          );
+
           showViolations([createViolation.invalidMove(result.error)]);
         }
       })
       .catch((error) => {
-        console.error('❌ Move error:', error);
+        console.error('❌ Network error, reverting move:', error);
+
+        // Same revert logic for network errors
+        setLiveGameState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            current_fen: chessGame.fen(),
+            current_turn: myColor,
+            move_count: prev.move_count - 1,
+          };
+        });
+
+        setChessGame(new Chess(chessGame.fen()));
+        setLiveMoves((prev) =>
+          prev.filter((move) => move.id !== optimisticMove.id)
+        );
+
         showViolations([createViolation.invalidMove('Network error')]);
+      })
+      .finally(() => {
+        // ✅ RESET PROCESSING FLAG after server response
+        setTimeout(() => {
+          setIsProcessingMove(false);
+        }, 200); // 200ms cooldown for live phase (slightly longer than blind phase)
       });
 
-    // Return true immediately for optimistic UI
+    // ✅ Return true immediately - the board will update instantly
     clearViolations();
     return true;
   };
