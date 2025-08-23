@@ -8,8 +8,8 @@ import RobotMoveLog from './RobotMoveLog';
 import RobotStatusPanel from './RobotStatusPanel';
 
 interface RobotChaosBlindPhaseProps {
-  player: 'P1' | 'P2';
   gameState: any;
+  gameId?: string;
 }
 
 const MAX_MOVES = 5;
@@ -56,10 +56,10 @@ const generateRobotMoves = (color: 'w' | 'b'): { moves: BlindSequence } => {
 };
 
 const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
-  player,
   gameState,
+  gameId,
 }) => {
-  const isWhite = player === 'P1';
+  const isWhite = gameState.gameState.blind.myColor === 'white';
   const [moves, setMoves] = useState<BlindSequence>([]);
   const [currentMove, setCurrentMove] = useState(0);
   const [status, setStatus] = useState<
@@ -76,10 +76,6 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
   };
 
   useEffect(() => {
-    console.log(
-      `🤖 RobotChaosBlindPhase mounted. Player: ${player}, isWhite: ${isWhite}`
-    );
-
     if (startedRef.current) {
       console.log('🤖 Already started, returning');
       return;

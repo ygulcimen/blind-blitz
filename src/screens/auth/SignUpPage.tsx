@@ -1,27 +1,35 @@
-// src/screens/auth/LoginPage.tsx - With Real Supabase Authentication
+// src/screens/auth/SignUpPage.tsx - With Real Supabase Authentication
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const LoginPage: React.FC = () => {
+const SignUpPage: React.FC = () => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await signUp(email, password, username);
       if (error) {
         setError(error.message);
       } else {
-        navigate('/games'); // Success! Go to games
+        navigate('/games'); // Success! Go to games with 1000 gold
       }
     } catch (err) {
       setError('Something went wrong');
@@ -50,15 +58,32 @@ const LoginPage: React.FC = () => {
             </div>
             <span className="text-white font-bold text-xl">BLINDCHESS</span>
           </button>
-          <h1 className="text-3xl font-black text-white mb-2">Welcome Back</h1>
+          <h1 className="text-3xl font-black text-white mb-2">
+            Join BlindChess
+          </h1>
           <p className="text-gray-400">
-            Sign in to continue your chess journey
+            Create your account and start earning gold
           </p>
         </div>
 
-        {/* Login Form */}
+        {/* Signup Form */}
         <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 backdrop-blur-sm">
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSignUp} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                placeholder="Choose a username"
+                required
+                disabled={loading}
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Email
@@ -83,7 +108,22 @@ const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
-                placeholder="Enter your password"
+                placeholder="Create a password"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                placeholder="Confirm your password"
                 required
                 disabled={loading}
               />
@@ -96,20 +136,22 @@ const LoginPage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-white bg-gray-800 border-gray-600 rounded focus:ring-white focus:ring-2"
-                />
-                <span className="ml-2 text-sm text-gray-400">Remember me</span>
-              </label>
-              <button
-                type="button"
-                className="text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Forgot password?
-              </button>
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                className="w-4 h-4 mt-1 text-white bg-gray-800 border-gray-600 rounded focus:ring-white focus:ring-2"
+                required
+              />
+              <span className="ml-2 text-sm text-gray-400">
+                I agree to the{' '}
+                <button type="button" className="text-white hover:underline">
+                  Terms of Service
+                </button>{' '}
+                and{' '}
+                <button type="button" className="text-white hover:underline">
+                  Privacy Policy
+                </button>
+              </span>
             </div>
 
             <button
@@ -117,11 +159,20 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-100 transition-colors transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
-          {/* Social Login */}
+          {/* Welcome Bonus */}
+          <div className="mt-6 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
+            <div className="text-yellow-400 text-2xl mb-2">🎁</div>
+            <div className="text-white font-semibold mb-1">Welcome Bonus</div>
+            <div className="text-gray-400 text-sm">
+              Get 1000 Gold to start playing!
+            </div>
+          </div>
+
+          {/* Social Signup */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -146,14 +197,14 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Sign Up Link */}
+          {/* Login Link */}
           <p className="mt-6 text-center text-sm text-gray-400">
-            Don't have an account?{' '}
+            Already have an account?{' '}
             <button
-              onClick={() => navigate('/signup')}
+              onClick={() => navigate('/login')}
               className="text-white hover:underline font-medium transition-colors"
             >
-              Sign up
+              Sign in
             </button>
           </p>
         </div>
@@ -162,4 +213,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignUpPage;

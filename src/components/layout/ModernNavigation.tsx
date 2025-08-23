@@ -1,12 +1,14 @@
 // src/components/layout/ModernNavigation.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavItem {
   id: string;
   label: string;
   path: string;
   icon: React.ReactNode;
+  isAction?: boolean; // ✅ For special actions like logout
 }
 
 const ModernNavigation: React.FC = () => {
@@ -14,6 +16,7 @@ const ModernNavigation: React.FC = () => {
   const [isGameMode, setIsGameMode] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut, user } = useAuth(); // ✅ Get auth functions
 
   // Check if we're in actual game mode (playing) or auth pages
   useEffect(() => {
@@ -24,6 +27,17 @@ const ModernNavigation: React.FC = () => {
       actualGameRoutes;
     setIsGameMode(isInGame);
   }, [location.pathname]);
+
+  // ✅ Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+      setIsExpanded(false);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const navItems: NavItem[] = [
     {
@@ -146,11 +160,46 @@ const ModernNavigation: React.FC = () => {
         </svg>
       ),
     },
+    // ✅ Add logout item (only show if user is logged in)
+    ...(user
+      ? [
+          {
+            id: 'logout',
+            label: 'Logout',
+            path: '#',
+            isAction: true,
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const handleNavClick = (path: string) => {
     navigate(path);
     setIsExpanded(false); // Auto-collapse after navigation
+  };
+
+  // ✅ Handle both navigation and actions
+  const handleItemClick = (item: NavItem) => {
+    if (item.id === 'logout') {
+      handleLogout();
+    } else {
+      handleNavClick(item.path);
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -201,16 +250,44 @@ const ModernNavigation: React.FC = () => {
             </button>
           </div>
 
+          {/* User Info Section (when logged in) */}
+          {user && (
+            <div className="px-3 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-sm">
+                    {user.user_metadata?.username?.[0]?.toUpperCase() ||
+                      user.email?.[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <div
+                  className={`transition-all duration-300 ${
+                    isExpanded
+                      ? 'opacity-100 translate-x-0'
+                      : 'opacity-0 -translate-x-4'
+                  }`}
+                >
+                  <div className="text-white text-sm font-medium truncate">
+                    {user.user_metadata?.username || 'Player'}
+                  </div>
+                  <div className="text-green-400 text-xs">Online</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Navigation Items */}
           <div className="flex-1 py-6">
             <div className="space-y-2 px-3">
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item.path)}
+                  onClick={() => handleItemClick(item)}
                   className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group ${
-                    isActive(item.path)
+                    isActive(item.path) && !item.isAction
                       ? 'bg-white/10 text-white shadow-lg'
+                      : item.id === 'logout'
+                      ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -218,7 +295,7 @@ const ModernNavigation: React.FC = () => {
                   <div className="flex-shrink-0 relative">
                     {item.icon}
                     {/* Active indicator */}
-                    {isActive(item.path) && (
+                    {isActive(item.path) && !item.isAction && (
                       <div className="absolute -inset-1 bg-white/20 rounded-lg blur-sm" />
                     )}
                   </div>
@@ -236,10 +313,12 @@ const ModernNavigation: React.FC = () => {
 
                   {/* Hover effect line */}
                   <div
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full transition-all duration-300 ${
-                      isActive(item.path)
-                        ? 'opacity-100 scale-100'
-                        : 'opacity-0 scale-y-0 group-hover:opacity-50 group-hover:scale-100'
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full transition-all duration-300 ${
+                      isActive(item.path) && !item.isAction
+                        ? 'bg-white opacity-100 scale-100'
+                        : item.id === 'logout'
+                        ? 'bg-red-400 opacity-0 scale-y-0 group-hover:opacity-50 group-hover:scale-100'
+                        : 'bg-white opacity-0 scale-y-0 group-hover:opacity-50 group-hover:scale-100'
                     }`}
                   />
                 </button>

@@ -6,11 +6,14 @@ import {
   ViolationToast,
   useViolations,
 } from '../components/shared/ViolationSystem';
-import WaitingRoomScreen from '../components/WaitingRoom/WaitingRoomScreen';
-import BlindPhaseScreen from '../components/BlindPhase/BlindPhaseScreen';
+//import WaitingRoomScreen from '../components/WaitingRoom/WaitingRoomScreen';
+//import BlindPhaseScreen from '../components/BlindPhase/BlindPhaseScreen';
 import RobotChaosBlindPhase from '../components/RobotChaos/RobotChaosBlindPhase';
 import AnimatedRevealScreen from '../components/AnimatedReveal/AnimatedRevealScreen';
 import LivePhaseScreen from '../components/LivePhase/LivePhaseScreen';
+import RealWaitingRoomScreen from '../components/WaitingRoom/RealWaitingRoomScreen';
+import MultiplayerBlindPhaseScreen from '../components/BlindPhase/MultiplayerBlindPhaseScreen';
+import MultiplayerLivePhaseScreen from '../components/LivePhase/MultiplayerLivePhaseScreen';
 
 export type GameMode = 'classic' | 'robot_chaos';
 
@@ -18,7 +21,7 @@ const GameScreen: React.FC = () => {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const location = useLocation();
-  const gameState = useGameStateManager();
+  const gameState = useGameStateManager(gameId);
   const { violations, showViolation } = useViolations();
 
   // Track if game has actually started
@@ -51,7 +54,11 @@ const GameScreen: React.FC = () => {
   // 🎮 GAME START HANDLER
   // ─────────────────────────────────────────────────────────────
 
-  const handleGameStart = () => {
+  const handleGameStart = (gameMode?: GameMode) => {
+    // ✅ Set the game mode from the waiting room
+    if (gameMode) {
+      setGameMode(gameMode);
+    }
     setGameStarted(true);
   };
 
@@ -61,26 +68,19 @@ const GameScreen: React.FC = () => {
 
   // If game hasn't started yet, show waiting room
   if (!gameStarted) {
-    return (
-      <WaitingRoomScreen onGameStart={handleGameStart} gameMode={gameMode} />
-    );
+    return <RealWaitingRoomScreen onGameStart={handleGameStart} />;
   }
 
   // Once game started, show the actual game phases
+  // In GameScreen.tsx, update the phase rendering:
+  // In GameScreen.tsx, update the phase rendering:
   const renderGamePhase = () => {
     switch (gameState.gameState.phase) {
-      case 'BLIND_P1':
+      case 'BLIND': // ✅ Single blind phase instead of BLIND_P1/BLIND_P2
         return gameMode === 'robot_chaos' ? (
-          <RobotChaosBlindPhase player="P1" gameState={gameState} />
+          <RobotChaosBlindPhase gameState={gameState} gameId={gameId} />
         ) : (
-          <BlindPhaseScreen player="P1" gameState={gameState} />
-        );
-
-      case 'BLIND_P2':
-        return gameMode === 'robot_chaos' ? (
-          <RobotChaosBlindPhase player="P2" gameState={gameState} />
-        ) : (
-          <BlindPhaseScreen player="P2" gameState={gameState} />
+          <MultiplayerBlindPhaseScreen gameState={gameState} gameId={gameId} />
         );
 
       case 'REVEAL':
@@ -98,7 +98,9 @@ const GameScreen: React.FC = () => {
         );
 
       case 'LIVE':
-        return <LivePhaseScreen gameState={gameState} />;
+        return (
+          <MultiplayerLivePhaseScreen gameState={gameState} gameId={gameId} />
+        );
 
       default:
         return <RevealTransitionScreen gameMode={gameMode} />;
@@ -136,12 +138,8 @@ const GameScreen: React.FC = () => {
     const modeInfo = getGameModeInfo(gameMode);
 
     // 🎯 FIXED: Don't show header during ANY game phase - only during REVEAL transition
-    if (
-      phase === 'LIVE' ||
-      phase === 'BLIND_P1' ||
-      phase === 'BLIND_P2' ||
-      phase === 'ANIMATED_REVEAL'
-    ) {
+    // 🎯 FIXED: Don't show header during ANY game phase - only during REVEAL transition
+    if (phase === 'LIVE' || phase === 'BLIND' || phase === 'ANIMATED_REVEAL') {
       return null;
     }
 
