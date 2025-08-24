@@ -224,11 +224,13 @@ const MultiplayerBlindPhaseScreen: React.FC<
 
   // Handle piece drop
   // Handle piece drop with OPTIMISTIC UI
+  // Handle piece drop with OPTIMISTIC UI
   const handleDrop = (from: string, to: string, piece: string): boolean => {
     if (isProcessingMove) {
       console.log('🚫 Move in progress, ignoring');
       return false;
     }
+
     setIsProcessingMove(true);
     if (myMoves.length >= MAX_MOVES) {
       showViolations([createViolation.moveLimit(myMoves.length, MAX_MOVES)]);

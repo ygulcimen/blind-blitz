@@ -18,6 +18,7 @@ import { WarModal } from './WarModal';
 import { EnhancedWarEndModal } from './EnhancedWarEndModal';
 import { supabase } from '../../lib/supabase';
 import { blindMovesService } from '../../services/blindMovesService';
+import { useServerTimer } from '../../hooks/useServerTimer';
 
 interface MultiplayerLivePhaseScreenProps {
   gameState: any; // Your existing game state manager
@@ -44,7 +45,6 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [myColor, setMyColor] = useState<'white' | 'black' | null>(null);
   const [opponentData, setOpponentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessingMove, setIsProcessingMove] = useState(false);
 
   // UI State
   const [showResignConfirm, setShowResignConfirm] = useState(false);
@@ -52,6 +52,10 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showGameEndModal, setShowGameEndModal] = useState(false);
   const [gameEndStatus, setGameEndStatus] = useState<string | null>(null);
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
+  // after other useState/useMemo hooks
+  const pendingOptimisticIdRef = React.useRef<string | null>(null);
+  const prevFenRef = React.useRef<string | null>(null);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎯 INITIALIZE MULTIPLAYER GAME
@@ -201,30 +205,67 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
     const unsubscribe = liveMovesService.subscribeToGameUpdates(gameId, {
       onGameStateUpdate: (newGameState) => {
-        console.log('🔄 Game state updated:', newGameState);
-        setLiveGameState(newGameState);
+        setLiveGameState((prev) => {
+          if (!prev) return newGameState;
 
-        // Update chess game
-        const chess = new Chess(newGameState.current_fen);
-        setChessGame(chess);
+          const optimisticPending = !!pendingOptimisticIdRef.current;
+          const serverIsNewer =
+            (newGameState.move_count ?? 0) > (prev.move_count ?? 0);
 
-        // Check for game end
-        if (newGameState.game_ended && newGameState.game_result) {
-          handleGameEnd(newGameState.game_result);
-        }
+          // ✅ Only accept server FEN when it’s truly newer and we’re not mid-optimistic
+          const acceptFen = serverIsNewer && !optimisticPending;
+
+          return {
+            ...prev,
+            // always take timer/turn/end flags
+            white_time_ms: newGameState.white_time_ms,
+            black_time_ms: newGameState.black_time_ms,
+            current_turn: newGameState.current_turn,
+            game_ended: newGameState.game_ended,
+            game_result: newGameState.game_result ?? prev.game_result,
+
+            // move counters
+            move_count: acceptFen ? newGameState.move_count : prev.move_count,
+
+            // FEN: ignore timer payloads that would roll us back
+            current_fen: acceptFen
+              ? newGameState.current_fen
+              : prev.current_fen,
+          };
+        });
+
+        // ❌ Do NOT touch chess here; only moves should change the board position.
+        // if (chessGame && chessGame.fen() !== newGameState.current_fen) {...}  ← remove this block
       },
 
       onNewMove: (move) => {
-        console.log('🔄 New move received:', move.move_san);
-        setLiveMoves((prev) => {
-          const exists = prev.some((m) => m.id === move.id);
-          if (exists) return prev;
-          return [...prev, move].sort((a, b) => a.move_number - b.move_number);
+        const isMine = move.player_id === currentUser?.id;
+        const hasOptimistic = !!pendingOptimisticIdRef.current;
+
+        if (isMine && hasOptimistic) {
+          setLiveMoves((prev) => {
+            const filtered = prev.filter(
+              (m) => m.id !== pendingOptimisticIdRef.current
+            );
+            return [...filtered, move].sort(
+              (a, b) => a.move_number - b.move_number
+            );
+          });
+          pendingOptimisticIdRef.current = null;
+        } else {
+          setLiveMoves((prev) =>
+            prev.some((m) => m.id === move.id)
+              ? prev
+              : [...prev, move].sort((a, b) => a.move_number - b.move_number)
+          );
+        }
+
+        // Only recreate chess if needed
+        setChessGame((prevChess) => {
+          if (prevChess && prevChess.fen() === move.move_fen) return prevChess;
+          return new Chess(move.move_fen);
         });
 
-        // Update chess game
-        const chess = new Chess(move.move_fen);
-        setChessGame(chess);
         clearViolations();
       },
 
@@ -235,64 +276,30 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     });
 
     return unsubscribe;
+    // ⛔ was: [gameId, myColor, chessGame, currentUser, liveMoves]
   }, [gameId, myColor]);
   // Timer logic for counting down
-  useEffect(() => {
-    if (!liveGameState || liveGameState.game_ended) return;
-
-    const interval = setInterval(() => {
-      setLiveGameState((prev) => {
-        if (!prev || prev.game_ended) return prev;
-
-        const newState = { ...prev };
-
-        if (prev.current_turn === 'white') {
-          newState.white_time_ms = Math.max(0, prev.white_time_ms - 100);
-          if (newState.white_time_ms <= 0) {
-            // Handle timeout
-            console.log('⏰ White player timeout!');
-            liveMovesService.handleTimeout(gameId!, 'white');
-          }
-        } else {
-          newState.black_time_ms = Math.max(0, prev.black_time_ms - 100);
-          if (newState.black_time_ms <= 0) {
-            // Handle timeout
-            console.log('⏰ Black player timeout!');
-            liveMovesService.handleTimeout(gameId!, 'black');
-          }
-        }
-
-        return newState;
-      });
-    }, 100); // Update every 100ms
-
-    return () => clearInterval(interval);
-  }, [liveGameState?.game_ended, liveGameState?.current_turn, gameId]);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎮 GAME HANDLERS
   // ═══════════════════════════════════════════════════════════════
+  // Add this import at the top
 
+  // Replace your current timer useEffect with this simple hook call:
+
+  // Remove your current timer useEffect completely!
   const handleDrop = (from: string, to: string, piece: string): boolean => {
-    // ✅ ANTI-SPAM: Prevent rapid-fire moves
-    if (isProcessingMove) {
-      console.log('🚫 Move in progress, ignoring rapid click');
-      return false;
-    }
-
+    if (isProcessingMove) return false;
     if (!liveGameState || !chessGame || !myColor) return false;
 
     if (liveGameState.game_ended) {
       showViolations([createViolation.gameEnded()]);
       return false;
     }
-
     if (liveGameState.current_turn !== myColor) {
       showViolations([createViolation.wrongTurn(myColor)]);
       return false;
     }
-
-    // Check if it's the right piece color
     if (
       (myColor === 'white' && piece[0] !== 'w') ||
       (myColor === 'black' && piece[0] !== 'b')
@@ -301,131 +308,82 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       return false;
     }
 
-    // Test the move locally first
+    // Try locally
     const testChess = new Chess(chessGame.fen());
-    const testMove = testChess.move({ from, to, promotion: 'q' });
-
-    if (!testMove) {
+    const move = testChess.move({ from, to, promotion: 'q' });
+    if (!move) {
       showViolations([createViolation.invalidMove()]);
       return false;
     }
 
-    console.log(`🎯 Making optimistic move: ${from} to ${to}`);
-
-    // ✅ SET PROCESSING FLAG
+    // ✅ OPTIMISTIC UI
     setIsProcessingMove(true);
+    prevFenRef.current = chessGame.fen();
 
-    // ✅ OPTIMISTIC UI: Update state immediately for instant feedback
-    setLiveGameState((prev) => {
-      if (!prev) return prev;
+    // 1) advance local chess instance + FEN immediately
+    setChessGame(testChess);
+    setLiveGameState((prev) =>
+      prev
+        ? {
+            ...prev,
+            current_fen: testChess.fen(),
+            current_turn: prev.current_turn === 'white' ? 'black' : 'white',
+            move_count: prev.move_count + 1,
+          }
+        : prev
+    );
 
-      return {
-        ...prev,
-        current_fen: testChess.fen(),
-        current_turn: prev.current_turn === 'white' ? 'black' : 'white',
-        move_count: prev.move_count + 1,
-      };
-    });
+    // 2) add optimistic move so lastMove highlights correctly
+    const optimisticId = `optimistic-${Date.now()}`;
+    pendingOptimisticIdRef.current = optimisticId;
+    setLiveMoves((prev) => [
+      ...prev,
+      {
+        id: optimisticId,
+        game_id: gameId!,
+        player_id: currentUser!.id,
+        move_number:
+          (prev.length > 0 ? prev[prev.length - 1].move_number : 0) + 1,
+        move_from: from,
+        move_to: to,
+        move_san: move.san,
+        move_fen: testChess.fen(),
+        created_at: new Date().toISOString(),
+      } as any,
+    ]);
 
-    // ✅ Update chess game immediately
-    setChessGame(new Chess(testChess.fen()));
-
-    // ✅ Add optimistic move to moves list
-    const optimisticMove: LiveMove = {
-      id: `optimistic-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      game_id: gameId!,
-      move_number: liveGameState.move_count + 1,
-      player_color: myColor,
-      player_id: currentUser!.id,
-      move_from: from,
-      move_to: to,
-      move_san: testMove.san,
-      move_fen: testChess.fen(),
-      is_check: testChess.inCheck(),
-      is_checkmate: testChess.isCheckmate(),
-      is_draw: testChess.isDraw(),
-      time_taken_ms: 2000,
-      time_remaining_ms:
-        myColor === 'white'
-          ? liveGameState.white_time_ms
-          : liveGameState.black_time_ms,
-    };
-
-    setLiveMoves((prev) => [...prev, optimisticMove]);
-
-    // ✅ Send to server asynchronously (fire and forget)
+    // 3) let server confirm
     liveMovesService
       .makeMove(gameId!, from, to, 'q')
       .then((result) => {
-        if (result.success) {
-          console.log('✅ Server confirmed move:', result.move?.move_san);
-
-          // Replace optimistic move with real move
-          if (result.move) {
-            setLiveMoves((prev) =>
-              prev.map((move) =>
-                move.id === optimisticMove.id ? result.move! : move
-              )
+        if (!result.success) {
+          // ❌ rollback if server rejects
+          if (prevFenRef.current) {
+            const rollback = new Chess(prevFenRef.current);
+            setChessGame(rollback);
+            setLiveGameState((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    current_fen: rollback.fen(),
+                    current_turn: myColor,
+                  }
+                : prev
             );
           }
-
-          clearViolations();
-        } else {
-          console.error('❌ Server rejected move, reverting:', result.error);
-
-          // ❌ REVERT: Server rejected the move
-          setLiveGameState((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              current_fen: chessGame.fen(), // Revert to original FEN
-              current_turn: myColor, // Revert turn
-              move_count: prev.move_count - 1, // Revert move count
-            };
-          });
-
-          // Revert chess game
-          setChessGame(new Chess(chessGame.fen()));
-
-          // Remove optimistic move
-          setLiveMoves((prev) =>
-            prev.filter((move) => move.id !== optimisticMove.id)
-          );
+          // remove optimistic move
+          setLiveMoves((prev) => prev.filter((m) => m.id !== optimisticId));
+          pendingOptimisticIdRef.current = null;
 
           showViolations([createViolation.invalidMove(result.error)]);
+        } else {
+          clearViolations();
         }
       })
-      .catch((error) => {
-        console.error('❌ Network error, reverting move:', error);
+      .finally(() => setTimeout(() => setIsProcessingMove(false), 120));
 
-        // Same revert logic for network errors
-        setLiveGameState((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            current_fen: chessGame.fen(),
-            current_turn: myColor,
-            move_count: prev.move_count - 1,
-          };
-        });
-
-        setChessGame(new Chess(chessGame.fen()));
-        setLiveMoves((prev) =>
-          prev.filter((move) => move.id !== optimisticMove.id)
-        );
-
-        showViolations([createViolation.invalidMove('Network error')]);
-      })
-      .finally(() => {
-        // ✅ RESET PROCESSING FLAG after server response
-        setTimeout(() => {
-          setIsProcessingMove(false);
-        }, 200); // 200ms cooldown for live phase (slightly longer than blind phase)
-      });
-
-    // ✅ Return true immediately - the board will update instantly
-    clearViolations();
+    // In a controlled board, returning true/false doesn’t move the piece itself;
+    // the FEN update we just did will render the new position.
     return true;
   };
 
@@ -518,6 +476,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       window.location.href = '/games';
     }
   };
+  useServerTimer(gameId, liveGameState, setLiveGameState, handleGameEnd);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎨 COMPUTED VALUES
@@ -629,28 +588,59 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col justify-between relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="flex justify-end">
-            <WarriorCard
-              player="black"
-              playerData={players.black}
-              timeMs={liveGameState.black_time_ms}
-              active={
-                liveGameState.current_turn === 'black' &&
-                !liveGameState.game_ended
-              }
-            />
-          </div>
-          <div className="flex justify-end">
-            <WarriorCard
-              player="white"
-              playerData={players.white}
-              timeMs={liveGameState.white_time_ms}
-              active={
-                liveGameState.current_turn === 'white' &&
-                !liveGameState.game_ended
-              }
-            />
-          </div>
+          {myColor === 'white' ? (
+            // White player view: Black opponent at top, White self at bottom
+            <>
+              <div className="flex justify-end">
+                <WarriorCard
+                  player="black"
+                  playerData={players.black}
+                  timeMs={liveGameState.black_time_ms}
+                  active={
+                    liveGameState.current_turn === 'black' &&
+                    !liveGameState.game_ended
+                  }
+                />
+              </div>
+              <div className="flex justify-end">
+                <WarriorCard
+                  player="white"
+                  playerData={players.white}
+                  timeMs={liveGameState.white_time_ms}
+                  active={
+                    liveGameState.current_turn === 'white' &&
+                    !liveGameState.game_ended
+                  }
+                />
+              </div>
+            </>
+          ) : (
+            // Black player view: White opponent at top, Black self at bottom
+            <>
+              <div className="flex justify-end">
+                <WarriorCard
+                  player="white"
+                  playerData={players.white}
+                  timeMs={liveGameState.white_time_ms}
+                  active={
+                    liveGameState.current_turn === 'white' &&
+                    !liveGameState.game_ended
+                  }
+                />
+              </div>
+              <div className="flex justify-end">
+                <WarriorCard
+                  player="black"
+                  playerData={players.black}
+                  timeMs={liveGameState.black_time_ms}
+                  active={
+                    liveGameState.current_turn === 'black' &&
+                    !liveGameState.game_ended
+                  }
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 

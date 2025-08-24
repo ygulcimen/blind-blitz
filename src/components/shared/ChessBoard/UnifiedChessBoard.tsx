@@ -138,28 +138,25 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
   const handlePieceDrop = useCallback(
     (from: string, to: string, piece: string): boolean => {
       if (gameEnded || !onPieceDrop) {
-        // Clear selection and prevent drop
         setSelectedSquare(null);
         setLegalMoves([]);
         return false;
       }
 
-      // STRICT: Only allow drops on legal moves (prevents error messages)
-      if (!legalMoves.includes(to)) {
-        // Silently reject - no error, no move
-        setSelectedSquare(null);
-        setLegalMoves([]);
-        return false;
-      }
+      // Don't hard-reject here; let parent validate + optimistically update FEN.
+      // This avoids the immediate snap-back visual.
+      const accepted = onPieceDrop(from, to, piece);
 
-      // Proceed with the actual move
-      const result = onPieceDrop(from, to, piece);
-
-      // Clear selection regardless of result
+      // Clear local selection regardless
       setSelectedSquare(null);
       setLegalMoves([]);
 
-      return result;
+      // IMPORTANT:
+      // - If parent returns true and updates `fen` immediately (optimistic),
+      //   the piece will stay where dropped (no bounce).
+      // - If parent later rejects (server error), parent will rollback `fen`,
+      //   causing a single smooth revert—no initial snap-back.
+      return true; // <-- return true to prevent the instant snap-back
     },
     [gameEnded, onPieceDrop, legalMoves]
   );

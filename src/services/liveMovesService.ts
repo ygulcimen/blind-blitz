@@ -58,6 +58,22 @@ class LiveMovesService {
   /**
    * Initialize live game after blind phase ends
    */
+  private parseTimeControl(timeControl: string): {
+    minutes: number;
+    increment: number;
+  } {
+    const parts = timeControl.split('+');
+    const minutes = parseInt(parts[0]) || 3; // Default to 3 minutes
+    const increment = parseInt(parts[1]) || 2; // Default to 2 seconds increment
+
+    console.log('⏱️ Parsed time control:', {
+      input: timeControl,
+      minutes,
+      increment,
+    });
+
+    return { minutes, increment };
+  }
   async initializeLiveGame(
     gameId: string,
     whitePlayerId: string,
@@ -82,6 +98,31 @@ class LiveMovesService {
         return existingState;
       }
 
+      // ✅ Get time control from the room settings
+      const { data: roomData, error: roomError } = await supabase
+        .from('game_rooms')
+        .select('time_control')
+        .eq('id', gameId)
+        .single();
+
+      if (roomError) {
+        console.warn(
+          '⚠️ Could not get room time control, using default:',
+          roomError
+        );
+      }
+
+      const timeControl = roomData?.time_control || '3+2'; // Fallback to 3+2
+      const { minutes, increment } = this.parseTimeControl(timeControl);
+      const timeMs = minutes * 60 * 1000; // Convert to milliseconds
+
+      console.log('⏰ Using time control from room:', {
+        timeControl,
+        minutes,
+        increment,
+        timeMs,
+      });
+
       // Create new live game state
       const { data: newState, error } = await supabase
         .from('game_live_state')
@@ -92,10 +133,11 @@ class LiveMovesService {
           current_fen: startingFen,
           current_turn: 'white', // White always starts live phase
           move_count: 0,
-          white_time_ms: 3 * 60 * 1000, // 3 minutes
-          black_time_ms: 3 * 60 * 1000, // 3 minutes
-          time_control_minutes: 3,
-          time_increment_seconds: 2,
+          white_time_ms: timeMs, // ✅ Use actual time control
+          black_time_ms: timeMs, // ✅ Use actual time control
+          time_control_minutes: minutes, // ✅ Store parsed minutes
+          time_increment_seconds: increment, // ✅ Store parsed increment
+          last_move_time: new Date().toISOString(),
         })
         .select()
         .single();
@@ -158,12 +200,29 @@ class LiveMovesService {
       }
 
       // Calculate time taken (mock for now, you can implement real timing)
-      const timeTaken = 2000; // 2 seconds
+      // ✅ Calculate REAL time taken since last move
+      const currentTime = new Date().toISOString();
+      const lastMoveTime = new Date(gameState.last_move_time || currentTime);
+      const timeTaken = Math.max(0, Date.now() - lastMoveTime.getTime());
+
+      console.log('⏱️ Time calculation:', {
+        currentPlayer: playerColor,
+        timeTaken: `${timeTaken}ms`,
+        lastMoveTime: gameState.last_move_time,
+        currentTime,
+      });
+
       const timeIncrement = gameState.time_increment_seconds * 1000;
-      const newTimeRemaining =
+      const currentPlayerTime =
         playerColor === 'white'
-          ? gameState.white_time_ms - timeTaken + timeIncrement
-          : gameState.black_time_ms - timeTaken + timeIncrement;
+          ? gameState.white_time_ms
+          : gameState.black_time_ms;
+
+      // ✅ Subtract actual time taken, add increment
+      const newTimeRemaining = Math.max(
+        0,
+        currentPlayerTime - timeTaken + timeIncrement
+      );
 
       // Check game end conditions
       const isCheck = chess.inCheck();

@@ -108,7 +108,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
 
     // Use the mode directly - no mapping needed since types match
     const dbMode = config.mode || 'classic';
-
+    const timeControl = config.timeControl || '10+5';
     // Create the room
     const { data: roomData, error: roomError } = await supabase
       .from('game_rooms')
@@ -117,7 +117,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
         mode: dbMode,
         entry_fee: entryFee,
         max_players: config.maxPlayers ?? 2,
-        time_control: '10+5', // Default time control
+        time_control: timeControl, // Default time control
         rated: true,
         private: false,
         host_id: user.id,
