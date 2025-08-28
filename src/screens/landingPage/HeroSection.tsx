@@ -1,6 +1,8 @@
 // src/components/landingPage/HeroSection.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 // Add this before your HeroSection component
 const TypewriterText: React.FC<{
   text: string;
@@ -44,13 +46,22 @@ const HeroSection: React.FC = () => {
   const navigate = useNavigate();
 
   // Mock user data - in real app this would come from auth context
-  const isLoggedIn = false; // Change this to test logged in state
-  const userData = {
-    gold: 15750,
-    xp: 8420,
-    level: 12,
-    username: 'ChessMaster',
-  };
+  const { user } = useAuth();
+  const { playerData } = useCurrentUser();
+  const isLoggedIn = !!user; // Change this to test logged in state
+  const userData = playerData
+    ? {
+        gold: playerData.gold_balance,
+        xp: playerData.xp,
+        level: playerData.level,
+        username: playerData.username,
+      }
+    : {
+        gold: 0,
+        xp: 0,
+        level: 1,
+        username: 'Guest',
+      };
 
   // Strategic quotes for rotating display
   const strategicQuotes = [
@@ -101,9 +112,14 @@ const HeroSection: React.FC = () => {
   }, []);
 
   const handleStartPlaying = () => {
-    navigate('/games');
+    if (isLoggedIn) {
+      // Authenticated users go straight to games
+      navigate('/games');
+    } else {
+      // Unauthenticated users go to signup to create account
+      navigate('/signup');
+    }
   };
-
   return (
     <section className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Background */}
@@ -352,7 +368,9 @@ const HeroSection: React.FC = () => {
             onClick={handleStartPlaying}
             className="group bg-white text-black font-black px-8 py-4 rounded-xl text-lg hover:bg-gray-100 transition-all duration-300 mb-10 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase"
           >
-            <span className="relative z-10">Start Your Journey</span>
+            <span className="relative z-10">
+              {isLoggedIn ? 'Enter Battle Arena' : 'Start Your Journey'}
+            </span>
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
 

@@ -267,11 +267,15 @@ export const useGameStateManager = (gameId?: string) => {
       if (gameId) {
         const blindState = await blindMovesService.getBlindGameState(gameId);
         if (blindState) {
+          const parts = fen.split(' ');
+          if (parts.length >= 2) parts[1] = 'w';
+          const liveFenWhiteToMove = parts.join(' ');
+
           await liveMovesService.initializeLiveGame(
             gameId,
             blindState.whitePlayerId,
             blindState.blackPlayerId,
-            fen
+            liveFenWhiteToMove
           );
         }
       }

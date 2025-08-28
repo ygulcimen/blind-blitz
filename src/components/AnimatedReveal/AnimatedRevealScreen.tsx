@@ -111,10 +111,21 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
   // ─────────────────────────────────────────────────────────────
 
   const generateBoardStates = (): string[] => {
+    // 🎯 FIXED: Create proper move sequence first
+    const p1Moves = moveLog.filter((m) => m.player === 'P1');
+    const p2Moves = moveLog.filter((m) => m.player === 'P2');
+    const sequenced = [];
+
+    const maxMoves = Math.max(p1Moves.length, p2Moves.length);
+    for (let i = 0; i < maxMoves; i++) {
+      if (i < p1Moves.length) sequenced.push(p1Moves[i]);
+      if (i < p2Moves.length) sequenced.push(p2Moves[i]);
+    }
+
     const states = [initialFen];
     const game = new Chess(initialFen);
 
-    moveLog.forEach((move, index) => {
+    sequenced.forEach((move, index) => {
       if (move.from && move.to && !move.isInvalid) {
         const currentTurn = game.turn();
         const isWhiteMove = move.player === 'P1';
@@ -150,7 +161,6 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
           }
         }
       }
-
       states.push(game.fen());
     });
 
@@ -374,16 +384,19 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
 
           {/* Group moves in pairs - Compact Version */}
           <div className="space-y-1">
-            {Array.from({ length: Math.ceil(totalMoves / 2) }).map(
-              (_, pairIndex) => {
-                const whiteMove = moveLog.find(
-                  (m, i) => m.player === 'P1' && Math.floor(i / 2) === pairIndex
-                );
-                const blackMove = moveLog.find(
-                  (m, i) => m.player === 'P2' && Math.floor(i / 2) === pairIndex
-                );
-                const isCurrentPair =
-                  Math.floor(currentMoveIndex / 2) === pairIndex;
+            {(() => {
+              const p1Moves = moveLog.filter((m) => m.player === 'P1');
+              const p2Moves = moveLog.filter((m) => m.player === 'P2');
+              const maxMoves = Math.max(p1Moves.length, p2Moves.length);
+
+              return Array.from({ length: maxMoves }).map((_, pairIndex) => {
+                const whiteMove = p1Moves[pairIndex] || null;
+                const blackMove = p2Moves[pairIndex] || null;
+                const isCurrentPair = (() => {
+                  if (currentMoveIndex < 0) return false;
+                  const currentSequenceIndex = Math.floor(currentMoveIndex / 2);
+                  return currentSequenceIndex === pairIndex;
+                })();
 
                 return (
                   <div
@@ -433,8 +446,8 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
                     </div>
                   </div>
                 );
-              }
-            )}
+              });
+            })()}
           </div>
         </div>
       </div>

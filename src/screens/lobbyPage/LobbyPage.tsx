@@ -25,7 +25,7 @@ const LobbyPage: React.FC = () => {
     mode: 'all',
     search: '',
     ratingRange: 'all',
-    showFull: true,
+    showFull: false, // ✅ HIDE FULL ROOMS BY DEFAULT
   });
 
   // Modal States
@@ -98,16 +98,36 @@ const LobbyPage: React.FC = () => {
   };
 
   // Filter rooms based on current filters
+  // Smart room filtering - hide dead/unplayable rooms
   const filteredRooms = rooms.filter((room) => {
+    // 🔥 SMART FILTERS: Hide problematic rooms
+
+    // 1. Hide rooms that are already in progress or finished
+    if (room.game_started || room.game_ended) {
+      return false;
+    }
+
+    // 2. Hide abandoned empty rooms (older than 30 minutes)
+    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+    const roomAge = new Date(
+      room.created_at || new Date().toISOString()
+    ).getTime();
+    if (room.players === 0 && roomAge < thirtyMinAgo) {
+      return false;
+    }
+
+    // 3. Apply user filters
     const matchesMode = filters.mode === 'all' || room.mode === filters.mode;
     const matchesSearch =
       room.host.toLowerCase().includes(filters.search.toLowerCase()) ||
       room.id.includes(filters.search);
-    const matchesFull = filters.showFull || room.players < room.maxPlayers;
+
+    // 4. Handle full room visibility
+    const isFull = room.players >= room.maxPlayers;
+    const matchesFull = filters.showFull || !isFull;
 
     return matchesMode && matchesSearch && matchesFull;
   });
-
   // ✅ ALL useEffect HOOKS AFTER FUNCTION DEFINITIONS
   // Load rooms on mount
   useEffect(() => {
@@ -228,7 +248,7 @@ const LobbyPage: React.FC = () => {
                 mode: 'all',
                 search: '',
                 ratingRange: 'all',
-                showFull: true,
+                showFull: false, // ✅ Match the default
               })
             }
           />

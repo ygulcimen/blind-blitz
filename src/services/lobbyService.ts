@@ -30,7 +30,8 @@ function transformDatabaseRoom(dbRoom: any): GameRoom {
     ratingRange: 'all', // Default rating range
     status: dbRoom.status as RoomStatus,
     isPrivate: dbRoom.private || false,
-    createdAt: new Date(dbRoom.created_at), // Keep as Date object
+    created_at: new Date(dbRoom.created_at).toISOString(),
+    // Keep as Date object
     spectators: 0, // Default spectators
   };
 }
@@ -71,6 +72,71 @@ async function getRooms(): Promise<GameRoom[]> {
   } catch (error) {
     console.error('Failed to get rooms:', error);
     return []; // Return empty array on error
+  }
+}
+// Add this method to your existing lobbyService class:
+
+// Replace your getAvailableRoomsForQuickMatch function with this corrected version:
+
+async function getAvailableRoomsForQuickMatch(
+  playerGold: number
+): Promise<GameRoom[]> {
+  try {
+    console.log(
+      '🔍 QuickMatch: Searching for rooms with playerGold:',
+      playerGold
+    );
+
+    const { data: rooms, error } = await supabase
+      .from('game_rooms')
+      .select(
+        `
+        id,
+        created_at,
+        name,
+        mode,
+        entry_fee,
+        max_players,
+        time_control,
+        status,
+        current_players,
+        host_username,
+        rated,
+        private,
+        password
+      `
+      )
+      .eq('status', 'waiting')
+      .lte('entry_fee', playerGold)
+      .eq('private', false)
+      .order('current_players', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(10);
+
+    if (error) {
+      console.error('❌ Error fetching quick match rooms:', error);
+      return [];
+    }
+
+    // Filter out full rooms in JavaScript since we can't do column comparison in Supabase
+    const availableRooms =
+      rooms?.filter((room) => room.current_players < room.max_players) || [];
+
+    console.log('📋 Raw rooms from database:', rooms);
+    console.log('📊 Available rooms after filtering:', availableRooms.length);
+
+    if (availableRooms.length > 0) {
+      availableRooms.forEach((room) => {
+        console.log(
+          `🏠 Room ${room.id}: ${room.current_players}/${room.max_players} players, ${room.entry_fee}g entry, status: ${room.status}`
+        );
+      });
+    }
+
+    return availableRooms.map(transformDatabaseRoom);
+  } catch (error) {
+    console.error('💥 Failed to get available rooms:', error);
+    return [];
   }
 }
 
@@ -391,4 +457,5 @@ export const lobbyService = {
   leaveRoom,
   isPlayerInRoom,
   getCurrentUserRoom,
+  getAvailableRoomsForQuickMatch,
 };

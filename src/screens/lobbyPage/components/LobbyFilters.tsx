@@ -146,22 +146,22 @@ export const LobbyFilters: React.FC<LobbyFiltersProps> = ({
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={!filters.showFull}
+            checked={filters.showFull}
             onChange={toggleShowFull}
             className="sr-only"
           />
           <div
             className={`w-10 h-5 rounded-full transition-colors ${
-              !filters.showFull ? 'bg-green-600' : 'bg-gray-600'
+              filters.showFull ? 'bg-blue-600' : 'bg-gray-600'
             }`}
           >
             <div
               className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                !filters.showFull ? 'translate-x-5' : 'translate-x-0.5'
+                filters.showFull ? 'translate-x-5' : 'translate-x-0.5'
               } transform mt-0.5`}
             />
           </div>
-          <span className="text-gray-400 text-sm">Hide full rooms</span>
+          <span className="text-gray-400 text-sm">Show full rooms</span>
         </label>
 
         {/* Results Count */}

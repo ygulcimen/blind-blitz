@@ -72,6 +72,33 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       try {
         // Get existing game state first
         let gameStateData = await liveMovesService.getGameState(gameId);
+        if (
+          gameStateData &&
+          gameStateData.move_count === 0 &&
+          gameStateData.current_turn !== 'white'
+        ) {
+          const fixedFen = gameStateData.current_fen.replace(/\s[wb]\s/, ' w ');
+          try {
+            // Prefer your service helper if you have one; otherwise a direct Supabase update:
+            await supabase
+              .from('game_live_state')
+              .update({
+                current_turn: 'white',
+                current_fen: fixedFen,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('game_id', gameId);
+
+            gameStateData = {
+              ...gameStateData,
+              current_turn: 'white',
+              current_fen: fixedFen,
+            };
+            console.log('✅ Corrected LIVE start: forced White to move.');
+          } catch (e) {
+            console.error('❌ Failed to correct LIVE start turn:', e);
+          }
+        }
 
         if (!gameStateData) {
           console.log('🔧 Live game not initialized yet, creating...');
@@ -86,23 +113,31 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           }
 
           // Get final FEN from reveal phase
-          const finalFen =
-            gameState.gameState.reveal.finalFen ||
+          // 🎯 ALWAYS START LIVE PHASE WITH WHITE TO MOVE
+          // 🎯 ALWAYS START LIVE PHASE FROM STANDARD POSITION WITH WHITE TO MOVE
+          // Use reveal final FEN if present, otherwise fall back to standard—but always set 'w'
+          const rawFen =
+            gameState?.gameState?.reveal?.finalFen ||
             'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+          const parts = rawFen.split(' ');
+          if (parts.length >= 2) parts[1] = 'w';
+          const liveStartingFen = parts.join(' ');
 
-          console.log('🎲 Initializing live game with:', {
+          // ...
+          // Initialize live game with liveStartingFen (as you already do)
+          gameStateData = await liveMovesService.initializeLiveGame(
             gameId,
-            whitePlayer: blindGameState.whitePlayerId,
-            blackPlayer: blindGameState.blackPlayerId,
-            finalFen,
-          });
+            blindGameState.whitePlayerId,
+            blindGameState.blackPlayerId,
+            liveStartingFen
+          );
 
           // Initialize live game
           gameStateData = await liveMovesService.initializeLiveGame(
             gameId,
             blindGameState.whitePlayerId,
             blindGameState.blackPlayerId,
-            finalFen
+            liveStartingFen // Use the modified FEN
           );
 
           if (!gameStateData) {
@@ -169,13 +204,8 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         setLiveMoves(moves);
         console.log('📝 Loaded moves:', moves.length);
 
-        // Initialize chess game
         const chess = new Chess(gameStateData.current_fen);
         setChessGame(chess);
-        console.log(
-          '♟️ Chess game initialized with FEN:',
-          gameStateData.current_fen
-        );
 
         // Get draw offer
         const activeDrawOffer = await liveMovesService.getActiveDrawOffer(
@@ -296,7 +326,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       showViolations([createViolation.gameEnded()]);
       return false;
     }
-    if (liveGameState.current_turn !== myColor) {
+    // Fix: Convert chess.js turn to our format for comparison
+    const chessTurnToColor = chessGame.turn() === 'w' ? 'white' : 'black';
+    if (chessTurnToColor !== myColor) {
       showViolations([createViolation.wrongTurn(myColor)]);
       return false;
     }
@@ -510,8 +542,10 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   );
 
   const isMyTurn = useMemo(() => {
-    return liveGameState?.current_turn === myColor;
-  }, [liveGameState?.current_turn, myColor]);
+    if (!chessGame || !myColor) return false;
+    const chessTurnColor = chessGame.turn() === 'w' ? 'white' : 'black';
+    return chessTurnColor === myColor;
+  }, [chessGame, myColor]);
 
   const currentDrawOffer = useMemo(() => {
     if (!drawOffer || !drawOffer.is_active) return null;

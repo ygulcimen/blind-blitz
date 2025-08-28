@@ -22,6 +22,17 @@ interface RoomCardProps {
   onJoin: (roomId: string) => void;
   playerGold: number;
 }
+const getTimeAgo = (dateString: string): string => {
+  const now = Date.now();
+  const created = new Date(dateString).getTime();
+  const diffMinutes = Math.floor((now - created) / (1000 * 60));
+
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return 'Old';
+};
 
 export const RoomCard: React.FC<RoomCardProps> = ({
   room,
@@ -38,6 +49,37 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   const isPremiumRoom = room.entryFee >= 1000;
 
   const getStatusConfig = () => {
+    // Check for problematic room states first
+    if (room.game_started) {
+      return {
+        color: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+        text: 'IN PROGRESS',
+        pulse: false,
+      };
+    }
+
+    if (room.game_ended) {
+      return {
+        color: 'bg-gray-500/20 text-gray-400 border-gray-500/40',
+        text: 'FINISHED',
+        pulse: false,
+      };
+    }
+
+    // Check room age for abandoned detection
+    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+    const roomAge = new Date(
+      room.created_at || new Date().toISOString()
+    ).getTime();
+    if (room.players === 0 && roomAge < thirtyMinAgo) {
+      return {
+        color: 'bg-gray-500/20 text-gray-400 border-gray-500/40',
+        text: 'ABANDONED',
+        pulse: false,
+      };
+    }
+
+    // Regular status logic
     if (isFull)
       return {
         color: 'bg-red-500/20 text-red-400 border-red-500/40',
@@ -158,12 +200,17 @@ export const RoomCard: React.FC<RoomCardProps> = ({
               <span className="text-white font-semibold text-sm">
                 {room.host}
               </span>
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-yellow-400 text-xs font-bold">
-                  {room.hostRating}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-yellow-400 text-xs font-bold">
+                    {room.hostRating}
+                  </span>
+                </div>
+                <div className="w-px h-3 bg-gray-600"></div>
+                <span className="text-gray-500 text-xs">
+                  {getTimeAgo(room.created_at || new Date().toISOString())}
                 </span>
-                <span className="text-gray-500 text-xs">rating</span>
               </div>
             </div>
           </div>
@@ -257,16 +304,24 @@ export const RoomCard: React.FC<RoomCardProps> = ({
         {/* Action Button */}
         <button
           onClick={() => onJoin(room.id)}
-          disabled={isFull || !canAfford}
+          disabled={
+            isFull || !canAfford || room.game_started || room.game_ended
+          }
           className={`w-full py-3 rounded-xl font-black text-sm tracking-wide transition-all duration-300 transform ${
-            isFull
+            room.game_started || room.game_ended
+              ? 'bg-gray-800/60 text-gray-500 cursor-not-allowed border border-gray-700/50'
+              : isFull
               ? 'bg-gray-800/60 text-gray-500 cursor-not-allowed border border-gray-700/50'
               : !canAfford
               ? 'bg-red-900/40 text-red-400 cursor-not-allowed border border-red-500/40'
               : `bg-gradient-to-r ${mode.gradient} text-white hover:shadow-xl active:scale-95 hover:scale-105 shadow-lg border border-white/10`
           }`}
         >
-          {isFull
+          {room.game_started
+            ? 'GAME IN PROGRESS'
+            : room.game_ended
+            ? 'GAME FINISHED'
+            : isFull
             ? 'ROOM FULL'
             : !canAfford
             ? 'INSUFFICIENT GOLD'

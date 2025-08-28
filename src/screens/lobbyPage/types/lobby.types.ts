@@ -23,8 +23,10 @@ export interface GameRoom {
   ratingRange: string;
   status: RoomStatus;
   isPrivate: boolean;
-  createdAt: Date;
   spectators?: number;
+  game_started?: boolean;
+  game_ended?: boolean;
+  created_at?: string;
 }
 
 export interface FilterState {

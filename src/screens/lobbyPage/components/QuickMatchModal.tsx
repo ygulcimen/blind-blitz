@@ -1,20 +1,20 @@
-// src/screens/LobbyPage/components/QuickMatchModal.tsx
-import React, { useState, useEffect } from 'react';
-import { X, Zap, Users, Clock, Trophy, Shield, TrendingUp } from 'lucide-react';
-import { useModal } from '../../../context/ModalContext'; // ✅ NEW
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Zap, Users, Trophy, CheckCircle, AlertCircle } from 'lucide-react';
+import { useModal } from '../../../context/ModalContext';
+import { quickMatchService } from '../../../services/quickMatchService';
+import { useCurrentUser } from '../../../hooks/useCurrentUser';
 
 interface QuickMatchModalProps {
   onClose: () => void;
   onMatchFound: (gameId: string) => void;
 }
 
-interface MatchData {
-  opponent: string;
-  opponentRating: number;
-  gameMode: 'classic' | 'robochaos';
-  timeControl: string;
-  entryFee: number;
+type MatchStage = 'searching' | 'found' | 'created' | 'error';
+
+interface MatchResult {
   gameId: string;
+  action: 'joined_existing' | 'created_new';
+  message: string;
 }
 
 export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
@@ -22,14 +22,21 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
   onMatchFound,
 }) => {
   const { setModalOpen } = useModal();
-  const [stage, setStage] = useState<'searching' | 'found' | 'error'>(
-    'searching'
-  );
+
+  // State
+  const [stage, setStage] = useState<MatchStage>('searching');
   const [searchTime, setSearchTime] = useState(0);
-  const [matchData, setMatchData] = useState<MatchData | null>(null);
-  const [cancelRequested, setCancelRequested] = useState(false);
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [error, setError] = useState<string>('');
+  const [autoAcceptTimer, setAutoAcceptTimer] = useState(5);
+  const { playerData, loading } = useCurrentUser(); // Get the loading state
+
+  // Refs for cancellation
+  const cancelledRef = useRef(false);
+  const hasSearchedRef = useRef(false);
+
+  // Lock scroll
   useEffect(() => {
-    // ✅ Lock scroll + hide nav on open
     setModalOpen(true);
     document.body.style.overflow = 'hidden';
 
@@ -39,48 +46,105 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
     };
   }, [setModalOpen]);
 
+  // Search timer
   useEffect(() => {
-    // Simulate search timer
+    if (stage !== 'searching') return;
+
     const timer = setInterval(() => {
       setSearchTime((prev) => prev + 0.1);
     }, 100);
 
-    // Simulate finding a match after 2-5 seconds
-    const matchTimer = setTimeout(() => {
-      if (!cancelRequested) {
-        setStage('found');
-        setMatchData({
-          opponent: 'ChessKnight92',
-          opponentRating: 1280,
-          gameMode: Math.random() > 0.5 ? 'classic' : 'robochaos',
-          timeControl: '10+5',
-          entryFee: 100,
-          gameId: Math.random().toString(36).substr(2, 9),
-        });
-      }
-    }, 2000 + Math.random() * 3000);
+    return () => clearInterval(timer);
+  }, [stage]);
 
-    return () => {
-      clearInterval(timer);
-      clearTimeout(matchTimer);
+  // Auto-accept timer
+  useEffect(() => {
+    if (stage === 'found' || stage === 'created') {
+      const timer = setInterval(() => {
+        setAutoAcceptTimer((prev) => {
+          if (prev <= 1) {
+            handleAcceptMatch();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [stage]);
+
+  // Main search effect
+  // Main search effect
+  useEffect(() => {
+    const performSearch = async () => {
+      // Prevent multiple searches
+      if (hasSearchedRef.current) return;
+
+      // Wait for loading to complete AND player data to exist
+      if (loading || !playerData?.gold_balance) {
+        if (!loading && !playerData?.gold_balance) {
+          setError('Unable to load player data. Please refresh and try again.');
+          setStage('error');
+        }
+        return;
+      }
+
+      hasSearchedRef.current = true;
+
+      try {
+        // Show searching for at least 1 second
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Check if cancelled during delay
+        if (cancelledRef.current) return;
+
+        const result = await quickMatchService.findQuickMatch(
+          playerData.gold_balance
+        );
+
+        // Check if cancelled after service call
+        if (cancelledRef.current) return;
+
+        if (result.success && result.gameId) {
+          setMatchResult({
+            gameId: result.gameId,
+            action: result.action as 'joined_existing' | 'created_new',
+            message: result.message || '',
+          });
+
+          setStage(result.action === 'joined_existing' ? 'found' : 'created');
+          setAutoAcceptTimer(5);
+        } else {
+          setError(result.message || 'Failed to find a match');
+          setStage('error');
+        }
+      } catch (err) {
+        if (!cancelledRef.current) {
+          setError('Something went wrong. Please try again.');
+          setStage('error');
+        }
+      }
     };
-  }, [cancelRequested]);
+
+    performSearch();
+  }, [playerData?.gold_balance, loading]); // Add 'loading' to dependencies
 
   const handleCancel = () => {
-    setCancelRequested(true);
+    cancelledRef.current = true;
     onClose();
   };
 
   const handleAcceptMatch = () => {
-    if (matchData) {
-      onMatchFound(matchData.gameId);
+    if (matchResult?.gameId && !cancelledRef.current) {
+      onMatchFound(matchResult.gameId);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-md w-full overflow-hidden">
-        {/* Modal Header */}
+        {/* Header */}
         <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 p-6">
           <button
             onClick={handleCancel}
@@ -96,53 +160,35 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
             <div>
               <h3 className="text-2xl font-bold text-white">Quick Match</h3>
               <p className="text-white/80 text-sm">
-                Finding your perfect opponent
+                {stage === 'searching' && 'Finding your opponent...'}
+                {stage === 'found' && 'Match found!'}
+                {stage === 'created' && 'Room created!'}
+                {stage === 'error' && 'Something went wrong'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Modal Content */}
         <div className="p-6">
+          {/* Searching State */}
           {stage === 'searching' && (
             <div className="text-center">
-              {/* Animated Search Indicator */}
-              <div className="relative w-32 h-32 mx-auto mb-6">
+              <div className="relative w-24 h-24 mx-auto mb-6">
                 <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-                <div className="absolute inset-2 bg-green-500/30 rounded-full animate-ping animation-delay-200" />
-                <div className="absolute inset-4 bg-green-500/40 rounded-full animate-ping animation-delay-400" />
-                <div className="absolute inset-6 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-pulse flex items-center justify-center">
-                  <Users className="w-8 h-8 text-white" />
+                <div className="absolute inset-2 bg-green-500/30 rounded-full animate-ping delay-75" />
+                <div className="absolute inset-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-pulse flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white" />
                 </div>
               </div>
 
               <h4 className="text-xl font-semibold text-white mb-2">
-                Searching for opponents...
+                Searching for match...
               </h4>
 
-              <p className="text-gray-400 mb-4">
+              <p className="text-gray-400 mb-6">
                 {searchTime.toFixed(1)}s elapsed
               </p>
 
-              {/* Search Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-gray-800/50 rounded-lg p-3">
-                  <div className="text-gray-500 text-xs mb-1">
-                    Players Online
-                  </div>
-                  <div className="text-white font-bold">2,847</div>
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-3">
-                  <div className="text-gray-500 text-xs mb-1">In Queue</div>
-                  <div className="text-green-400 font-bold">342</div>
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-3">
-                  <div className="text-gray-500 text-xs mb-1">Avg Wait</div>
-                  <div className="text-blue-400 font-bold">3.2s</div>
-                </div>
-              </div>
-
-              {/* Loading Dots */}
               <div className="flex justify-center gap-2 mb-6">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce delay-100" />
@@ -158,98 +204,107 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
             </div>
           )}
 
-          {stage === 'found' && matchData && (
+          {/* Found Match State */}
+          {stage === 'found' && matchResult && (
             <div className="text-center">
-              {/* Success Animation */}
-              <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
-                <div className="w-14 h-14 bg-green-500/40 rounded-full flex items-center justify-center">
-                  <Trophy className="w-8 h-8 text-green-400" />
-                </div>
+              <div className="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
 
-              <h4 className="text-2xl font-bold text-white mb-4">
+              <h4 className="text-xl font-bold text-white mb-2">
                 Match Found!
               </h4>
+              <p className="text-gray-300 mb-6">{matchResult.message}</p>
 
-              {/* Match Details */}
               <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-left">
-                    <div className="text-sm text-gray-400 mb-1">You</div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400" />
-                      <div>
-                        <div className="text-white font-semibold">You</div>
-                        <div className="text-gray-400 text-xs flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          1250
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-2xl text-gray-500">VS</div>
-
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Opponent</div>
-                    <div className="flex items-center gap-2 flex-row-reverse">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-orange-400" />
-                      <div>
-                        <div className="text-white font-semibold">
-                          {matchData.opponent}
-                        </div>
-                        <div className="text-gray-400 text-xs flex items-center gap-1 justify-end">
-                          <Shield className="w-3 h-3" />
-                          {matchData.opponentRating}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="text-sm text-gray-400 mb-2">
+                  Ready to battle
                 </div>
-
-                <div className="border-t border-gray-700 pt-3 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Mode</span>
-                    <span className="text-white font-medium capitalize">
-                      {matchData.gameMode === 'robochaos'
-                        ? '🤖 RoboChaos'
-                        : '🕶️ Classic'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Time Control</span>
-                    <span className="text-white font-medium">
-                      {matchData.timeControl}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Entry Fee</span>
-                    <span className="text-yellow-400 font-medium">
-                      {matchData.entryFee}g
-                    </span>
-                  </div>
+                <div className="text-white font-semibold">
+                  Joining existing game...
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={handleCancel}
                   className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 rounded-xl transition-colors"
                 >
-                  Decline
+                  Cancel
                 </button>
                 <button
                   onClick={handleAcceptMatch}
                   className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg hover:shadow-green-500/25 text-white font-semibold py-3 rounded-xl transition-all hover:scale-105 active:scale-95"
                 >
-                  Accept Match
+                  Join Battle
                 </button>
               </div>
 
-              <p className="text-gray-500 text-xs mt-4">
-                Auto-accept in 10 seconds...
+              <p className="text-gray-500 text-xs mt-3">
+                Auto-joining in {autoAcceptTimer}s...
               </p>
+            </div>
+          )}
+
+          {/* Created Room State */}
+          {stage === 'created' && matchResult && (
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-blue-400" />
+              </div>
+
+              <h4 className="text-xl font-bold text-white mb-2">
+                Room Created!
+              </h4>
+              <p className="text-gray-300 mb-6">{matchResult.message}</p>
+
+              <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+                <div className="text-sm text-gray-400 mb-2">
+                  Waiting for opponent
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                  <span className="text-white font-semibold">Room is open</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancel}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAcceptMatch}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:shadow-lg hover:shadow-blue-500/25 text-white font-semibold py-3 rounded-xl transition-all hover:scale-105 active:scale-95"
+                >
+                  Enter Room
+                </button>
+              </div>
+
+              <p className="text-gray-500 text-xs mt-3">
+                Auto-entering in {autoAcceptTimer}s...
+              </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {stage === 'error' && (
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-red-400" />
+              </div>
+
+              <h4 className="text-xl font-bold text-white mb-2">Failed!</h4>
+              <p className="text-gray-300 mb-6">{error}</p>
+
+              <button
+                onClick={handleCancel}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           )}
         </div>

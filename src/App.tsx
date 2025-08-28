@@ -21,6 +21,8 @@ import FAQPage from './screens/FAQPage';
 import LoginPage from './screens/auth/LoginPage';
 import SignUpPage from './screens/auth/SignUpPage';
 import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './screens/auth/ProtectedRoute';
+import { AuthRedirect } from './screens/auth/AuthRedirect';
 
 function App() {
   useEffect(() => {
@@ -52,9 +54,11 @@ function App() {
                 <Route
                   path="/games"
                   element={
-                    <AppLayout>
-                      <LobbyPage />
-                    </AppLayout>
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <LobbyPage />
+                      </AppLayout>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
@@ -68,9 +72,11 @@ function App() {
                 <Route
                   path="/game/:gameId"
                   element={
-                    <AppLayout hideNavigation={true} hideFooter={true}>
-                      <GameScreen />
-                    </AppLayout>
+                    <ProtectedRoute>
+                      <AppLayout hideNavigation={true} hideFooter={true}>
+                        <GameScreen />
+                      </AppLayout>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
@@ -108,25 +114,31 @@ function App() {
                 <Route
                   path="/login"
                   element={
-                    <AppLayout hideNavigation={true} hideFooter={true}>
-                      <LoginPage />
-                    </AppLayout>
+                    <AuthRedirect>
+                      <AppLayout hideNavigation={true} hideFooter={true}>
+                        <LoginPage />
+                      </AppLayout>
+                    </AuthRedirect>
                   }
                 />
                 <Route
                   path="/signup"
                   element={
-                    <AppLayout hideNavigation={true} hideFooter={true}>
-                      <SignUpPage />
-                    </AppLayout>
+                    <AuthRedirect>
+                      <AppLayout hideNavigation={true} hideFooter={true}>
+                        <SignUpPage />
+                      </AppLayout>
+                    </AuthRedirect>
                   }
                 />
                 <Route
                   path="/profile"
                   element={
-                    <AppLayout>
-                      <ProfilePage />
-                    </AppLayout>
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <ProfilePage />
+                      </AppLayout>
+                    </ProtectedRoute>
                   }
                 />
                 <Route

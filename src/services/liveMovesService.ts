@@ -185,14 +185,24 @@ class LiveMovesService {
       }
 
       // Check if it's the player's turn
+      // Check if it's the player's turn using CHESS POSITION as source of truth
       const playerColor =
         gameState.white_player_id === user.id ? 'white' : 'black';
-      if (gameState.current_turn !== playerColor) {
+      const chess = new Chess(gameState.current_fen);
+      const actualTurn = chess.turn() === 'w' ? 'white' : 'black';
+
+      console.log('🎯 TURN VALIDATION:', {
+        playerColor,
+        actualTurnFromFen: actualTurn,
+        storedTurn: gameState.current_turn,
+        canMove: actualTurn === playerColor,
+      });
+
+      if (actualTurn !== playerColor) {
         return { success: false, error: 'Not your turn' };
       }
 
       // Validate the move using chess.js
-      const chess = new Chess(gameState.current_fen);
       const moveResult = chess.move({ from, to, promotion: promotion as any });
 
       if (!moveResult) {
