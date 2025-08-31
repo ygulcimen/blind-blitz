@@ -1,4 +1,4 @@
-// src/services/blindMovesService.ts - FIXED TYPESCRIPT ISSUES
+// src/services/blindMovesService.ts - FIXED: Aligned with actual database schema
 import { supabase } from '../lib/supabase';
 import type { BlindSequence } from '../types/BlindTypes';
 
@@ -13,6 +13,7 @@ export interface BlindMove {
   move_san: string;
   is_submitted: boolean;
   created_at: string;
+  phase_completed_at?: string;
 }
 
 export interface BlindGameState {
@@ -30,26 +31,47 @@ export interface BlindGameState {
 
 class BlindMovesService {
   /**
-   * Initialize blind phase for a game
+   * Initialize blind phase - simplified with database automation
    */
   async initializeBlindGame(roomId: string): Promise<BlindGameState | null> {
     try {
-      // Get players from the room
+      console.log('🎯 Initializing blind game for room:', roomId);
+
+      // Get players from room (deterministic color assignment)
       const { data: players, error: playersError } = await supabase
         .from('game_room_players')
-        .select('player_id, player_username')
-        .eq('room_id', roomId);
+        .select('player_id, player_username, created_at')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
 
       if (playersError || !players || players.length !== 2) {
-        console.error('Error getting players:', playersError);
+        console.error('❌ Error getting players for blind game:', playersError);
         return null;
       }
 
-      // Randomly assign colors
-      const shuffled = [...players].sort(() => Math.random() - 0.5);
-      const whitePlayer = shuffled[0];
-      const blackPlayer = shuffled[1];
+      // Assign colors deterministically (first joiner = white)
+      const whitePlayer = players[0];
+      const blackPlayer = players[1];
 
+      console.log('🎨 Color assignment:', {
+        white: whitePlayer.player_username,
+        black: blackPlayer.player_username,
+      });
+
+      // Update room status to blind phase if not already
+      const { error: roomUpdateError } = await supabase
+        .from('game_rooms')
+        .update({
+          status: 'blind',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', roomId);
+
+      if (roomUpdateError) {
+        console.error('❌ Error updating room status:', roomUpdateError);
+      }
+
+      // Return initial state
       return {
         gameId: roomId,
         whitePlayerId: whitePlayer.player_id,
@@ -63,13 +85,13 @@ class BlindMovesService {
         bothSubmitted: false,
       };
     } catch (error) {
-      console.error('Failed to initialize blind game:', error);
+      console.error('💥 Failed to initialize blind game:', error);
       return null;
     }
   }
 
   /**
-   * Save a single blind move to database
+   * Save a blind move with proper error handling
    */
   async saveBlindMove(
     gameId: string,
@@ -84,41 +106,47 @@ class BlindMovesService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+
       if (authError || !user) {
-        throw new Error('Not authenticated');
-      }
-
-      // Upsert the move (insert or update if exists)
-      const { error } = await supabase.from('game_blind_moves').upsert(
-        {
-          game_id: gameId,
-          player_id: user.id,
-          player_color: playerColor,
-          move_number: moveNumber,
-          move_from: from,
-          move_to: to,
-          move_san: san,
-          is_submitted: false,
-        },
-        {
-          onConflict: 'game_id,player_id,move_number',
-        }
-      );
-
-      if (error) {
-        console.error('Error saving blind move:', error);
+        console.error('❌ Not authenticated for saveBlindMove');
         return false;
       }
 
+      console.log('💾 Saving blind move:', {
+        gameId,
+        playerColor,
+        moveNumber,
+        san,
+      });
+
+      // Use upsert to handle conflicts gracefully
+      // Replace the upsert with insert
+      const { error } = await supabase.from('game_blind_moves').insert({
+        game_id: gameId,
+        player_id: user.id,
+        player_color: playerColor,
+        move_number: moveNumber,
+        move_from: from,
+        move_to: to,
+        move_san: san,
+        is_submitted: false,
+      });
+
+      if (error) {
+        console.error('❌ Error saving blind move:', error);
+        return false;
+      }
+
+      console.log('✅ Blind move saved successfully');
       return true;
     } catch (error) {
-      console.error('Failed to save blind move:', error);
+      console.error('💥 Failed to save blind move:', error);
       return false;
     }
   }
 
   /**
-   * Delete a blind move (for undo)
+   * Delete a blind move (for undo functionality)
    */
   async deleteBlindMove(
     gameId: string,
@@ -130,9 +158,17 @@ class BlindMovesService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+
       if (authError || !user) {
-        throw new Error('Not authenticated');
+        console.error('❌ Not authenticated for deleteBlindMove');
+        return false;
       }
+
+      console.log('🗑️ Deleting blind move:', {
+        gameId,
+        playerColor,
+        moveNumber,
+      });
 
       const { error } = await supabase
         .from('game_blind_moves')
@@ -143,19 +179,20 @@ class BlindMovesService {
         .eq('move_number', moveNumber);
 
       if (error) {
-        console.error('Error deleting blind move:', error);
+        console.error('❌ Error deleting blind move:', error);
         return false;
       }
 
+      console.log('✅ Blind move deleted successfully');
       return true;
     } catch (error) {
-      console.error('Failed to delete blind move:', error);
+      console.error('💥 Failed to delete blind move:', error);
       return false;
     }
   }
 
   /**
-   * Submit all blind moves (mark as submitted)
+   * Submit blind moves - triggers database automation
    */
   async submitBlindMoves(
     gameId: string,
@@ -166,11 +203,16 @@ class BlindMovesService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+
       if (authError || !user) {
-        throw new Error('Not authenticated');
+        console.error('❌ Not authenticated for submitBlindMoves');
+        return false;
       }
 
-      // Mark all moves as submitted
+      console.log('📤 Submitting blind moves for:', playerColor);
+
+      // Mark all player's moves as submitted
+      // Database trigger will check if both players submitted and auto-transition
       const { error } = await supabase
         .from('game_blind_moves')
         .update({ is_submitted: true })
@@ -179,25 +221,25 @@ class BlindMovesService {
         .eq('player_color', playerColor);
 
       if (error) {
-        console.error('Error submitting blind moves:', error);
+        console.error('❌ Error submitting blind moves:', error);
         return false;
       }
 
+      console.log('✅ Blind moves submitted successfully');
       return true;
     } catch (error) {
-      console.error('Failed to submit blind moves:', error);
+      console.error('💥 Failed to submit blind moves:', error);
       return false;
     }
   }
 
   /**
-   * Get current blind game state - FIXED TYPESCRIPT ISSUES
-   */
-  /**
-   * Get current blind game state - FIXED TYPESCRIPT ISSUES
+   * Get blind game state with accurate data
    */
   async getBlindGameState(gameId: string): Promise<BlindGameState | null> {
     try {
+      console.log('🔍 Getting blind game state for:', gameId);
+
       // Get all blind moves for this game
       const { data: moves, error: movesError } = await supabase
         .from('game_blind_moves')
@@ -206,86 +248,72 @@ class BlindMovesService {
         .order('move_number');
 
       if (movesError) {
-        console.error('Error getting blind moves:', movesError);
+        console.error('❌ Error getting blind moves:', movesError);
         return null;
       }
 
-      // Get players from the room
+      // Get players with deterministic color assignment
       const { data: players, error: playersError } = await supabase
         .from('game_room_players')
-        .select('player_id')
-        .eq('room_id', gameId);
+        .select('player_id, created_at')
+        .eq('room_id', gameId)
+        .order('created_at', { ascending: true });
 
       if (playersError || !players || players.length !== 2) {
-        console.error('Error getting players:', playersError);
+        console.error('❌ Error getting players for game state:', playersError);
         return null;
       }
 
-      // Separate moves by color
+      const whitePlayerId = players[0].player_id;
+      const blackPlayerId = players[1].player_id;
+
+      // Process moves by color
       const whiteMoves: BlindSequence = [];
       const blackMoves: BlindSequence = [];
-      let whitePlayerId = '';
-      let blackPlayerId = '';
       let whiteSubmitted = false;
       let blackSubmitted = false;
 
-      if (moves) {
-        // ✅ FIX: Properly type the accumulator and moves with explicit typing
-        const movesByPlayer = moves.reduce(
-          (acc: Record<string, BlindMove[]>, move: BlindMove) => {
-            if (!acc[move.player_id]) {
-              acc[move.player_id] = [];
-            }
-            acc[move.player_id].push(move);
-            return acc;
-          },
-          {} as Record<string, BlindMove[]>
+      if (moves && moves.length > 0) {
+        // Group moves by player
+        const whitePlayerMoves = moves.filter(
+          (m) => m.player_id === whitePlayerId
+        );
+        const blackPlayerMoves = moves.filter(
+          (m) => m.player_id === blackPlayerId
         );
 
-        // ✅ FIX: Process each player's moves with type assertion
-        Object.entries(movesByPlayer).forEach(([playerId, playerMoves]) => {
-          const typedPlayerMoves = playerMoves as BlindMove[];
+        // Build white moves sequence
+        whiteMoves.push(
+          ...whitePlayerMoves
+            .sort((a, b) => a.move_number - b.move_number)
+            .map((move) => ({
+              from: move.move_from,
+              to: move.move_to,
+              san: move.move_san,
+            }))
+        );
 
-          if (typedPlayerMoves.length === 0) return;
+        // Build black moves sequence
+        blackMoves.push(
+          ...blackPlayerMoves
+            .sort((a, b) => a.move_number - b.move_number)
+            .map((move) => ({
+              from: move.move_from,
+              to: move.move_to,
+              san: move.move_san,
+            }))
+        );
 
-          const playerColor = typedPlayerMoves[0].player_color;
-
-          // ✅ FIX: Explicitly type the sort parameters
-          const sortedMoves = typedPlayerMoves.sort(
-            (a: BlindMove, b: BlindMove) => a.move_number - b.move_number
-          );
-
-          // ✅ FIX: Explicitly type the map parameter
-          const sequence = sortedMoves.map((move: BlindMove) => ({
-            from: move.move_from,
-            to: move.move_to,
-            san: move.move_san,
-          }));
-
-          if (playerColor === 'white') {
-            whitePlayerId = playerId;
-            whiteMoves.push(...sequence);
-            whiteSubmitted = typedPlayerMoves.every(
-              (move: BlindMove) => move.is_submitted
-            );
-          } else {
-            blackPlayerId = playerId;
-            blackMoves.push(...sequence);
-            blackSubmitted = typedPlayerMoves.every(
-              (move: BlindMove) => move.is_submitted
-            );
-          }
-        });
-
-        // If we don't have color assignments yet, assign them
-        if (!whitePlayerId && !blackPlayerId) {
-          const shuffled = [...players].sort(() => Math.random() - 0.5);
-          whitePlayerId = shuffled[0].player_id;
-          blackPlayerId = shuffled[1].player_id;
-        }
+        // Check submission status
+        whiteSubmitted =
+          whitePlayerMoves.length > 0 &&
+          whitePlayerMoves.every((move) => move.is_submitted);
+        blackSubmitted =
+          blackPlayerMoves.length > 0 &&
+          blackPlayerMoves.every((move) => move.is_submitted);
       }
 
-      return {
+      const gameState = {
         gameId,
         whitePlayerId,
         blackPlayerId,
@@ -297,14 +325,24 @@ class BlindMovesService {
         blackSubmitted,
         bothSubmitted: whiteSubmitted && blackSubmitted,
       };
+
+      console.log('📊 Blind game state:', {
+        whiteMoves: gameState.whiteMoveCount,
+        blackMoves: gameState.blackMoveCount,
+        whiteSubmitted,
+        blackSubmitted,
+        bothSubmitted: gameState.bothSubmitted,
+      });
+
+      return gameState;
     } catch (error) {
-      console.error('Failed to get blind game state:', error);
+      console.error('💥 Failed to get blind game state:', error);
       return null;
     }
   }
 
   /**
-   * Check if current user is white or black
+   * Get player color with deterministic assignment
    */
   async getPlayerColor(gameId: string): Promise<'white' | 'black' | null> {
     try {
@@ -312,42 +350,38 @@ class BlindMovesService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+
       if (authError || !user) {
         console.error('❌ Not authenticated for getPlayerColor');
         return null;
       }
 
       console.log(
-        '🔍 Getting player color for user:',
+        '🎨 Getting player color for user:',
         user.id,
         'in game:',
         gameId
       );
 
-      // First, check if we already have moves for this player
-      const { data: moves, error } = await supabase
+      // Check existing moves first (for consistency)
+      const { data: existingMoves } = await supabase
         .from('game_blind_moves')
         .select('player_color')
         .eq('game_id', gameId)
         .eq('player_id', user.id)
         .limit(1);
 
-      if (error) {
-        console.error('❌ Error getting player color from moves:', error);
-      } else if (moves && moves.length > 0) {
-        console.log(
-          '✅ Found existing color from moves:',
-          moves[0].player_color
-        );
-        return moves[0].player_color;
+      if (existingMoves && existingMoves.length > 0) {
+        console.log('✅ Found existing color:', existingMoves[0].player_color);
+        return existingMoves[0].player_color;
       }
 
-      // If no moves yet, get players and assign colors deterministically
+      // Determine from room players (first joiner = white)
       const { data: players, error: playersError } = await supabase
         .from('game_room_players')
         .select('player_id, created_at')
         .eq('room_id', gameId)
-        .order('created_at', { ascending: true }); // ✅ Consistent ordering by join time
+        .order('created_at', { ascending: true });
 
       if (playersError || !players || players.length !== 2) {
         console.error(
@@ -357,45 +391,32 @@ class BlindMovesService {
         return null;
       }
 
-      console.log('👥 Room players (ordered by join time):', players);
-
-      // ✅ Deterministic color assignment: first to join = white, second = black
-      const player1 = players[0];
-      const player2 = players[1];
-
-      let assignedColor: 'white' | 'black';
-
-      if (user.id === player1.player_id) {
-        assignedColor = 'white'; // First player = white
-      } else if (user.id === player2.player_id) {
-        assignedColor = 'black'; // Second player = black
-      } else {
-        console.error('❌ User not found in room players!');
-        return null;
+      // First to join = white, second = black
+      if (user.id === players[0].player_id) {
+        console.log('🟡 Assigned WHITE (first to join)');
+        return 'white';
+      } else if (user.id === players[1].player_id) {
+        console.log('⚫ Assigned BLACK (second to join)');
+        return 'black';
       }
 
-      console.log('🎨 Assigned color:', assignedColor, 'to user:', user.id);
-      console.log(
-        '📋 Assignment logic: player1 (white):',
-        player1.player_id,
-        'player2 (black):',
-        player2.player_id
-      );
-
-      return assignedColor;
+      console.error('❌ User not found in room players!');
+      return null;
     } catch (error) {
-      console.error('❌ Failed to get player color:', error);
+      console.error('💥 Failed to get player color:', error);
       return null;
     }
   }
 
   /**
-   * Subscribe to real-time blind moves updates - FIXED RETURN TYPE
+   * Subscribe to blind moves updates with optimized queries
    */
   subscribeToBlindMoves(
     gameId: string,
     callback: (gameState: BlindGameState) => void
   ): () => void {
+    console.log('📡 Setting up blind moves subscription for:', gameId);
+
     const subscription = supabase
       .channel(`blind-moves-${gameId}`)
       .on(
@@ -406,11 +427,33 @@ class BlindMovesService {
           table: 'game_blind_moves',
           filter: `game_id=eq.${gameId}`,
         },
-        async () => {
-          console.log('🔄 Blind moves changed - refreshing...');
+        async (payload) => {
+          console.log('🔄 Blind moves changed:', payload.eventType);
+
+          // Refresh game state and notify
           const gameState = await this.getBlindGameState(gameId);
           if (gameState) {
             callback(gameState);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_rooms',
+          filter: `id=eq.${gameId}`,
+        },
+        async (payload) => {
+          console.log('🔄 Room status changed:', payload.new.status);
+
+          // If room transitioned to revealing, get final state
+          if (payload.new.status === 'revealing') {
+            const gameState = await this.getBlindGameState(gameId);
+            if (gameState) {
+              callback(gameState);
+            }
           }
         }
       )
@@ -418,14 +461,15 @@ class BlindMovesService {
         console.log('📡 Blind moves subscription status:', status);
       });
 
-    // ✅ Return a proper cleanup function
+    // Return cleanup function
     return () => {
+      console.log('❌ Cleaning up blind moves subscription');
       supabase.removeChannel(subscription);
     };
   }
 
   /**
-   * Clear all blind moves for a game (reset)
+   * Clear all blind moves (reset functionality)
    */
   async clearBlindMoves(
     gameId: string,
@@ -436,9 +480,13 @@ class BlindMovesService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
+
       if (authError || !user) {
-        throw new Error('Not authenticated');
+        console.error('❌ Not authenticated for clearBlindMoves');
+        return false;
       }
+
+      console.log('🧹 Clearing all blind moves for:', playerColor);
 
       const { error } = await supabase
         .from('game_blind_moves')
@@ -448,13 +496,27 @@ class BlindMovesService {
         .eq('player_color', playerColor);
 
       if (error) {
-        console.error('Error clearing blind moves:', error);
+        console.error('❌ Error clearing blind moves:', error);
         return false;
       }
 
+      console.log('✅ All blind moves cleared successfully');
       return true;
     } catch (error) {
-      console.error('Failed to clear blind moves:', error);
+      console.error('💥 Failed to clear blind moves:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if both players have submitted (for UI states)
+   */
+  async checkBothSubmitted(gameId: string): Promise<boolean> {
+    try {
+      const gameState = await this.getBlindGameState(gameId);
+      return gameState ? gameState.bothSubmitted : false;
+    } catch (error) {
+      console.error('💥 Failed to check submission status:', error);
       return false;
     }
   }

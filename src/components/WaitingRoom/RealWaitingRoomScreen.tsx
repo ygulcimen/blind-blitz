@@ -1,4 +1,4 @@
-// src/components/WaitingRoom/RealWaitingRoomScreen.tsx
+// src/components/WaitingRoom/RealWaitingRoomScreen.tsx - SIMPLIFIED: Let GameStateManager handle everything
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -8,18 +8,13 @@ import {
   ArrowLeft,
   Crown,
   Star,
-  Zap,
   Sword,
   Shield,
-  Clock,
   Trophy,
   Users,
-  Eye,
-  EyeOff,
-  Bot,
 } from 'lucide-react';
 
-export type GameMode = 'classic' | 'robot_chaos'; // ✅ Match GameScreen types
+export type GameMode = 'classic' | 'robot_chaos';
 
 interface RealPlayer {
   id: string;
@@ -32,7 +27,7 @@ interface RealPlayer {
 interface RoomData {
   id: string;
   name: string;
-  mode: 'classic' | 'robochaos'; // ✅ Keep database format
+  mode: 'classic' | 'robochaos';
   entry_fee: number;
   host_id: string;
   host_username: string;
@@ -42,7 +37,7 @@ interface RoomData {
 }
 
 interface RealWaitingRoomScreenProps {
-  onGameStart: (gameMode?: GameMode) => void; // ✅ Make it optional to match GameScreen
+  onGameStart: (gameMode?: GameMode) => void;
 }
 
 const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
@@ -65,7 +60,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     if (!gameId) return;
 
     try {
-      // Get room data
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
         .select('*')
@@ -77,7 +71,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
         return;
       }
 
-      // Get players in room
       const { data: roomPlayers, error: playersError } = await supabase
         .from('game_room_players')
         .select('*')
@@ -91,7 +84,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
 
       setRoomData(room);
 
-      // Transform players data
       const transformedPlayers: RealPlayer[] = (roomPlayers || []).map(
         (player) => ({
           id: player.player_id,
@@ -117,17 +109,13 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   }, [gameId]);
 
   // Set up real-time subscriptions
-  // Update the real-time subscription part (around line 108):
-  // Set up real-time subscriptions - FIXED VERSION
-  // SIMPLEST VERSION - No type checking needed
-  // Replace the existing useEffect subscription with this:
   useEffect(() => {
     if (!gameId) return;
 
-    console.log('🔗 Setting up subscription for room:', gameId);
+    console.log('Setting up subscription for room:', gameId);
 
     const subscription = supabase
-      .channel(`room-${gameId}-${Date.now()}`) // ✅ Unique channel name
+      .channel(`room-${gameId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -135,9 +123,8 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           schema: 'public',
           table: 'game_room_players',
         },
-        (payload) => {
-          console.log('🔄 Player table change:', payload);
-          console.log('🔄 Reloading room data...');
+        () => {
+          console.log('Player table changed - reloading room data');
           loadRoomData();
         }
       )
@@ -148,19 +135,15 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           schema: 'public',
           table: 'game_rooms',
         },
-        (payload) => {
-          console.log('🔄 Room table change:', payload);
-          console.log('🔄 Reloading room data...');
+        () => {
+          console.log('Room table changed - reloading room data');
           loadRoomData();
         }
       )
-      .subscribe((status, err) => {
-        console.log('📡 Subscription status:', status);
-        if (err) console.error('❌ Subscription error:', err);
-      });
+      .subscribe();
 
     return () => {
-      console.log('❌ Cleaning up subscription');
+      console.log('Cleaning up subscription');
       supabase.removeChannel(subscription);
     };
   }, [gameId]);
@@ -175,7 +158,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
 
       const newReadyState = !currentPlayer.ready;
 
-      // Update ready state in database
       const { error } = await supabase
         .from('game_room_players')
         .update({ ready: newReadyState })
@@ -187,7 +169,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
         return;
       }
 
-      // Optimistically update local state
       setPlayers((prev) =>
         prev.map((p) =>
           p.id === playerData.id ? { ...p, ready: newReadyState } : p
@@ -207,27 +188,51 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
       navigate('/games');
     } catch (error) {
       console.error('Failed to leave room:', error);
-      navigate('/games'); // Navigate anyway
+      navigate('/games');
     }
   };
 
   // Check if all players are ready
   const allPlayersReady = players.length === 2 && players.every((p) => p.ready);
 
-  // Start game when all ready
+  // SIMPLIFIED: Just start countdown when all ready - let GameStateManager initialize everything
   useEffect(() => {
     if (allPlayersReady && !gameStarting && roomData) {
-      // ✅ Check roomData exists
+      console.log('All players ready - starting countdown');
       setGameStarting(true);
 
       const countdownInterval = setInterval(() => {
         setCountdown((prev) => {
+          // In the useEffect where countdown reaches 0, add this:
           if (prev <= 1) {
             clearInterval(countdownInterval);
-            // ✅ Map database mode to GameScreen mode
+
+            // UPDATE: Actually start the game in database
+            const startGame = async () => {
+              try {
+                await supabase
+                  .from('game_rooms')
+                  .update({ status: 'blind' })
+                  .eq('id', gameId);
+
+                console.log('Game started - room status updated to blind');
+              } catch (error) {
+                console.error('Failed to start game:', error);
+              }
+            };
+
+            startGame();
+
+            // Map database mode to GameScreen mode
             const gameScreenMode: GameMode =
               roomData.mode === 'robochaos' ? 'robot_chaos' : 'classic';
-            setTimeout(() => onGameStart(gameScreenMode), 500);
+
+            console.log('Starting game with mode:', gameScreenMode);
+
+            setTimeout(() => {
+              onGameStart(gameScreenMode);
+            }, 500);
+
             return 0;
           }
           return prev - 1;
@@ -236,7 +241,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     }
   }, [allPlayersReady, gameStarting, onGameStart, roomData]);
 
-  // Get mode configuration - map database mode to display mode
+  // Get mode configuration
   const getModeConfig = (mode: 'classic' | 'robochaos') => {
     switch (mode) {
       case 'classic':
@@ -292,7 +297,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <div className="text-2xl font-bold mb-2 text-red-400">
-            Room Not Found
+            {error || 'Room Not Found'}
           </div>
           <div className="text-gray-400 mb-6">
             {error || 'This battle arena no longer exists'}
@@ -310,7 +315,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
 
   const mode = getModeConfig(roomData.mode);
   const prizePool = roomData.entry_fee * 2;
-  const currentPlayer = players.find((p) => p.id === playerData?.id);
 
   // Countdown screen
   if (gameStarting && countdown > 0) {
@@ -328,6 +332,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           <div className="text-6xl mb-6 animate-bounce drop-shadow-2xl">
             {mode.icon}
           </div>
+
           <h1 className="text-5xl font-black mb-3 tracking-wider">
             <span
               className={`bg-gradient-to-r ${mode.gradient} bg-clip-text text-transparent animate-pulse`}
@@ -431,7 +436,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="max-w-5xl w-full">
             <div className="flex items-center justify-center gap-10 mb-6">
-              {/* Show current players or waiting message */}
               {players.length === 0 ? (
                 <div className="text-center">
                   <div className="text-6xl mb-4">👤</div>
@@ -444,7 +448,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                 </div>
               ) : players.length === 1 ? (
                 <>
-                  {/* Show single player + waiting slot */}
                   <PlayerCard
                     player={players[0]}
                     mode={mode}
@@ -457,7 +460,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                 </>
               ) : (
                 <>
-                  {/* Show both players */}
                   <PlayerCard
                     player={players[0]}
                     mode={mode}
@@ -503,7 +505,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   );
 };
 
-// Player Card Component
+// Keep the same PlayerCard, WaitingSlot, and VSDisplay components...
 const PlayerCard: React.FC<{
   player: RealPlayer;
   mode: any;
@@ -596,7 +598,6 @@ const PlayerCard: React.FC<{
   );
 };
 
-// Waiting Slot Component
 const WaitingSlot: React.FC<{ mode: any }> = ({ mode }) => {
   return (
     <div className="relative group">
@@ -617,7 +618,6 @@ const WaitingSlot: React.FC<{ mode: any }> = ({ mode }) => {
   );
 };
 
-// VS Display Component
 const VSDisplay: React.FC<{ mode: any; prizePool: number }> = ({
   mode,
   prizePool,
@@ -651,4 +651,5 @@ const VSDisplay: React.FC<{ mode: any; prizePool: number }> = ({
     </div>
   );
 };
+
 export default RealWaitingRoomScreen;

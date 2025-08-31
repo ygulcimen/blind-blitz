@@ -227,7 +227,8 @@ const MultiplayerBlindPhaseScreen: React.FC<
   // Handle piece drop with OPTIMISTIC UI
   const handleDrop = (from: string, to: string, piece: string): boolean => {
     if (isProcessingMove) {
-      console.log('🚫 Move in progress, ignoring');
+      console.log('Move in progress, ignoring');
+      setTimeout(() => setIsProcessingMove(false), 1000); // Reset after 1 second if stuck
       return false;
     }
 

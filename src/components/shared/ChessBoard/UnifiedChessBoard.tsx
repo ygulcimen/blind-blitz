@@ -4,6 +4,12 @@ import { Chessboard } from 'react-chessboard';
 import type { Chess } from 'chess.js';
 import type { SquareIndicator } from '../../../services/chess';
 
+type MoveHint =
+  | { to: string; kind: 'quiet' }
+  | { to: string; kind: 'capture' }
+  | { to: string; kind: 'enpassant' }
+  | { to: string; kind: 'castle' };
+
 interface UnifiedChessBoardProps {
   // Core chess props
   fen: string;
@@ -48,22 +54,41 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
 }) => {
   // State
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-  const [legalMoves, setLegalMoves] = useState<string[]>([]);
+  const [legalMoves, setLegalMoves] = useState<MoveHint[]>([]);
 
   // Legal moves calculation
   const getPossibleMoves = useCallback(
-    (square: string): string[] => {
+    (square: string): MoveHint[] => {
       if (!game || gameEnded) return [];
 
       try {
-        const moves = game.moves({ square: square as any, verbose: true });
-        return moves.map((move) => move.to);
+        const moves = game.moves({
+          square: square as any,
+          verbose: true,
+        }) as any[];
+        return moves.map((m) => {
+          // flags: 'c' capture, 'e' en passant, 'k' king-side castle, 'q' queen-side castle
+          if (m.flags?.includes('e'))
+            return { to: m.to, kind: 'enpassant' } as MoveHint;
+          if (m.flags?.includes('k') || m.flags?.includes('q'))
+            return { to: m.to, kind: 'castle' } as MoveHint;
+          if (m.flags?.includes('c'))
+            return { to: m.to, kind: 'capture' } as MoveHint;
+          return { to: m.to, kind: 'quiet' } as MoveHint;
+        });
       } catch {
         return [];
       }
     },
     [game, gameEnded]
   );
+  const getEffectiveTurn = useCallback((): 'w' | 'b' => {
+    if (phase === 'live') {
+      if (currentTurn) return currentTurn;
+      if (game) return game.turn() as 'w' | 'b';
+    }
+    return 'w';
+  }, [phase, currentTurn, game]);
 
   // Square click handler
   const handleSquareClick = useCallback(
@@ -78,7 +103,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       }
 
       // If a piece is selected and clicking on legal move, make the move
-      if (selectedSquare && legalMoves.includes(square)) {
+      if (selectedSquare && legalMoves.some((m) => m.to === square)) {
         const piece = game?.get(selectedSquare as any);
         if (piece && onPieceDrop) {
           const success = onPieceDrop(
@@ -98,14 +123,13 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       const piece = game?.get(square as any);
       if (piece && !gameEnded) {
         // Check if it's the correct player's turn in live phase
-        if (phase === 'live' && game) {
-          const currentPlayer = game.turn();
-          const pieceColor = piece.color;
+        if (phase === 'live') {
+          const turn = getEffectiveTurn();
+          const pieceColor = piece.color as 'w' | 'b';
           if (
-            (currentPlayer === 'w' && pieceColor !== 'w') ||
-            (currentPlayer === 'b' && pieceColor !== 'b')
+            (turn === 'w' && pieceColor !== 'w') ||
+            (turn === 'b' && pieceColor !== 'b')
           ) {
-            // Wrong player's piece, don't select
             setSelectedSquare(null);
             setLegalMoves([]);
             return;
@@ -113,8 +137,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
         }
 
         setSelectedSquare(square);
-        const moves = getPossibleMoves(square);
-        setLegalMoves(moves);
+        setLegalMoves(getPossibleMoves(square));
       } else {
         setSelectedSquare(null);
         setLegalMoves([]);
@@ -156,9 +179,9 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       //   the piece will stay where dropped (no bounce).
       // - If parent later rejects (server error), parent will rollback `fen`,
       //   causing a single smooth revert—no initial snap-back.
-      return true; // <-- return true to prevent the instant snap-back
+      return accepted; // <-- return true to prevent the instant snap-back
     },
-    [gameEnded, onPieceDrop, legalMoves]
+    [gameEnded, onPieceDrop]
   );
 
   // Drag begin handler
@@ -167,12 +190,12 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       if (gameEnded) return false;
 
       // Check if it's the correct player's turn in live phase
-      if (phase === 'live' && game) {
-        const currentPlayer = game.turn();
-        const pieceColor = piece[0];
+      if (phase === 'live') {
+        const turn = getEffectiveTurn();
+        const pieceColor = piece[0] as 'w' | 'b';
         if (
-          (currentPlayer === 'w' && pieceColor !== 'w') ||
-          (currentPlayer === 'b' && pieceColor !== 'b')
+          (turn === 'w' && pieceColor !== 'w') ||
+          (turn === 'b' && pieceColor !== 'b')
         ) {
           return false;
         }
@@ -180,8 +203,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
 
       // Show legal moves for the piece being dragged
       setSelectedSquare(square);
-      const moves = getPossibleMoves(square);
-      setLegalMoves(moves);
+      setLegalMoves(getPossibleMoves(square));
 
       return true;
     },
@@ -200,19 +222,19 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       if (gameEnded) return false;
 
       // In live phase, only allow current player's pieces
-      if (phase === 'live' && game) {
-        const currentPlayer = game.turn();
-        const pieceColor = piece[0];
+      if (phase === 'live') {
+        const turn = getEffectiveTurn();
+        const pieceColor = piece[0] as 'w' | 'b';
         return (
-          (currentPlayer === 'w' && pieceColor === 'w') ||
-          (currentPlayer === 'b' && pieceColor === 'b')
+          (turn === 'w' && pieceColor === 'w') ||
+          (turn === 'b' && pieceColor === 'b')
         );
       }
 
       // In blind phase, allow all pieces (but check turn validation in drag begin)
       return true;
     },
-    [gameEnded, phase, game]
+    [gameEnded, phase, getEffectiveTurn]
   );
 
   // Square styles
@@ -241,17 +263,24 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
     }
 
     // Legal move hints
-    legalMoves.forEach((square) => {
-      if (square !== selectedSquare) {
-        styles[square] = {
-          ...styles[square],
-          backgroundColor: 'rgba(0, 255, 0, 0.12)', // Subtle green dots
-          borderRadius: '50%',
-          transform: 'scale(0.9)',
+    legalMoves.forEach((m) => {
+      if (m.to === selectedSquare) return;
+      const base = styles[m.to] || {};
+      const occupied = !!game?.get(m.to as any);
+      if (occupied) {
+        styles[m.to] = {
+          ...base,
+          boxShadow: 'inset 0 0 0 6px rgba(0, 200, 0, 0.45)',
+        };
+      } else {
+        styles[m.to] = {
+          ...base,
+          // small dot ~12% radius
+          backgroundImage:
+            'radial-gradient(circle at 50% 50%, rgba(0,200,0,0.75) 0 12%, rgba(0,0,0,0) 13%)',
         };
       }
     });
-
     // Blind phase piece indicators
     if (phase === 'blind') {
       Object.entries(pieceIndicators).forEach(([square, indicator]) => {
@@ -284,6 +313,24 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
     legalMoves,
     pieceIndicators,
   ]);
+
+  const handleMouseOverSquare = useCallback(
+    (square: string) => {
+      if (selectedSquare || gameEnded || !game) return;
+      const piece = game.get(square as any);
+      if (!piece) return;
+      if (phase === 'live') {
+        const turn = getEffectiveTurn();
+        if (piece.color !== turn) return;
+      }
+      setLegalMoves(getPossibleMoves(square));
+    },
+    [selectedSquare, gameEnded, game, phase, getEffectiveTurn, getPossibleMoves]
+  );
+
+  const handleMouseOutSquare = useCallback(() => {
+    if (!selectedSquare) setLegalMoves([]);
+  }, [selectedSquare]);
 
   // Board styling
   const boardContainerClass = useMemo(() => {
@@ -354,6 +401,12 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
         onPieceDragBegin={handlePieceDragBegin}
         onPieceDragEnd={handlePieceDragEnd}
         onSquareClick={handleSquareClick}
+        onMouseOverSquare={handleMouseOverSquare}
+        onMouseOutSquare={handleMouseOutSquare}
+        onSquareRightClick={() => {
+          setSelectedSquare(null);
+          setLegalMoves([]);
+        }}
         isDraggablePiece={isDraggablePiece}
         boardWidth={boardWidth}
         customSquareStyles={getSquareStyles}

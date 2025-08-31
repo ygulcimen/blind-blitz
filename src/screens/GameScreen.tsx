@@ -10,7 +10,6 @@ import {
 //import BlindPhaseScreen from '../components/BlindPhase/BlindPhaseScreen';
 import RobotChaosBlindPhase from '../components/RobotChaos/RobotChaosBlindPhase';
 import AnimatedRevealScreen from '../components/AnimatedReveal/AnimatedRevealScreen';
-import LivePhaseScreen from '../components/LivePhase/LivePhaseScreen';
 import RealWaitingRoomScreen from '../components/WaitingRoom/RealWaitingRoomScreen';
 import MultiplayerBlindPhaseScreen from '../components/BlindPhase/MultiplayerBlindPhaseScreen';
 import MultiplayerLivePhaseScreen from '../components/LivePhase/MultiplayerLivePhaseScreen';
@@ -67,7 +66,8 @@ const GameScreen: React.FC = () => {
   // ─────────────────────────────────────────────────────────────
 
   // If game hasn't started yet, show waiting room
-  if (!gameStarted) {
+  // If game hasn't started yet, show waiting room
+  if (gameState.gameState.phase === 'WAITING') {
     return <RealWaitingRoomScreen onGameStart={handleGameStart} />;
   }
 

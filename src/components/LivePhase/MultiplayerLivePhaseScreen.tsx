@@ -553,18 +553,24 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   }, [drawOffer]);
 
   // Add this debug useEffect after your other useEffects
+  const lastDebugRef = React.useRef<{
+    fen: string | null;
+    turn: string | null;
+    mc: number | null;
+  }>({ fen: null, turn: null, mc: null });
   useEffect(() => {
-    console.log('🐛 DEBUG STATE:', {
-      loading,
-      liveGameState,
-      myColor,
-      chessGame: chessGame?.fen(),
-      currentUser: currentUser?.username,
-      isMyTurn,
-      gameEnded: liveGameState?.game_ended,
-      currentTurn: liveGameState?.current_turn,
-    });
-  }, [loading, liveGameState, myColor, chessGame, currentUser, isMyTurn]);
+    const fen = chessGame?.fen() ?? null;
+    const turn = liveGameState?.current_turn ?? null;
+    const mc = liveGameState?.move_count ?? null;
+    if (
+      fen !== lastDebugRef.current.fen ||
+      turn !== lastDebugRef.current.turn ||
+      mc !== lastDebugRef.current.mc
+    ) {
+      lastDebugRef.current = { fen, turn, mc };
+      console.log('🐛 DEBUG STATE:', { fen, turn, mc });
+    }
+  }, [chessGame, liveGameState?.current_turn, liveGameState?.move_count]);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎬 RENDER
