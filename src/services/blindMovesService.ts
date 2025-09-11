@@ -119,8 +119,6 @@ class BlindMovesService {
         san,
       });
 
-      // Use upsert to handle conflicts gracefully
-      // Replace the upsert with insert
       const { error } = await supabase.from('game_blind_moves').insert({
         game_id: gameId,
         player_id: user.id,
@@ -129,6 +127,7 @@ class BlindMovesService {
         move_from: from,
         move_to: to,
         move_san: san,
+        // Remove is_valid field completely
         is_submitted: false,
       });
 
@@ -191,9 +190,8 @@ class BlindMovesService {
     }
   }
 
-  /**
-   * Submit blind moves - triggers database automation
-   */
+  // Updated submitBlindMoves function for your backend architecture
+  // In your blindMovesService.ts, replace the submitBlindMoves function:
   async submitBlindMoves(
     gameId: string,
     playerColor: 'white' | 'black'
@@ -209,23 +207,36 @@ class BlindMovesService {
         return false;
       }
 
-      console.log('📤 Submitting blind moves for:', playerColor);
-
-      // Mark all player's moves as submitted
-      // Database trigger will check if both players submitted and auto-transition
-      const { error } = await supabase
+      // Submit moves (your existing logic)
+      const { error: updateError } = await supabase
         .from('game_blind_moves')
-        .update({ is_submitted: true })
+        .update({
+          is_submitted: true,
+          phase_completed_at: new Date().toISOString(),
+        })
         .eq('game_id', gameId)
         .eq('player_id', user.id)
-        .eq('player_color', playerColor);
+        .eq('player_color', playerColor)
+        .eq('is_submitted', false);
 
-      if (error) {
-        console.error('❌ Error submitting blind moves:', error);
+      if (updateError) {
+        console.error('❌ Error submitting blind moves:', updateError);
         return false;
       }
 
-      console.log('✅ Blind moves submitted successfully');
+      // Check if game should transition
+      const { data: result, error: checkError } = await supabase.rpc(
+        'check_game_completion',
+        { p_game_id: gameId }
+      );
+
+      if (checkError) {
+        console.error('❌ Error checking game completion:', checkError);
+      } else {
+        console.log('🎯 Game completion check:', result);
+      }
+
+      console.log('✅ Moves submitted successfully');
       return true;
     } catch (error) {
       console.error('💥 Failed to submit blind moves:', error);

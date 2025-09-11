@@ -9,16 +9,18 @@ import {
   type LiveGameState,
   type LiveMove,
   type DrawOffer,
-  type GameResult,
 } from '../../services/liveMovesService';
 import { WarriorCard } from './WarriorCard';
 import { WarMoveHistory } from './WarMoveHistory';
 import { WarActions } from './WarActions';
 import { WarModal } from './WarModal';
-import { EnhancedWarEndModal } from './EnhancedWarEndModal';
 import { supabase } from '../../lib/supabase';
 import { blindMovesService } from '../../services/blindMovesService';
-import { useServerTimer } from '../../hooks/useServerTimer';
+import { useSimplifiedTimer } from '../../hooks/useSimplifiedTimer';
+import { PotDisplay } from './PotDisplay';
+import { BlindPhaseGoldSummary } from './BlindPhaseGoldSummary';
+import { GameEndModal } from '../shared/GameEndModal/GameEndModal';
+import type { GameResult } from '../../types/GameTypes';
 
 interface MultiplayerLivePhaseScreenProps {
   gameState: any; // Your existing game state manager
@@ -223,11 +225,50 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
     initializeMultiplayerGame();
   }, [gameId, currentUser, gameState.gameState.reveal.finalFen]); // Added finalFen dependency
-
+  useEffect(() => {
+    // Clear any stuck pending state when component loads
+    pendingOptimisticIdRef.current = null;
+    setIsProcessingMove(false);
+  }, [gameId]);
   // ═══════════════════════════════════════════════════════════════
   // 📡 REAL-TIME SUBSCRIPTIONS
   // ═══════════════════════════════════════════════════════════════
+  // Heartbeat monitoring
+  useEffect(() => {
+    if (!gameId || !liveGameState || loading) return;
 
+    liveMovesService.startHeartbeatMonitoring(gameId);
+
+    return () => {
+      liveMovesService.stopHeartbeatMonitoring(gameId);
+    };
+  }, [gameId, liveGameState, loading]);
+
+  // Handle browser events
+  useEffect(() => {
+    if (!gameId) return;
+
+    const handleBeforeUnload = () => {
+      liveMovesService.leaveGame(gameId);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      liveMovesService.leaveGame(gameId);
+    };
+  }, [gameId]);
+
+  // Handle abandonment results
+  useEffect(() => {
+    if (
+      liveGameState?.game_ended &&
+      liveGameState?.game_result?.type === 'abandonment'
+    ) {
+      handleGameEnd(liveGameState.game_result);
+    }
+  }, [liveGameState?.game_ended, liveGameState?.game_result]);
   useEffect(() => {
     if (!gameId || !myColor) return;
 
@@ -308,6 +349,19 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     return unsubscribe;
     // ⛔ was: [gameId, myColor, chessGame, currentUser, liveMoves]
   }, [gameId, myColor]);
+
+  // Add this after your other useEffects in MultiplayerLivePhaseScreen.tsx
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (pendingOptimisticIdRef.current) {
+        console.log('Clearing stuck pending state');
+        pendingOptimisticIdRef.current = null;
+        setIsProcessingMove(false);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
   // Timer logic for counting down
 
   // ═══════════════════════════════════════════════════════════════
@@ -321,6 +375,10 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const handleDrop = (from: string, to: string, piece: string): boolean => {
     if (isProcessingMove) return false;
     if (!liveGameState || !chessGame || !myColor) return false;
+    if (pendingOptimisticIdRef.current) {
+      console.log('Move already pending, ignoring');
+      return false;
+    }
 
     if (liveGameState.game_ended) {
       showViolations([createViolation.gameEnded()]);
@@ -368,21 +426,35 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     // 2) add optimistic move so lastMove highlights correctly
     const optimisticId = `optimistic-${Date.now()}`;
     pendingOptimisticIdRef.current = optimisticId;
-    setLiveMoves((prev) => [
-      ...prev,
-      {
-        id: optimisticId,
-        game_id: gameId!,
-        player_id: currentUser!.id,
-        move_number:
-          (prev.length > 0 ? prev[prev.length - 1].move_number : 0) + 1,
-        move_from: from,
-        move_to: to,
-        move_san: move.san,
-        move_fen: testChess.fen(),
-        created_at: new Date().toISOString(),
-      } as any,
-    ]);
+    // In handleDrop, add this logging before creating the optimistic move:
+    setLiveMoves((prev) => {
+      const currentMoveCount = liveGameState?.move_count || 0;
+      const calculatedMoveNumber = currentMoveCount + 1;
+
+      console.log('🔍 OPTIMISTIC MOVE DEBUG:', {
+        currentMoveCount,
+        calculatedMoveNumber,
+        existingMovesLength: prev.length,
+        lastExistingMoveNumber:
+          prev.length > 0 ? prev[prev.length - 1].move_number : 'none',
+        liveGameStateMoveCount: liveGameState?.move_count,
+      });
+
+      return [
+        ...prev,
+        {
+          id: optimisticId,
+          game_id: gameId!,
+          player_id: currentUser!.id,
+          move_number: calculatedMoveNumber,
+          move_from: from,
+          move_to: to,
+          move_san: move.san,
+          move_fen: testChess.fen(),
+          created_at: new Date().toISOString(),
+        } as any,
+      ];
+    });
 
     // 3) let server confirm
     liveMovesService
@@ -462,7 +534,19 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     console.log('❌ Declining draw...');
     await liveMovesService.respondToDrawOffer(gameId, false);
   };
-
+  useEffect(() => {
+    if (
+      liveGameState?.game_ended &&
+      liveGameState?.game_result &&
+      !gameResult
+    ) {
+      console.log(
+        '🏁 Game ended detected from server:',
+        liveGameState.game_result
+      );
+      handleGameEnd(liveGameState.game_result);
+    }
+  }, [liveGameState?.game_ended, liveGameState?.game_result, gameResult]);
   const handleGameEnd = (result: GameResult) => {
     console.log('🏁 Game ended:', result);
     setGameResult(result);
@@ -489,7 +573,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     setTimeout(() => {
       setShowGameEndModal(true);
       setGameEndStatus(null);
-    }, 2000);
+    }, 1000);
   };
 
   const handleRematch = () => {
@@ -508,8 +592,37 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       window.location.href = '/games';
     }
   };
-  useServerTimer(gameId, liveGameState, setLiveGameState, handleGameEnd);
+  const displayTimes = useSimplifiedTimer(
+    liveGameState,
+    async (timedOutPlayer) => {
+      if (gameId) {
+        await liveMovesService.handleTimeout(gameId, timedOutPlayer);
+      }
+    }
+  );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (liveGameState && displayTimes) {
+        const formatTime = (ms: number) => {
+          const minutes = Math.floor(ms / 60000);
+          const seconds = Math.floor((ms % 60000) / 1000);
+          return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        };
 
+        console.log('🕐 TIMER DEBUG:', {
+          serverWhite: formatTime(liveGameState.white_time_ms),
+          serverBlack: formatTime(liveGameState.black_time_ms),
+          displayWhite: formatTime(displayTimes.white),
+          displayBlack: formatTime(displayTimes.black),
+          currentTurn: liveGameState.current_turn,
+          gameEnded: liveGameState.game_ended,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    }, 2000); // Log every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [liveGameState, displayTimes]);
   // ═══════════════════════════════════════════════════════════════
   // 🎨 COMPUTED VALUES
   // ═══════════════════════════════════════════════════════════════
@@ -635,7 +748,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                 <WarriorCard
                   player="black"
                   playerData={players.black}
-                  timeMs={liveGameState.black_time_ms}
+                  timeMs={displayTimes.black} // ✅ Use hook timer, not server timer
                   active={
                     liveGameState.current_turn === 'black' &&
                     !liveGameState.game_ended
@@ -646,7 +759,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                 <WarriorCard
                   player="white"
                   playerData={players.white}
-                  timeMs={liveGameState.white_time_ms}
+                  timeMs={displayTimes.white} // ✅ Use hook timer, not server timer
                   active={
                     liveGameState.current_turn === 'white' &&
                     !liveGameState.game_ended
@@ -661,7 +774,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                 <WarriorCard
                   player="white"
                   playerData={players.white}
-                  timeMs={liveGameState.white_time_ms}
+                  timeMs={displayTimes.white} // ✅ Use hook timer, not server timer
                   active={
                     liveGameState.current_turn === 'white' &&
                     !liveGameState.game_ended
@@ -672,7 +785,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                 <WarriorCard
                   player="black"
                   playerData={players.black}
-                  timeMs={liveGameState.black_time_ms}
+                  timeMs={displayTimes.black} // ✅ Use hook timer, not server timer
                   active={
                     liveGameState.current_turn === 'black' &&
                     !liveGameState.game_ended
@@ -719,23 +832,14 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       <div className="w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 p-6 flex flex-col relative">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col h-full">
-          <div className="flex-1 mb-6">
+          <div className="mb-3 space-y-2">
+            <PotDisplay gameId={gameId!} />
+            <BlindPhaseGoldSummary gameId={gameId!} />
+          </div>
+          <div className="flex-1  overflow-hidden">
             <WarMoveHistory
               liveMoves={liveMoves.map((move) => move.move_san)}
               blindMoves={gameState.gameState.reveal.moveLog || []}
-            />
-          </div>
-          <div className="flex-shrink-0">
-            <WarActions
-              gameEnded={liveGameState.game_ended}
-              drawOffered={currentDrawOffer}
-              currentTurn={liveGameState.current_turn === 'white' ? 'w' : 'b'}
-              onResign={() => setShowResignConfirm(true)}
-              onOfferDraw={() => setShowDrawOfferConfirm(true)}
-              onAcceptDraw={handleAcceptDraw}
-              onDeclineDraw={handleDeclineDraw}
-              onRematch={handleRematch}
-              onLeave={handleLeaveTable}
             />
           </div>
         </div>
@@ -765,11 +869,14 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       />
 
       {/* ENHANCED GAME END MODAL */}
-      <EnhancedWarEndModal
+      <GameEndModal
         isOpen={showGameEndModal}
         gameResult={gameResult}
+        gameId={gameId!}
+        myColor={myColor!}
         onRematch={handleRematch}
-        onLeave={() => setShowGameEndModal(false)}
+        onReturnToLobby={() => (window.location.href = '/games')}
+        onClose={() => setShowGameEndModal(false)}
       />
     </div>
   );

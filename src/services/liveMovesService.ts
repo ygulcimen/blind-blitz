@@ -1,6 +1,7 @@
 // src/services/liveMovesService.ts - REAL-TIME MULTIPLAYER CHESS
 import { supabase } from '../lib/supabase';
 import { Chess } from 'chess.js';
+import type { GameResult } from '../types/GameTypes';
 
 export interface LiveMove {
   id: string;
@@ -38,12 +39,6 @@ export interface LiveGameState {
   updated_at: string;
 }
 
-export interface GameResult {
-  type: 'checkmate' | 'draw' | 'resignation' | 'timeout' | 'abort';
-  winner: 'white' | 'black' | 'draw';
-  reason: string;
-}
-
 export interface DrawOffer {
   id: string;
   game_id: string;
@@ -58,6 +53,114 @@ class LiveMovesService {
   /**
    * Initialize live game after blind phase ends
    */
+  private heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private readonly HEARTBEAT_INTERVAL = 120000; // 2 minutes instead of 30 seconds
+  private readonly ABANDONMENT_THRESHOLD = 300000; // 5 minutes instead of 90 seconds
+  startHeartbeatMonitoring(gameId: string): void {
+    this.stopHeartbeatMonitoring(gameId);
+
+    const interval = setInterval(async () => {
+      await this.sendHeartbeat(gameId);
+      await this.checkForAbandonment(gameId);
+    }, this.HEARTBEAT_INTERVAL);
+
+    this.heartbeatIntervals.set(gameId, interval);
+  }
+
+  /**
+   * Send heartbeat ping
+   */
+  private async sendHeartbeat(gameId: string): Promise<void> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Only update player_presence table, not game_live_state
+      await supabase.from('player_presence').upsert(
+        {
+          player_id: user.id,
+          game_id: gameId,
+          last_ping: new Date().toISOString(),
+          is_online: true,
+        },
+        {
+          onConflict: 'player_id,game_id',
+        }
+      );
+
+      // Remove any console.log here to reduce spam
+    } catch (error) {
+      // Silent fail to reduce console spam
+    }
+  }
+
+  /**
+   * Check for player abandonment
+   */
+  private async checkForAbandonment(gameId: string): Promise<void> {
+    try {
+      const gameState = await this.getGameState(gameId);
+      if (!gameState || gameState.game_ended) return;
+
+      const threshold = new Date(Date.now() - this.ABANDONMENT_THRESHOLD);
+
+      const { data: presenceData } = await supabase
+        .from('player_presence')
+        .select('*')
+        .eq('game_id', gameId)
+        .gte('last_ping', threshold.toISOString());
+
+      const activePlayers = presenceData || [];
+      const playerIds = [gameState.white_player_id, gameState.black_player_id];
+
+      const abandonedPlayer = playerIds.find(
+        (playerId) => !activePlayers.some((p) => p.player_id === playerId)
+      );
+
+      if (abandonedPlayer) {
+        await this.handlePlayerAbandonment(gameId, abandonedPlayer);
+        this.stopHeartbeatMonitoring(gameId);
+      }
+    } catch (error) {
+      console.error('Error checking for abandonment:', error);
+    }
+  }
+
+  /**
+   * Stop heartbeat monitoring
+   */
+  stopHeartbeatMonitoring(gameId: string): void {
+    const interval = this.heartbeatIntervals.get(gameId);
+    if (interval) {
+      clearInterval(interval);
+      this.heartbeatIntervals.delete(gameId);
+    }
+  }
+
+  /**
+   * Clean up player presence when leaving game
+   */
+  async leaveGame(gameId: string): Promise<void> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('player_presence')
+        .update({ is_online: false })
+        .eq('player_id', user.id)
+        .eq('game_id', gameId);
+
+      this.stopHeartbeatMonitoring(gameId);
+    } catch (error) {
+      console.error('Error leaving game:', error);
+    }
+  }
+
   private parseTimeControl(timeControl: string): {
     minutes: number;
     increment: number;
@@ -65,12 +168,6 @@ class LiveMovesService {
     const parts = timeControl.split('+');
     const minutes = parseInt(parts[0]) || 3; // Default to 3 minutes
     const increment = parseInt(parts[1]) || 2; // Default to 2 seconds increment
-
-    console.log('⏱️ Parsed time control:', {
-      input: timeControl,
-      minutes,
-      increment,
-    });
 
     return { minutes, increment };
   }
@@ -81,12 +178,6 @@ class LiveMovesService {
     startingFen: string
   ): Promise<LiveGameState | null> {
     try {
-      console.log('🎯 Initializing live game:', {
-        gameId,
-        whitePlayerId,
-        blackPlayerId,
-      });
-
       const { data: existingState, error: checkError } = await supabase
         .from('game_live_state')
         .select('*')
@@ -94,7 +185,6 @@ class LiveMovesService {
         .single();
 
       if (existingState && !checkError) {
-        console.log('✅ Live game already exists, returning existing state');
         return existingState;
       }
 
@@ -185,7 +275,6 @@ class LiveMovesService {
       }
 
       // Check if it's the player's turn
-      // Check if it's the player's turn using CHESS POSITION as source of truth
       const playerColor =
         gameState.white_player_id === user.id ? 'white' : 'black';
       const chess = new Chess(gameState.current_fen);
@@ -209,8 +298,7 @@ class LiveMovesService {
         return { success: false, error: 'Invalid move' };
       }
 
-      // Calculate time taken (mock for now, you can implement real timing)
-      // ✅ Calculate REAL time taken since last move
+      // Calculate time taken
       const currentTime = new Date().toISOString();
       const lastMoveTime = new Date(gameState.last_move_time || currentTime);
       const timeTaken = Math.max(0, Date.now() - lastMoveTime.getTime());
@@ -228,7 +316,6 @@ class LiveMovesService {
           ? gameState.white_time_ms
           : gameState.black_time_ms;
 
-      // ✅ Subtract actual time taken, add increment
       const newTimeRemaining = Math.max(
         0,
         currentPlayerTime - timeTaken + timeIncrement
@@ -240,12 +327,23 @@ class LiveMovesService {
       const isDraw = chess.isDraw();
       const gameEnded = isCheckmate || isDraw;
 
+      // Get the next move number directly from database
+      const { data: lastMove } = await supabase
+        .from('game_live_moves')
+        .select('move_number')
+        .eq('game_id', gameId)
+        .order('move_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const nextMoveNumber = (lastMove?.move_number || 0) + 1;
+
       // Insert the move
       const { data: moveData, error: moveError } = await supabase
         .from('game_live_moves')
         .insert({
           game_id: gameId,
-          move_number: gameState.move_count + 1,
+          move_number: nextMoveNumber,
           player_color: playerColor,
           player_id: user.id,
           move_from: from,
@@ -273,14 +371,15 @@ class LiveMovesService {
       if (isCheckmate) {
         gameResult = {
           type: 'checkmate',
-          winner: playerColor, // Current player wins by checkmate
+          winner: playerColor,
           reason: 'checkmate',
         };
       } else if (isDraw) {
+        const drawReason = chess.isStalemate() ? 'stalemate' : 'draw';
         gameResult = {
-          type: 'draw',
+          type: drawReason === 'stalemate' ? 'stalemate' : 'draw',
           winner: 'draw',
-          reason: chess.isStalemate() ? 'stalemate' : 'draw',
+          reason: drawReason,
         };
       }
 
@@ -315,14 +414,44 @@ class LiveMovesService {
         return { success: false, error: 'Failed to update game state' };
       }
 
-      console.log('✅ Move made successfully:', moveResult.san);
       return { success: true, move: moveData };
     } catch (error) {
       console.error('❌ Failed to make move:', error);
       return { success: false, error: 'Internal error' };
     }
   }
+  // Add to liveMovesService.ts
+  async handlePlayerAbandonment(
+    gameId: string,
+    abandonedPlayerId: string
+  ): Promise<boolean> {
+    try {
+      const gameState = await this.getGameState(gameId);
+      if (!gameState || gameState.game_ended) return false;
 
+      const winner =
+        gameState.white_player_id === abandonedPlayerId ? 'black' : 'white';
+      const gameResult: GameResult = {
+        type: 'abandonment',
+        winner,
+        reason: 'player_disconnected',
+      };
+
+      const { error } = await supabase
+        .from('game_live_state')
+        .update({
+          game_ended: true,
+          game_result: gameResult,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('game_id', gameId);
+
+      return !error;
+    } catch (error) {
+      console.error('Failed to handle abandonment:', error);
+      return false;
+    }
+  }
   /**
    * Get current game state
    */
@@ -412,7 +541,6 @@ class LiveMovesService {
         return false;
       }
 
-      console.log('✅ Game resigned successfully');
       return true;
     } catch (error) {
       console.error('❌ Failed to resign game:', error);
@@ -461,7 +589,6 @@ class LiveMovesService {
         return false;
       }
 
-      console.log('✅ Draw offered successfully');
       return true;
     } catch (error) {
       console.error('❌ Failed to offer draw:', error);
@@ -527,10 +654,7 @@ class LiveMovesService {
             updated_at: new Date().toISOString(),
           })
           .eq('game_id', gameId);
-
-        console.log('✅ Draw accepted - game ended');
       } else {
-        console.log('✅ Draw declined');
       }
 
       return true;
@@ -601,7 +725,6 @@ class LiveMovesService {
         return false;
       }
 
-      console.log(`✅ Timeout handled - ${winner} wins`);
       return true;
     } catch (error) {
       console.error('❌ Failed to handle timeout:', error);
@@ -620,8 +743,6 @@ class LiveMovesService {
       onDrawOfferUpdate?: (offer: DrawOffer | null) => void;
     }
   ): () => void {
-    console.log('🔗 Setting up live game subscriptions for:', gameId);
-
     const gameStateSubscription = supabase
       .channel(`live-game-state-${gameId}`)
       .on(
@@ -633,7 +754,6 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         async (payload) => {
-          console.log('🔄 Game state changed:', payload);
           if (callbacks.onGameStateUpdate) {
             const gameState = await this.getGameState(gameId);
             if (gameState) {
@@ -655,7 +775,6 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
-          console.log('🔄 New move:', payload.new);
           if (callbacks.onNewMove) {
             callbacks.onNewMove(payload.new as LiveMove);
           }
@@ -674,7 +793,6 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         async () => {
-          console.log('🔄 Draw offer changed');
           if (callbacks.onDrawOfferUpdate) {
             const offer = await this.getActiveDrawOffer(gameId);
             callbacks.onDrawOfferUpdate(offer);
@@ -683,11 +801,8 @@ class LiveMovesService {
       )
       .subscribe();
 
-    console.log('📡 Live game subscriptions active');
-
     // Return cleanup function
     return () => {
-      console.log('❌ Cleaning up live game subscriptions');
       supabase.removeChannel(gameStateSubscription);
       supabase.removeChannel(movesSubscription);
       supabase.removeChannel(drawOffersSubscription);
