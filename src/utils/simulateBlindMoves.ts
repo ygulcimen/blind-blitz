@@ -1,4 +1,4 @@
-// utils/simulateBlindMoves.ts - FIXED REWARD SYSTEM
+// utils/simulateBlindMoves.ts - COMPLETE FIXED VERSION
 import { Chess } from 'chess.js';
 import type { BlindSequence, MoveLogItem } from '../types/BlindTypes';
 
@@ -17,7 +17,6 @@ interface SimulationResultWithRewards {
   checkmateWinner?: 'white' | 'black';
 }
 
-// ✅ FIXED: Correct reward system implementation
 export const simulateBlindMovesWithRewards = (
   whiteMoves: BlindSequence,
   blackMoves: BlindSequence,
@@ -26,25 +25,21 @@ export const simulateBlindMovesWithRewards = (
   const game = new Chess();
   const log: MoveLogItemWithRewards[] = [];
 
-  // ✅ FIXED: Use exact fixed amounts as specified
-  const VALID_REWARD = 5; // Fixed +5 gold per valid move
-  const INVALID_PENALTY = 5; // Fixed -5 gold for invalid move
-  const OPPONENT_BONUS = 10; // Fixed +10 gold for opponent when player makes invalid move
-  const CAPTURE_REWARD = 15; // Fixed +15 gold per capture
+  // Fixed reward amounts
+  const VALID_REWARD = 5;
+  const INVALID_PENALTY = 5;
+  const OPPONENT_BONUS = 10;
+  const CAPTURE_REWARD = 15;
 
   let whiteGold = 0;
   let blackGold = 0;
   let checkmateOccurred = false;
   let checkmateWinner: 'white' | 'black' | undefined;
 
-  console.log('🎬 Starting FIXED simulation with rewards:', {
+  console.log('🎬 Starting simulation with checkmate detection:', {
     whiteMoves: whiteMoves.length,
     blackMoves: blackMoves.length,
     entryFee,
-    VALID_REWARD,
-    INVALID_PENALTY,
-    OPPONENT_BONUS,
-    CAPTURE_REWARD,
   });
 
   let whiteIndex = 0;
@@ -52,29 +47,6 @@ export const simulateBlindMovesWithRewards = (
 
   // Process moves in strict chess turn order
   while (whiteIndex < whiteMoves.length || blackIndex < blackMoves.length) {
-    // ✅ Check for checkmate before each move
-    if (game.isCheckmate()) {
-      const winner = game.turn() === 'w' ? 'black' : 'white'; // Previous player won
-      checkmateOccurred = true;
-      checkmateWinner = winner;
-
-      console.log(
-        `🏆 CHECKMATE! ${winner.toUpperCase()} WINS during blind phase!`
-      );
-
-      // Add checkmate log entry
-      log.push({
-        player: winner === 'white' ? 'P1' : 'P2',
-        san: 'CHECKMATE',
-        isInvalid: false,
-        goldReward: 0, // Will get entire pot later
-        rewardType: 'checkmate',
-        isCapture: false,
-      });
-
-      break; // End simulation immediately
-    }
-
     const isWhiteTurn = game.turn() === 'w';
 
     if (isWhiteTurn) {
@@ -90,21 +62,33 @@ export const simulateBlindMovesWithRewards = (
           CAPTURE_REWARD
         );
 
+        // Check for checkmate immediately after successful move
+        if (success && game.isCheckmate()) {
+          checkmateOccurred = true;
+          checkmateWinner = 'white';
+
+          // Update the last move to indicate checkmate
+          const lastMove = log[log.length - 1];
+          if (lastMove) {
+            lastMove.san = lastMove.san + '#';
+            lastMove.rewardType = 'checkmate';
+          }
+
+          console.log('🏆 CHECKMATE! White wins with', lastMove?.san);
+          break;
+        }
+
         // Update gold totals
         const lastLogEntry = log[log.length - 1];
         if (lastLogEntry) {
           whiteGold += lastLogEntry.goldReward || 0;
-          // If invalid move, opponent gets bonus
           if (lastLogEntry.rewardType === 'invalid') {
             blackGold += OPPONENT_BONUS;
           }
         }
 
         whiteIndex++;
-
-        if (!success) {
-          forceTurnChange(game, 'b');
-        }
+        if (!success) forceTurnChange(game, 'b');
       } else {
         forceTurnChange(game, 'b');
       }
@@ -121,56 +105,61 @@ export const simulateBlindMovesWithRewards = (
           CAPTURE_REWARD
         );
 
+        // Check for checkmate immediately after successful move
+        if (success && game.isCheckmate()) {
+          checkmateOccurred = true;
+          checkmateWinner = 'black';
+
+          // Update the last move to indicate checkmate
+          const lastMove = log[log.length - 1];
+          if (lastMove) {
+            lastMove.san = lastMove.san + '#';
+            lastMove.rewardType = 'checkmate';
+          }
+
+          console.log('🏆 CHECKMATE! Black wins with', lastMove?.san);
+          break;
+        }
+
         // Update gold totals
         const lastLogEntry = log[log.length - 1];
         if (lastLogEntry) {
           blackGold += lastLogEntry.goldReward || 0;
-          console.log(
-            `🔍 Black move: ${lastLogEntry.san}, reward: ${lastLogEntry.goldReward}, running total: ${blackGold}`
-          );
-          // If invalid move, opponent gets bonus
           if (lastLogEntry.rewardType === 'invalid') {
             whiteGold += OPPONENT_BONUS;
-            console.log(
-              `💰 White gets opponent bonus: +${OPPONENT_BONUS}, running total: ${whiteGold}`
-            );
           }
         }
 
         blackIndex++;
-
-        if (!success) {
-          forceTurnChange(game, 'w');
-        }
+        if (!success) forceTurnChange(game, 'w');
       } else {
         forceTurnChange(game, 'w');
       }
     }
   }
 
-  // ✅ FIXED: Handle negative balance redistribution
+  // Handle negative balance redistribution (only if no checkmate)
   if (!checkmateOccurred) {
     if (whiteGold < 0) {
       console.log(
         `⚠️ White gold negative (${whiteGold}), redistributing to Black`
       );
-      blackGold += Math.abs(whiteGold); // Add negative amount as positive to opponent
-      whiteGold = 0; // Set to 0
+      blackGold += Math.abs(whiteGold);
+      whiteGold = 0;
     }
 
     if (blackGold < 0) {
       console.log(
         `⚠️ Black gold negative (${blackGold}), redistributing to White`
       );
-      whiteGold += Math.abs(blackGold); // Add negative amount as positive to opponent
-      blackGold = 0; // Set to 0
+      whiteGold += Math.abs(blackGold);
+      blackGold = 0;
     }
   }
 
-  console.log('🎬 FIXED simulation complete:', {
+  console.log('🎬 Simulation complete:', {
     finalFen: game.fen(),
     totalMoves: log.length,
-    validMoves: log.filter((m) => !m.isInvalid).length,
     whiteGold,
     blackGold,
     checkmateOccurred,
@@ -187,7 +176,6 @@ export const simulateBlindMovesWithRewards = (
   };
 };
 
-// Helper function with reward tracking
 function attemptMoveWithRewards(
   game: Chess,
   move: { from: string; to: string; san: string },
@@ -200,7 +188,6 @@ function attemptMoveWithRewards(
   const isWhite = playerName === 'White';
 
   try {
-    // Check if this would be a capture by counting pieces before/after
     const beforePieces = game
       .board()
       .flat()
@@ -219,7 +206,6 @@ function attemptMoveWithRewards(
         .filter((p) => p !== null).length;
       const isCapture = beforePieces > afterPieces;
 
-      // ✅ FIXED: Use fixed amounts, not percentages
       const goldReward = isCapture ? captureReward : validReward;
       const rewardType = isCapture ? 'capture' : 'valid';
 
@@ -239,21 +225,20 @@ function attemptMoveWithRewards(
     // Move failed
   }
 
-  // ✅ FIXED: Invalid move - use fixed penalty amount
+  // Invalid move
   log.push({
     player: isWhite ? 'P1' : 'P2',
     san: move.san,
     isInvalid: true,
     from: move.from,
     to: move.to,
-    goldReward: -invalidPenalty, // Fixed -5 gold
+    goldReward: -invalidPenalty,
     rewardType: 'invalid',
     isCapture: false,
   });
   return false;
 }
 
-// Helper function to force turn change
 function forceTurnChange(game: Chess, newTurn: 'w' | 'b'): void {
   try {
     const currentFen = game.fen();

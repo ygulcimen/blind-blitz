@@ -417,6 +417,8 @@ export const useGameStateManager = (gameId?: string) => {
   // Updated proceedToReveal to work with new reward system
   // Updated proceedToReveal function in GameStateManager.tsx
 
+  // Complete proceedToReveal function for GameStateManager.tsx
+
   const proceedToReveal = useCallback(async () => {
     if (!gameId) {
       console.error('No gameId available for reveal');
@@ -424,7 +426,7 @@ export const useGameStateManager = (gameId?: string) => {
     }
 
     console.log(
-      'Proceeding to reveal phase - calculating rewards and waiting...'
+      'Proceeding to reveal phase - calculating rewards with checkmate detection...'
     );
 
     try {
@@ -434,7 +436,6 @@ export const useGameStateManager = (gameId?: string) => {
         return;
       }
 
-      // Get entry fee for reward calculation
       const { data: room } = await supabase
         .from('game_rooms')
         .select('entry_fee')
@@ -443,45 +444,70 @@ export const useGameStateManager = (gameId?: string) => {
 
       const entryFee = room?.entry_fee || 100;
 
-      // Use FIXED simulation with reward calculation
-      const { fen, log, whiteGold, blackGold } = simulateBlindMovesWithRewards(
+      // Use simulation with checkmate detection
+      const {
+        fen,
+        log,
+        whiteGold,
+        blackGold,
+        checkmateOccurred,
+        checkmateWinner,
+      } = simulateBlindMovesWithRewards(
         freshBlindState.whiteMoves,
         freshBlindState.blackMoves,
         entryFee
       );
 
-      console.log('✅ Calculated rewards:', { whiteGold, blackGold });
+      console.log('Simulation results:', {
+        whiteGold,
+        blackGold,
+        checkmateOccurred,
+        checkmateWinner,
+      });
 
-      // Save the calculated rewards to database
-      const { error: saveError } = await supabase.rpc(
-        'save_calculated_rewards',
-        {
+      // Handle checkmate scenario
+      if (checkmateOccurred && checkmateWinner) {
+        console.log(
+          `CHECKMATE in blind phase! ${checkmateWinner.toUpperCase()} wins!`
+        );
+
+        const totalPot = entryFee * 2;
+        const commission = Math.floor(totalPot * 0.05);
+        const availablePot = totalPot - commission;
+
+        // Save checkmate rewards (winner gets full pot)
+        await supabase.rpc('save_calculated_rewards', {
+          p_game_id: gameId,
+          p_white_player_id: freshBlindState.whitePlayerId,
+          p_black_player_id: freshBlindState.blackPlayerId,
+          p_white_gold: checkmateWinner === 'white' ? availablePot : 0,
+          p_black_gold: checkmateWinner === 'black' ? availablePot : 0,
+        });
+
+        // Distribute final rewards immediately
+        await supabase.rpc('distribute_final_rewards', {
+          p_game_id: gameId,
+          p_winner: checkmateWinner,
+        });
+      } else {
+        // Normal case - save regular rewards
+        await supabase.rpc('save_calculated_rewards', {
           p_game_id: gameId,
           p_white_player_id: freshBlindState.whitePlayerId,
           p_black_player_id: freshBlindState.blackPlayerId,
           p_white_gold: whiteGold,
           p_black_gold: blackGold,
-        }
-      );
+        });
 
-      if (saveError) {
-        console.error('❌ Failed to save calculated rewards:', saveError);
-        // Continue anyway - we can still show the game
-      } else {
-        console.log('✅ Rewards saved to database');
+        // Wait for rewards to be processed
+        await goldRewardsService.waitForRewardsToBeCalculated(gameId);
       }
 
-      // ✅ WAIT for rewards to be available before proceeding
-      console.log('⏳ Waiting for rewards to be processed...');
-      await goldRewardsService.waitForRewardsToBeCalculated(gameId);
-      console.log('✅ Rewards are now available');
-
-      // Prepare FEN for live phase (always White to move)
+      // ALWAYS initialize live game (even for checkmate)
       const parts = fen.split(' ');
       if (parts.length >= 2) parts[1] = 'w';
       const liveFenWhiteToMove = parts.join(' ');
 
-      // Initialize live game
       await liveMovesService.initializeLiveGame(
         gameId,
         freshBlindState.whitePlayerId,
@@ -489,18 +515,34 @@ export const useGameStateManager = (gameId?: string) => {
         liveFenWhiteToMove
       );
 
-      // Update game state to reveal phase
+      // Set game state with checkmate info if applicable
       setGameState((prev) => ({
         ...prev,
         phase: 'REVEAL',
         reveal: { finalFen: fen, moveLog: log, isComplete: false },
-        live: { ...prev.live, game: new Chess(fen), fen: fen },
+        live: {
+          ...prev.live,
+          game: new Chess(fen),
+          fen: fen,
+          gameEnded: checkmateOccurred, // Will be true for checkmate
+          gameResult: checkmateOccurred
+            ? {
+                type: 'checkmate',
+                winner: checkmateWinner,
+                reason: 'blind_phase_checkmate',
+              }
+            : null,
+        },
         timer: { ...prev.timer, isRunning: false },
       }));
 
-      console.log('✅ Reveal phase ready with rewards available');
+      console.log(
+        checkmateOccurred
+          ? 'Checkmate game prepared'
+          : 'Normal reveal phase ready'
+      );
     } catch (error) {
-      console.error('❌ Failed to proceed to reveal:', error);
+      console.error('Failed to proceed to reveal:', error);
     }
   }, [gameId]);
 

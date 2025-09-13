@@ -685,6 +685,21 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     }
   }, [chessGame, liveGameState?.current_turn, liveGameState?.move_count]);
 
+  useEffect(() => {
+    if (
+      liveGameState?.game_ended &&
+      liveGameState?.game_result && // ✅ Add this null check
+      !gameResult
+    ) {
+      console.log(
+        '🏆 Blind phase checkmate detected, showing modal after delay'
+      );
+      setTimeout(() => {
+        handleGameEnd(liveGameState.game_result!); // ✅ Use non-null assertion since we checked above
+      }, 500);
+    }
+  }, [liveGameState?.game_ended, liveGameState?.game_result, gameResult]);
+
   // ═══════════════════════════════════════════════════════════════
   // 🎬 RENDER
   // ═══════════════════════════════════════════════════════════════
