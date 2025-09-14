@@ -1,4 +1,4 @@
-// src/services/lobbyService.ts - FIXED: Aligned with actual database schema
+// src/services/lobbyService.ts - Updated for 5+0 Signature
 import { supabase } from '../lib/supabase';
 import type {
   GameRoom,
@@ -6,12 +6,20 @@ import type {
   RoomStatus,
 } from '../screens/lobbyPage/types/lobby.types';
 
+// 🎯 BLINDCHESS SIGNATURE CONSTANTS
+const BLINDCHESS_SIGNATURE = {
+  TIME_CONTROL: '5+0',
+  TIME_MINUTES: 5,
+  TIME_INCREMENT: 0,
+  DESCRIPTION: '5 Blind Moves • 5 Minutes Live • Pure Strategy',
+} as const;
+
 type CreateRoomConfig = Partial<GameRoom> & {
   host?: string;
   mode?: string;
   entryFee?: number;
   maxPlayers?: number;
-  timeControl?: string;
+  // 🎯 REMOVED: timeControl - always enforced as 5+0
 };
 
 // Transform database room to frontend GameRoom type
@@ -26,7 +34,7 @@ function transformDatabaseRoom(dbRoom: any): GameRoom {
     reward: dbRoom.entry_fee * 2,
     players: dbRoom.current_players || 0,
     maxPlayers: dbRoom.max_players || 2,
-    timeControl: dbRoom.time_control || '10+5',
+    timeControl: '5+0', // 🎯 ALWAYS 5+0 - BlindChess Signature
     ratingRange: 'all',
     status: dbRoom.status as RoomStatus,
     isPrivate: dbRoom.private || false,
@@ -64,6 +72,7 @@ async function getRooms(): Promise<GameRoom[]> {
       `
       )
       .eq('status', 'waiting')
+      .eq('time_control', '5+0') // 🎯 ENFORCE 5+0 SIGNATURE
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -78,12 +87,15 @@ async function getRooms(): Promise<GameRoom[]> {
   }
 }
 
-// Get rooms suitable for quick match
+// Get rooms suitable for quick match - 5+0 only
 async function getAvailableRoomsForQuickMatch(
   playerGold: number
 ): Promise<GameRoom[]> {
   try {
-    console.log('🔍 QuickMatch: Searching rooms with playerGold:', playerGold);
+    console.log(
+      '🎯 QuickMatch: Searching 5+0 rooms with playerGold:',
+      playerGold
+    );
 
     const { data: rooms, error } = await supabase
       .from('game_rooms')
@@ -105,6 +117,7 @@ async function getAvailableRoomsForQuickMatch(
       `
       )
       .eq('status', 'waiting')
+      .eq('time_control', '5+0') // 🎯 SIGNATURE TIME CONTROL ONLY
       .lte('entry_fee', playerGold)
       .eq('private', false)
       .is('password', null) // No password required
@@ -122,7 +135,10 @@ async function getAvailableRoomsForQuickMatch(
       (room) => room.current_players < room.max_players
     );
 
-    console.log('📊 Available rooms after filtering:', availableRooms.length);
+    console.log(
+      '📊 Available 5+0 rooms after filtering:',
+      availableRooms.length
+    );
 
     return availableRooms.map(transformDatabaseRoom);
   } catch (error) {
@@ -131,7 +147,7 @@ async function getAvailableRoomsForQuickMatch(
   }
 }
 
-// Create a new room
+// Create a new room - ALWAYS 5+0
 async function createRoom(config: CreateRoomConfig): Promise<string> {
   try {
     // Get current user
@@ -164,17 +180,28 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
     }
 
     const dbMode = config.mode || 'classic';
-    const timeControl = config.timeControl || '10+5';
 
-    // Create the room
+    // 🎯 ALWAYS ENFORCE 5+0 SIGNATURE TIME CONTROL
+    const timeControl = BLINDCHESS_SIGNATURE.TIME_CONTROL;
+
+    console.log('🎯 Creating BlindChess room with signature time control:', {
+      mode: dbMode,
+      timeControl,
+      entryFee,
+      description: BLINDCHESS_SIGNATURE.DESCRIPTION,
+    });
+
+    // Create the room with SIGNATURE branding
     const { data: roomData, error: roomError } = await supabase
       .from('game_rooms')
       .insert({
-        name: config.host ? `${config.host}'s Room` : 'BlindChess Battle',
+        name: config.host
+          ? `${config.host}'s BlindChess Battle`
+          : 'BlindChess Battle (5+0)',
         mode: dbMode,
         entry_fee: entryFee,
         max_players: config.maxPlayers ?? 2,
-        time_control: timeControl,
+        time_control: timeControl, // 🎯 SIGNATURE 5+0
         status: 'waiting',
         current_players: 0, // Will be updated by trigger
         rated: true,
@@ -182,15 +209,17 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
         password: null,
         host_id: user.id,
         host_username: playerData.username,
-        region: 'global', // Default region
+        region: 'global',
       })
       .select()
       .single();
 
     if (roomError) {
-      console.error('Error creating room:', roomError);
+      console.error('Error creating BlindChess room:', roomError);
       throw roomError;
     }
+
+    console.log('✅ BlindChess 5+0 room created successfully:', roomData.id);
 
     // Add creator as first player - this will trigger entry fee deduction
     const { error: joinError } = await supabase
@@ -205,7 +234,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
       });
 
     if (joinError) {
-      console.error('Error joining own room:', joinError);
+      console.error('Error joining own BlindChess room:', joinError);
       // Clean up the room if join failed
       await supabase.from('game_rooms').delete().eq('id', roomData.id);
       throw new Error('Failed to join room after creation');
@@ -213,12 +242,12 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
 
     return roomData.id;
   } catch (error) {
-    console.error('Failed to create room:', error);
+    console.error('Failed to create BlindChess room:', error);
     throw error;
   }
 }
 
-// Join an existing room
+// Join an existing room - verify 5+0
 async function joinRoom(roomId: string): Promise<void> {
   try {
     // Get current user
@@ -252,6 +281,13 @@ async function joinRoom(roomId: string): Promise<void> {
       throw new Error('Room not found');
     }
 
+    // 🎯 VERIFY SIGNATURE TIME CONTROL
+    if (roomData.time_control !== '5+0') {
+      throw new Error(
+        'This room does not use BlindChess signature time control (5+0)'
+      );
+    }
+
     // Validation checks
     if (roomData.status !== 'waiting') {
       throw new Error('Room is no longer accepting players');
@@ -279,6 +315,8 @@ async function joinRoom(roomId: string): Promise<void> {
       throw new Error('You are already in this room');
     }
 
+    console.log('🎯 Joining BlindChess 5+0 battle:', roomId);
+
     // Add player to room - trigger will handle entry fee deduction
     const { error: joinError } = await supabase
       .from('game_room_players')
@@ -292,13 +330,13 @@ async function joinRoom(roomId: string): Promise<void> {
       });
 
     if (joinError) {
-      console.error('Error joining room:', joinError);
+      console.error('Error joining BlindChess room:', joinError);
       throw joinError;
     }
 
-    console.log('Successfully joined room:', roomId);
+    console.log('✅ Successfully joined BlindChess 5+0 room:', roomId);
   } catch (error) {
-    console.error('Failed to join room:', error);
+    console.error('Failed to join BlindChess room:', error);
     throw error;
   }
 }
@@ -317,13 +355,20 @@ async function leaveRoom(roomId: string): Promise<void> {
     // Get room data first to handle refunds
     const { data: roomData, error: roomError } = await supabase
       .from('game_rooms')
-      .select('entry_fee, status, host_id')
+      .select('entry_fee, status, host_id, time_control')
       .eq('id', roomId)
       .single();
 
     if (roomError || !roomData) {
       throw new Error('Room not found');
     }
+
+    // 🎯 LOG SIGNATURE ROOM LEAVE
+    console.log('🎯 Leaving BlindChess 5+0 room:', {
+      roomId,
+      timeControl: roomData.time_control,
+      entryFee: roomData.entry_fee,
+    });
 
     // Refund entry fee if game hasn't started
     if (roomData.status === 'waiting' && roomData.entry_fee > 0) {
@@ -349,7 +394,7 @@ async function leaveRoom(roomId: string): Promise<void> {
             player_id: user.id,
             amount: roomData.entry_fee,
             transaction_type: 'refund',
-            description: 'Left room before game started',
+            description: 'Left BlindChess 5+0 room before game started',
             game_id: roomId,
             balance_after: newBalance,
           });
@@ -365,13 +410,13 @@ async function leaveRoom(roomId: string): Promise<void> {
       .eq('player_id', user.id);
 
     if (leaveError) {
-      console.error('Error leaving room:', leaveError);
+      console.error('Error leaving BlindChess room:', leaveError);
       throw leaveError;
     }
 
-    console.log('Successfully left room:', roomId);
+    console.log('✅ Successfully left BlindChess 5+0 room:', roomId);
   } catch (error) {
-    console.error('Failed to leave room:', error);
+    console.error('Failed to leave BlindChess room:', error);
     throw error;
   }
 }
@@ -400,7 +445,7 @@ async function isPlayerInRoom(roomId: string): Promise<boolean> {
   }
 }
 
-// Get current user's active room
+// Get current user's active room - must be 5+0
 async function getCurrentUserRoom(): Promise<GameRoom | null> {
   try {
     const {
@@ -416,7 +461,7 @@ async function getCurrentUserRoom(): Promise<GameRoom | null> {
       .select(
         `
         room_id,
-        game_rooms (
+        game_rooms!inner (
           id,
           created_at,
           name,
@@ -434,6 +479,7 @@ async function getCurrentUserRoom(): Promise<GameRoom | null> {
       `
       )
       .eq('player_id', user.id)
+      .eq('game_rooms.time_control', '5+0') // 🎯 FILTER BY SIGNATURE TIME CONTROL
       .not('game_rooms.status', 'eq', 'finished')
       .single();
 
@@ -441,13 +487,15 @@ async function getCurrentUserRoom(): Promise<GameRoom | null> {
       return null;
     }
 
+    console.log('🎯 Found current BlindChess 5+0 room for user');
     return transformDatabaseRoom(data.game_rooms);
   } catch (error) {
+    console.error('Error getting current user room:', error);
     return null;
   }
 }
 
-// Get room details with players
+// Get room details with players - verify 5+0
 async function getRoomDetails(roomId: string): Promise<{
   room: any;
   players: any[];
@@ -458,11 +506,14 @@ async function getRoomDetails(roomId: string): Promise<{
       .from('game_rooms')
       .select('*')
       .eq('id', roomId)
+      .eq('time_control', '5+0') // 🎯 SIGNATURE VERIFICATION
       .single();
 
     if (roomError || !room) {
       return null;
     }
+
+    console.log('🎯 Getting details for BlindChess 5+0 room:', roomId);
 
     // Get players in room
     const { data: players, error: playersError } = await supabase
@@ -478,12 +529,12 @@ async function getRoomDetails(roomId: string): Promise<{
 
     return { room, players: players || [] };
   } catch (error) {
-    console.error('Failed to get room details:', error);
+    console.error('Failed to get BlindChess room details:', error);
     return null;
   }
 }
 
-// Export the service interface
+// Export the service interface with signature branding
 export const lobbyService = {
   getRooms,
   createRoom,
@@ -493,4 +544,6 @@ export const lobbyService = {
   getCurrentUserRoom,
   getAvailableRoomsForQuickMatch,
   getRoomDetails,
+  // 🎯 SIGNATURE CONSTANTS
+  SIGNATURE: BLINDCHESS_SIGNATURE,
 };

@@ -1,5 +1,6 @@
-// src/services/quickMatchService.ts
+// src/services/quickMatchService.ts - Updated for 5+0 Signature
 import { lobbyService } from './lobbyService';
+import { BLINDCHESS_CONSTANTS } from '../screens/lobbyPage/types/lobby.types';
 
 interface QuickMatchResult {
   success: boolean;
@@ -10,73 +11,152 @@ interface QuickMatchResult {
 
 class QuickMatchService {
   async findQuickMatch(playerGold: number): Promise<QuickMatchResult> {
-    console.log('QuickMatch starting for player with', playerGold, 'gold');
+    console.log(
+      '🎯 BlindChess 5+0 QuickMatch starting for player with',
+      playerGold,
+      'gold'
+    );
 
     try {
-      // Step 1: Look for existing rooms to join
+      // Step 1: Look for existing 5+0 signature rooms to join
       const availableRooms = await lobbyService.getAvailableRoomsForQuickMatch(
         playerGold
       );
-      console.log('Found', availableRooms.length, 'available rooms');
+      console.log('🎯 Found', availableRooms.length, 'BlindChess 5+0 rooms');
 
       if (availableRooms.length > 0) {
-        const room = availableRooms[0];
-        console.log('Attempting to join room:', room.id);
+        // Prioritize rooms that match our preferences
+        const room = this.selectBestRoom(availableRooms, playerGold);
+        console.log('🎯 Attempting to join BlindChess 5+0 room:', room.id);
 
         try {
           await lobbyService.joinRoom(room.id);
-          console.log('Successfully joined room:', room.id);
+          console.log('✅ Successfully joined BlindChess 5+0 room:', room.id);
           return {
             success: true,
             gameId: room.id,
             action: 'joined_existing',
-            message: `Joined ${room.host}'s room`,
+            message: `Joined ${room.host}'s BlindChess 5+0 battle`,
           };
         } catch (joinError) {
-          console.log('Failed to join room, will create new one:', joinError);
+          console.log(
+            '❌ Failed to join room, will create new BlindChess 5+0 room:',
+            joinError
+          );
           // Continue to room creation below
         }
       }
 
-      // Step 2: Create new room
-      const entryFee = this.calculateEntryFee(playerGold);
-      console.log('Creating new room with entry fee:', entryFee);
+      // Step 2: Create new BlindChess 5+0 signature room
+      const entryFee = this.calculateOptimalEntryFee(playerGold);
+      console.log(
+        '🎯 Creating new BlindChess 5+0 room with entry fee:',
+        entryFee
+      );
 
       const roomConfig = {
-        mode: 'classic' as const,
+        mode: 'classic' as const, // Default to classic for quick match
+        timeControl: BLINDCHESS_CONSTANTS.TIME_CONTROL, // 🎯 SIGNATURE 5+0
         entryFee,
-        timeControl: '10+5',
         isPrivate: false,
         maxPlayers: 2,
+        ratingRestriction: 'any', // Open to all for quick match
       };
 
       const roomId = await lobbyService.createRoom(roomConfig);
-      console.log('Successfully created room:', roomId);
+      console.log('✅ Successfully created BlindChess 5+0 room:', roomId);
 
       return {
         success: true,
         gameId: roomId,
         action: 'created_new',
-        message: 'Created new room - waiting for opponent',
+        message: 'Created new BlindChess 5+0 battle - waiting for opponent',
       };
     } catch (error) {
-      console.error('QuickMatch failed:', error);
+      console.error('❌ BlindChess 5+0 QuickMatch failed:', error);
       return {
         success: false,
         action: 'error',
         message:
           error instanceof Error
             ? error.message
-            : 'Failed to find or create a match',
+            : 'Failed to find or create a BlindChess 5+0 match',
       };
     }
   }
 
-  private calculateEntryFee(playerGold: number): number {
-    if (playerGold >= 500) return 100;
-    if (playerGold >= 200) return 50;
-    if (playerGold >= 100) return 25;
-    return 10;
+  /**
+   * Select the best room for quick match based on various factors
+   */
+  private selectBestRoom(rooms: any[], playerGold: number) {
+    // Sort rooms by preference:
+    // 1. Rooms with entry fees we can comfortably afford (not too high)
+    // 2. Rooms that are almost full (faster start)
+    // 3. Rooms with reasonable entry fees for our gold level
+    return rooms.sort((a, b) => {
+      const aAffordability = playerGold / Math.max(1, a.entryFee);
+      const bAffordability = playerGold / Math.max(1, b.entryFee);
+
+      // Prefer rooms where we have at least 5x the entry fee (comfortable)
+      const aComfortable = aAffordability >= 5 ? 1 : 0;
+      const bComfortable = bAffordability >= 5 ? 1 : 0;
+
+      if (aComfortable !== bComfortable) {
+        return bComfortable - aComfortable;
+      }
+
+      // Prefer rooms closer to full (faster game start)
+      const aFillRatio = a.players / a.maxPlayers;
+      const bFillRatio = b.players / b.maxPlayers;
+
+      return bFillRatio - aFillRatio;
+    })[0];
+  }
+
+  /**
+   * Calculate optimal entry fee for BlindChess 5+0 based on player's gold
+   */
+  private calculateOptimalEntryFee(playerGold: number): number {
+    // 🎯 BlindChess 5+0 Signature Entry Fee Tiers
+    if (playerGold >= 1000) return 200; // High stakes for wealthy players
+    if (playerGold >= 500) return 100; // Standard stakes
+    if (playerGold >= 250) return 50; // Moderate stakes
+    if (playerGold >= 100) return 25; // Low stakes
+    return 0; // Free for new players
+  }
+
+  /**
+   * Get recommended entry fee range for display
+   */
+  getRecommendedEntryFeeRange(playerGold: number): string {
+    const optimal = this.calculateOptimalEntryFee(playerGold);
+    if (optimal === 0) return 'Free';
+
+    const min = Math.max(0, optimal - 25);
+    const max = Math.min(playerGold, optimal + 50);
+
+    return `${min}-${max}g`;
+  }
+
+  /**
+   * Check if player can afford BlindChess 5+0 battles
+   */
+  canPlayBlindChess(playerGold: number): boolean {
+    return playerGold >= 0; // Even free battles are available
+  }
+
+  /**
+   * Get BlindChess 5+0 signature info for UI
+   */
+  getSignatureInfo() {
+    return {
+      timeControl: BLINDCHESS_CONSTANTS.TIME_CONTROL,
+      description: BLINDCHESS_CONSTANTS.DESCRIPTION,
+      signature: BLINDCHESS_CONSTANTS.SIGNATURE,
+      blindMoves: BLINDCHESS_CONSTANTS.BLIND_MOVES_COUNT,
+      liveMinutes: BLINDCHESS_CONSTANTS.TIME_CONTROL_MINUTES,
+      increment: BLINDCHESS_CONSTANTS.TIME_CONTROL_INCREMENT,
+    };
   }
 }
 

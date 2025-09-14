@@ -1,9 +1,9 @@
-// src/components/WaitingRoom/RealWaitingRoomScreen.tsx - SIMPLIFIED: Let GameStateManager handle everything
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { lobbyService } from '../../services/lobbyService';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { matchmakingService } from '../../services/matchmakingService';
 import {
   ArrowLeft,
   Crown,
@@ -12,6 +12,8 @@ import {
   Shield,
   Trophy,
   Users,
+  CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 
 export type GameMode = 'classic' | 'robot_chaos';
@@ -40,6 +42,12 @@ interface RealWaitingRoomScreenProps {
   onGameStart: (gameMode?: GameMode) => void;
 }
 
+type PaymentPhase =
+  | 'waiting'
+  | 'processing_payment'
+  | 'payment_failed'
+  | 'game_starting';
+
 const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   onGameStart,
 }) => {
@@ -52,7 +60,8 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   const [players, setPlayers] = useState<RealPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [gameStarting, setGameStarting] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<PaymentPhase>('waiting');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
 
   // Load room data and players
@@ -135,8 +144,16 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           schema: 'public',
           table: 'game_rooms',
         },
-        () => {
-          console.log('Room table changed - reloading room data');
+        (payload) => {
+          console.log('Room table changed:', payload);
+          // Check if game started (blind phase)
+          if ((payload.new as any)?.status === 'blind') {
+            console.log('Game started! Transitioning to blind phase...');
+            const gameScreenMode: GameMode =
+              roomData?.mode === 'robochaos' ? 'robot_chaos' : 'classic';
+            setTimeout(() => onGameStart(gameScreenMode), 500);
+            return;
+          }
           loadRoomData();
         }
       )
@@ -146,7 +163,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
       console.log('Cleaning up subscription');
       supabase.removeChannel(subscription);
     };
-  }, [gameId]);
+  }, [gameId, roomData?.mode, onGameStart]);
 
   // Handle ready toggle
   const handleReady = async () => {
@@ -169,6 +186,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
         return;
       }
 
+      // Update local state optimistically
       setPlayers((prev) =>
         prev.map((p) =>
           p.id === playerData.id ? { ...p, ready: newReadyState } : p
@@ -195,51 +213,65 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   // Check if all players are ready
   const allPlayersReady = players.length === 2 && players.every((p) => p.ready);
 
-  // SIMPLIFIED: Just start countdown when all ready - let GameStateManager initialize everything
+  // 💰 PAYMENT PROCESSING: When all players ready → charge fees → start game
   useEffect(() => {
-    if (allPlayersReady && !gameStarting && roomData) {
-      console.log('All players ready - starting countdown');
-      setGameStarting(true);
+    if (allPlayersReady && paymentPhase === 'waiting' && roomData) {
+      console.log('All players ready - processing payments...');
+      setPaymentPhase('processing_payment');
 
-      const countdownInterval = setInterval(() => {
-        setCountdown((prev) => {
-          // In the useEffect where countdown reaches 0, add this:
-          if (prev <= 1) {
-            clearInterval(countdownInterval);
+      const processPayments = async () => {
+        try {
+          console.log('🎯 Charging entry fees for room:', gameId);
 
-            // UPDATE: Actually start the game in database
-            const startGame = async () => {
-              try {
-                await supabase
-                  .from('game_rooms')
-                  .update({ status: 'blind' })
-                  .eq('id', gameId);
+          const result = await matchmakingService.processPaymentAndStartGame(
+            gameId!
+          );
 
-                console.log('Game started - room status updated to blind');
-              } catch (error) {
-                console.error('Failed to start game:', error);
-              }
-            };
+          if (result.success) {
+            console.log(
+              '✅ Payments processed successfully - starting countdown'
+            );
+            setPaymentPhase('game_starting');
 
-            startGame();
+            // Start countdown
+            setCountdown(3);
+            const countdownInterval = setInterval(() => {
+              setCountdown((prev) => {
+                if (prev <= 1) {
+                  clearInterval(countdownInterval);
+                  console.log('Game starting now!');
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+          } else {
+            console.error('❌ Payment processing failed:', result.message);
+            setPaymentError(result.message);
+            setPaymentPhase('payment_failed');
 
-            // Map database mode to GameScreen mode
-            const gameScreenMode: GameMode =
-              roomData.mode === 'robochaos' ? 'robot_chaos' : 'classic';
-
-            console.log('Starting game with mode:', gameScreenMode);
-
+            // Reset player ready states on payment failure
             setTimeout(() => {
-              onGameStart(gameScreenMode);
-            }, 500);
-
-            return 0;
+              setPaymentPhase('waiting');
+              setPaymentError(null);
+              loadRoomData(); // Reload to get updated ready states
+            }, 5000);
           }
-          return prev - 1;
-        });
-      }, 1000);
+        } catch (error) {
+          console.error('💥 Payment processing error:', error);
+          setPaymentError('Network error during payment processing');
+          setPaymentPhase('payment_failed');
+
+          setTimeout(() => {
+            setPaymentPhase('waiting');
+            setPaymentError(null);
+          }, 5000);
+        }
+      };
+
+      processPayments();
     }
-  }, [allPlayersReady, gameStarting, onGameStart, roomData]);
+  }, [allPlayersReady, paymentPhase, gameId, roomData]);
 
   // Get mode configuration
   const getModeConfig = (mode: 'classic' | 'robochaos') => {
@@ -316,8 +348,64 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   const mode = getModeConfig(roomData.mode);
   const prizePool = roomData.entry_fee * 2;
 
-  // Countdown screen
-  if (gameStarting && countdown > 0) {
+  // 💰 PAYMENT PROCESSING SCREEN
+  if (paymentPhase === 'processing_payment') {
+    return (
+      <div className="h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/20 via-orange-900/10 to-yellow-900/20 animate-pulse" />
+        </div>
+
+        <div className="relative z-10 text-center">
+          <div className="text-6xl mb-6 animate-bounce">💰</div>
+          <h1 className="text-4xl font-black mb-3 text-yellow-400">
+            PROCESSING PAYMENTS
+          </h1>
+          <p className="text-lg text-gray-300 mb-5">
+            Charging entry fees of {roomData.entry_fee} gold each...
+          </p>
+          <div className="flex justify-center space-x-2">
+            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce delay-0"></div>
+            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce delay-100"></div>
+            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce delay-200"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 💰 PAYMENT FAILED SCREEN
+  if (paymentPhase === 'payment_failed') {
+    return (
+      <div className="h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-orange-900/10 to-red-900/20 animate-pulse" />
+        </div>
+
+        <div className="relative z-10 text-center max-w-md mx-auto p-6">
+          <div className="text-6xl mb-6">⚠️</div>
+          <h1 className="text-3xl font-black mb-3 text-red-400">
+            PAYMENT FAILED
+          </h1>
+          <p className="text-lg text-gray-300 mb-5">
+            {paymentError || 'Unable to process entry fees'}
+          </p>
+          <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 mb-4">
+            <p className="text-red-300 text-sm">
+              Players have been returned to ready room. Please ensure all
+              players have sufficient gold and try again.
+            </p>
+          </div>
+          <div className="text-gray-500 text-sm">
+            Returning to waiting room in a moment...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🎮 COUNTDOWN SCREEN
+  if (paymentPhase === 'game_starting' && countdown > 0) {
     return (
       <div className="h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0">
@@ -332,7 +420,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           <div className="text-6xl mb-6 animate-bounce drop-shadow-2xl">
             {mode.icon}
           </div>
-
           <h1 className="text-5xl font-black mb-3 tracking-wider">
             <span
               className={`bg-gradient-to-r ${mode.gradient} bg-clip-text text-transparent animate-pulse`}
@@ -342,19 +429,19 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                 : 'ROBOTS ACTIVATED!'}
             </span>
           </h1>
-          <p className="text-lg text-gray-300 mb-5 font-medium tracking-wide">
-            Battle beginning in...
+          <p className="text-lg text-gray-300 mb-2">
+            💰 Entry fees charged successfully!
           </p>
-          <div className="relative">
-            <div className="text-7xl font-black text-white animate-pulse drop-shadow-2xl">
-              {countdown}
-            </div>
+          <p className="text-lg text-gray-300 mb-5">Battle beginning in...</p>
+          <div className="text-7xl font-black text-white animate-pulse drop-shadow-2xl">
+            {countdown}
           </div>
         </div>
       </div>
     );
   }
 
+  // 🎮 MAIN WAITING ROOM UI (unchanged from your original)
   return (
     <div className="h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white overflow-hidden">
       {/* Background */}
@@ -453,7 +540,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                     mode={mode}
                     isCurrentPlayer={players[0].id === playerData?.id}
                     onReady={handleReady}
-                    gameStarting={gameStarting}
+                    gameStarting={paymentPhase !== 'waiting'}
                   />
                   <VSDisplay mode={mode} prizePool={prizePool} />
                   <WaitingSlot mode={mode} />
@@ -465,7 +552,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                     mode={mode}
                     isCurrentPlayer={players[0].id === playerData?.id}
                     onReady={handleReady}
-                    gameStarting={gameStarting}
+                    gameStarting={paymentPhase !== 'waiting'}
                   />
                   <VSDisplay mode={mode} prizePool={prizePool} />
                   <PlayerCard
@@ -473,7 +560,7 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                     mode={mode}
                     isCurrentPlayer={players[1].id === playerData?.id}
                     onReady={handleReady}
-                    gameStarting={gameStarting}
+                    gameStarting={paymentPhase !== 'waiting'}
                   />
                 </>
               )}
@@ -487,12 +574,11 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
                   Players: {players.length}/2 | Ready:{' '}
                   {players.filter((p) => p.ready).length}/2
                 </span>
-                {allPlayersReady && (
-                  <div className="flex items-center gap-2 ml-3 px-3 py-1 bg-green-900/50 rounded-lg border border-green-500/50">
-                    <span
-                      className={`${mode.accentColor} font-black text-xs animate-pulse`}
-                    >
-                      🚀 BATTLE STARTING...
+                {allPlayersReady && paymentPhase === 'waiting' && (
+                  <div className="flex items-center gap-2 ml-3 px-3 py-1 bg-yellow-900/50 rounded-lg border border-yellow-500/50">
+                    <CreditCard className="w-4 h-4 text-yellow-400" />
+                    <span className="text-yellow-400 font-black text-xs animate-pulse">
+                      💰 PROCESSING PAYMENTS...
                     </span>
                   </div>
                 )}
@@ -504,8 +590,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     </div>
   );
 };
-
-// Keep the same PlayerCard, WaitingSlot, and VSDisplay components...
 const PlayerCard: React.FC<{
   player: RealPlayer;
   mode: any;
@@ -585,12 +669,18 @@ const PlayerCard: React.FC<{
             onClick={onReady}
             disabled={gameStarting}
             className={`w-full py-3 rounded-xl font-black text-base transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg ${
-              player.ready
+              gameStarting
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : player.ready
                 ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-500/30'
                 : `bg-gradient-to-r ${mode.gradient} text-white hover:shadow-xl`
             }`}
           >
-            {player.ready ? '❌ NOT READY' : '✅ READY UP!'}
+            {gameStarting
+              ? '⏳ PROCESSING...'
+              : player.ready
+              ? '❌ NOT READY'
+              : '✅ READY UP!'}
           </button>
         )}
       </div>
