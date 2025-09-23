@@ -94,6 +94,7 @@ const GameScreen: React.FC = () => {
             finalFen={gameState.gameState.reveal.finalFen}
             onRevealComplete={gameState.completeAnimatedReveal}
             gameMode={gameMode}
+            gameId={gameId} // ← Add this line
           />
         );
 
