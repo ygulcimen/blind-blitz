@@ -1,8 +1,12 @@
-// Enhanced LivePhaseScreen with REAL MULTIPLAYER
-import React, { useState, useEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import { Chess } from 'chess.js';
-import { UnifiedChessBoard } from '../shared/ChessBoard/UnifiedChessBoard';
-import { useViolations } from '../shared/ViolationSystem';
+import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import {
   liveMovesService,
@@ -10,20 +14,38 @@ import {
   type LiveMove,
   type DrawOffer,
 } from '../../services/liveMovesService';
-import { WarriorCard } from './WarriorCard';
-import { WarMoveHistory } from './WarMoveHistory';
-import { WarActions } from './WarActions';
-import { WarModal } from './WarModal';
-import { supabase } from '../../lib/supabase';
-import { blindMovesService } from '../../services/blindMovesService';
-import { useSimplifiedTimer } from '../../hooks/useSimplifiedTimer';
-import { PotDisplay } from './PotDisplay';
-import { BlindPhaseGoldSummary } from './BlindPhaseGoldSummary';
-import { GameEndModal } from '../shared/GameEndModal/GameEndModal';
 import type { GameResult } from '../../types/GameTypes';
 
+// Custom hooks
+import { useGameTimer } from '../../hooks/useGameTimer';
+import { useViolations } from '../shared/ViolationSystem';
+
+// Focused components
+import { GameInitializer } from './GameInitializer';
+import { GameSubscriptions } from './GameSubscriptions';
+import { useMoveHandler } from './MoveHandler';
+
+// UI Components
+import { LiveGameBoard } from './GameBoard/LiveGameBoard';
+import { GameStatusOverlay } from './GameStatus/GameStatusOverlay';
+import { PlayerBar } from './PlayerBar/PlayerBar';
+import { RewardsBox } from './LeftPanel/RewardsBox';
+import { PhaseTimeline } from './LeftPanel/PhaseTimeline';
+import { GameStats } from './LeftPanel/GameStats';
+import { MoveLog } from './RightPanel/MoveLog';
+import { ActionButtons } from './RightPanel/ActionButtons';
+
+interface MoveLogItem {
+  player: 'P1' | 'P2';
+  san: string;
+  isInvalid: boolean;
+  from?: string;
+  to?: string;
+  moveNumber?: number;
+}
+
 interface MultiplayerLivePhaseScreenProps {
-  gameState: any; // Your existing game state manager
+  gameState: any;
   gameId?: string;
 }
 
@@ -31,11 +53,30 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   gameState,
   gameId,
 }) => {
-  const { showViolations, createViolation, clearViolations } = useViolations();
+  const navigate = useNavigate();
+  const { clearViolations } = useViolations();
   const { playerData: currentUser } = useCurrentUser();
 
+  // Memoize gameState parts to prevent re-renders from timer updates
+  const memoizedGameStateData = useMemo(
+    () => ({
+      reveal: gameState?.gameState?.reveal,
+      phase: gameState?.gameState?.phase,
+      live: gameState?.gameState?.live,
+    }),
+    [
+      gameState?.gameState?.reveal?.finalFen,
+      gameState?.gameState?.reveal?.moveLog,
+      gameState?.gameState?.reveal?.isComplete,
+      gameState?.gameState?.phase,
+      gameState?.gameState?.live?.fen,
+      gameState?.gameState?.live?.gameEnded,
+      gameState?.gameState?.live?.gameResult,
+    ]
+  );
+
   // ═══════════════════════════════════════════════════════════════
-  // 🎮 MULTIPLAYER STATE
+  // 🎮 GAME STATE
   // ═══════════════════════════════════════════════════════════════
 
   const [liveGameState, setLiveGameState] = useState<LiveGameState | null>(
@@ -55,500 +96,95 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [showGameEndModal, setShowGameEndModal] = useState(false);
   const [gameEndStatus, setGameEndStatus] = useState<string | null>(null);
   const [isProcessingMove, setIsProcessingMove] = useState(false);
-  // after other useState/useMemo hooks
-  const pendingOptimisticIdRef = React.useRef<string | null>(null);
-  const prevFenRef = React.useRef<string | null>(null);
+
+  // Move processing refs
+  const pendingOptimisticIdRef = useRef<string | null>(null);
+  const prevFenRef = useRef<string | null>(null);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🎯 INITIALIZE MULTIPLAYER GAME
+  // 🎯 GAME INITIALIZATION
   // ═══════════════════════════════════════════════════════════════
 
-  // Replace the initialization useEffect in MultiplayerLivePhaseScreen.tsx with this:
+  const handleGameStateLoaded = useCallback(
+    (data: {
+      liveGameState: LiveGameState;
+      liveMoves: LiveMove[];
+      drawOffer: DrawOffer | null;
+      chessGame: Chess;
+      myColor: 'white' | 'black';
+      opponentData: any;
+    }) => {
+      setLiveGameState(data.liveGameState);
+      setLiveMoves(data.liveMoves);
+      setDrawOffer(data.drawOffer);
+      setChessGame(data.chessGame);
+      setMyColor(data.myColor);
+      setOpponentData(data.opponentData);
+    },
+    []
+  );
 
-  useEffect(() => {
-    const initializeMultiplayerGame = async () => {
-      if (!gameId || !currentUser) return;
+  // ═══════════════════════════════════════════════════════════════
+  // ⏰ TIMER MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════
 
-      console.log('🎯 Initializing multiplayer live game...');
-
-      try {
-        // Get existing game state first
-        let gameStateData = await liveMovesService.getGameState(gameId);
-        if (
-          gameStateData &&
-          gameStateData.move_count === 0 &&
-          gameStateData.current_turn !== 'white'
-        ) {
-          const fixedFen = gameStateData.current_fen.replace(/\s[wb]\s/, ' w ');
-          try {
-            // Prefer your service helper if you have one; otherwise a direct Supabase update:
-            await supabase
-              .from('game_live_state')
-              .update({
-                current_turn: 'white',
-                current_fen: fixedFen,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('game_id', gameId);
-
-            gameStateData = {
-              ...gameStateData,
-              current_turn: 'white',
-              current_fen: fixedFen,
-            };
-            console.log('✅ Corrected LIVE start: forced White to move.');
-          } catch (e) {
-            console.error('❌ Failed to correct LIVE start turn:', e);
-          }
-        }
-
-        if (!gameStateData) {
-          console.log('🔧 Live game not initialized yet, creating...');
-
-          // Get blind game state to get player IDs
-          const blindGameState = await blindMovesService.getBlindGameState(
-            gameId
-          );
-          if (!blindGameState) {
-            console.error('❌ No blind game state found');
-            return;
-          }
-
-          // Get final FEN from reveal phase
-          // 🎯 ALWAYS START LIVE PHASE WITH WHITE TO MOVE
-          // 🎯 ALWAYS START LIVE PHASE FROM STANDARD POSITION WITH WHITE TO MOVE
-          // Use reveal final FEN if present, otherwise fall back to standard—but always set 'w'
-          const rawFen =
-            gameState?.gameState?.reveal?.finalFen ||
-            'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-          const parts = rawFen.split(' ');
-          if (parts.length >= 2) parts[1] = 'w';
-          const liveStartingFen = parts.join(' ');
-
-          // ...
-          // Initialize live game with liveStartingFen (as you already do)
-          gameStateData = await liveMovesService.initializeLiveGame(
-            gameId,
-            blindGameState.whitePlayerId,
-            blindGameState.blackPlayerId,
-            liveStartingFen
-          );
-
-          // Initialize live game
-          gameStateData = await liveMovesService.initializeLiveGame(
-            gameId,
-            blindGameState.whitePlayerId,
-            blindGameState.blackPlayerId,
-            liveStartingFen // Use the modified FEN
-          );
-
-          if (!gameStateData) {
-            console.error('❌ Failed to initialize live game');
-            return;
-          }
-
-          console.log('✅ Live game created successfully');
-        }
-
-        console.log('🎮 Game state data:', gameStateData);
-        setLiveGameState(gameStateData);
-
-        // Determine my color
-        const playerColor =
-          gameStateData.white_player_id === currentUser.id ? 'white' : 'black';
-        setMyColor(playerColor);
-
-        console.log('🎨 My color:', playerColor, 'My ID:', currentUser.id);
-        console.log(
-          '👥 White player:',
-          gameStateData.white_player_id,
-          'Black player:',
-          gameStateData.black_player_id
-        );
-
-        // Get real opponent data from room players
-        try {
-          const { data: roomPlayers, error: playersError } = await supabase
-            .from('game_room_players')
-            .select('player_id, player_username, player_rating')
-            .eq('room_id', gameId);
-
-          if (!playersError && roomPlayers) {
-            console.log('👥 Room players:', roomPlayers);
-            const opponent = roomPlayers.find(
-              (p) => p.player_id !== currentUser.id
-            );
-            if (opponent) {
-              const opponentColor = playerColor === 'white' ? 'black' : 'white';
-              setOpponentData({
-                name: `${opponent.player_username} (${
-                  opponentColor === 'white' ? 'White' : 'Black'
-                })`,
-                rating: opponent.player_rating || 1500,
-                isHost: false,
-              });
-              console.log(
-                '✅ Real opponent data loaded:',
-                opponent.player_username
-              );
-            } else {
-              console.error('❌ Opponent not found in room players');
-            }
-          } else {
-            console.error('❌ Error fetching room players:', playersError);
-          }
-        } catch (error) {
-          console.error('❌ Failed to fetch opponent data:', error);
-        }
-
-        // Load existing moves
-        const moves = await liveMovesService.getMoves(gameId);
-        setLiveMoves(moves);
-        console.log('📝 Loaded moves:', moves.length);
-
-        const chess = new Chess(gameStateData.current_fen);
-        setChessGame(chess);
-
-        // Get draw offer
-        const activeDrawOffer = await liveMovesService.getActiveDrawOffer(
-          gameId
-        );
-        setDrawOffer(activeDrawOffer);
-
-        setLoading(false);
-        console.log('✅ Multiplayer live game initialized successfully');
-      } catch (error) {
-        console.error('❌ Failed to initialize multiplayer game:', error);
-        setLoading(false);
+  const handleTimeout = useCallback(
+    async (timedOutPlayer: 'white' | 'black') => {
+      if (gameId) {
+        await liveMovesService.handleTimeout(gameId, timedOutPlayer);
       }
-    };
+    },
+    [gameId]
+  );
 
-    initializeMultiplayerGame();
-  }, [gameId, currentUser, gameState.gameState.reveal.finalFen]); // Added finalFen dependency
-  useEffect(() => {
-    // Clear any stuck pending state when component loads
-    pendingOptimisticIdRef.current = null;
-    setIsProcessingMove(false);
-  }, [gameId]);
-  // ═══════════════════════════════════════════════════════════════
-  // 📡 REAL-TIME SUBSCRIPTIONS
-  // ═══════════════════════════════════════════════════════════════
-  // Heartbeat monitoring
-  useEffect(() => {
-    if (!gameId || !liveGameState || loading) return;
+  const { displayTimes } = useGameTimer(liveGameState, handleTimeout);
 
-    liveMovesService.startHeartbeatMonitoring(gameId);
-
-    return () => {
-      liveMovesService.stopHeartbeatMonitoring(gameId);
-    };
-  }, [gameId, liveGameState, loading]);
-
-  // Handle browser events
-  useEffect(() => {
-    if (!gameId) return;
-
-    const handleBeforeUnload = () => {
-      liveMovesService.leaveGame(gameId);
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      liveMovesService.leaveGame(gameId);
-    };
-  }, [gameId]);
-
-  // Handle abandonment results
-  useEffect(() => {
-    if (
-      liveGameState?.game_ended &&
-      liveGameState?.game_result?.type === 'abandonment'
-    ) {
-      handleGameEnd(liveGameState.game_result);
-    }
-  }, [liveGameState?.game_ended, liveGameState?.game_result]);
-  useEffect(() => {
-    if (!gameId || !myColor) return;
-
-    console.log('📡 Setting up real-time subscriptions...');
-
-    const unsubscribe = liveMovesService.subscribeToGameUpdates(gameId, {
-      onGameStateUpdate: (newGameState) => {
-        setLiveGameState((prev) => {
-          if (!prev) return newGameState;
-
-          const optimisticPending = !!pendingOptimisticIdRef.current;
-          const serverIsNewer =
-            (newGameState.move_count ?? 0) > (prev.move_count ?? 0);
-
-          // ✅ Only accept server FEN when it’s truly newer and we’re not mid-optimistic
-          const acceptFen = serverIsNewer && !optimisticPending;
-
-          return {
-            ...prev,
-            // always take timer/turn/end flags
-            white_time_ms: newGameState.white_time_ms,
-            black_time_ms: newGameState.black_time_ms,
-            current_turn: newGameState.current_turn,
-            game_ended: newGameState.game_ended,
-            game_result: newGameState.game_result ?? prev.game_result,
-
-            // move counters
-            move_count: acceptFen ? newGameState.move_count : prev.move_count,
-
-            // FEN: ignore timer payloads that would roll us back
-            current_fen: acceptFen
-              ? newGameState.current_fen
-              : prev.current_fen,
-          };
-        });
-
-        // ❌ Do NOT touch chess here; only moves should change the board position.
-        // if (chessGame && chessGame.fen() !== newGameState.current_fen) {...}  ← remove this block
-      },
-
-      onNewMove: (move) => {
-        const isMine = move.player_id === currentUser?.id;
-        const hasOptimistic = !!pendingOptimisticIdRef.current;
-
-        if (isMine && hasOptimistic) {
-          setLiveMoves((prev) => {
-            const filtered = prev.filter(
-              (m) => m.id !== pendingOptimisticIdRef.current
-            );
-            return [...filtered, move].sort(
-              (a, b) => a.move_number - b.move_number
-            );
-          });
-          pendingOptimisticIdRef.current = null;
-        } else {
-          setLiveMoves((prev) =>
-            prev.some((m) => m.id === move.id)
-              ? prev
-              : [...prev, move].sort((a, b) => a.move_number - b.move_number)
-          );
-        }
-
-        // Only recreate chess if needed
-        setChessGame((prevChess) => {
-          if (prevChess && prevChess.fen() === move.move_fen) return prevChess;
-          return new Chess(move.move_fen);
-        });
-
-        clearViolations();
-      },
-
-      onDrawOfferUpdate: (offer) => {
-        console.log('🔄 Draw offer updated:', offer);
-        setDrawOffer(offer);
-      },
-    });
-
-    return unsubscribe;
-    // ⛔ was: [gameId, myColor, chessGame, currentUser, liveMoves]
-  }, [gameId, myColor]);
-
-  // Add this after your other useEffects in MultiplayerLivePhaseScreen.tsx
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (pendingOptimisticIdRef.current) {
-        console.log('Clearing stuck pending state');
-        pendingOptimisticIdRef.current = null;
-        setIsProcessingMove(false);
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
+  // Helper function to format time
+  const formatTime = useCallback((timeMs: number) => {
+    const totalSeconds = Math.floor(timeMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }, []);
-  // Timer logic for counting down
 
   // ═══════════════════════════════════════════════════════════════
-  // 🎮 GAME HANDLERS
+  // 🎮 MOVE HANDLING
   // ═══════════════════════════════════════════════════════════════
-  // Add this import at the top
 
-  // Replace your current timer useEffect with this simple hook call:
+  const moveHandlerProps = useMemo(
+    () => ({
+      gameId,
+      currentUser,
+      liveGameState,
+      chessGame,
+      myColor,
+      isProcessingMove,
+      setIsProcessingMove,
+      setChessGame,
+      setLiveGameState,
+      setLiveMoves,
+      pendingOptimisticIdRef,
+      prevFenRef,
+    }),
+    [
+      gameId,
+      currentUser,
+      liveGameState,
+      chessGame,
+      myColor,
+      isProcessingMove,
+      pendingOptimisticIdRef,
+      prevFenRef,
+    ]
+  );
 
-  // Remove your current timer useEffect completely!
-  const handleDrop = (from: string, to: string, piece: string): boolean => {
-    if (isProcessingMove) return false;
-    if (!liveGameState || !chessGame || !myColor) return false;
-    if (pendingOptimisticIdRef.current) {
-      console.log('Move already pending, ignoring');
-      return false;
-    }
+  const { handleDrop } = useMoveHandler(moveHandlerProps);
 
-    if (liveGameState.game_ended) {
-      showViolations([createViolation.gameEnded()]);
-      return false;
-    }
-    // Fix: Convert chess.js turn to our format for comparison
-    const chessTurnToColor = chessGame.turn() === 'w' ? 'white' : 'black';
-    if (chessTurnToColor !== myColor) {
-      showViolations([createViolation.wrongTurn(myColor)]);
-      return false;
-    }
-    if (
-      (myColor === 'white' && piece[0] !== 'w') ||
-      (myColor === 'black' && piece[0] !== 'b')
-    ) {
-      showViolations([createViolation.wrongTurn(myColor)]);
-      return false;
-    }
+  // ═══════════════════════════════════════════════════════════════
+  // 🎮 GAME END HANDLING
+  // ═══════════════════════════════════════════════════════════════
 
-    // Try locally
-    const testChess = new Chess(chessGame.fen());
-    const move = testChess.move({ from, to, promotion: 'q' });
-    if (!move) {
-      showViolations([createViolation.invalidMove()]);
-      return false;
-    }
-
-    // ✅ OPTIMISTIC UI
-    setIsProcessingMove(true);
-    prevFenRef.current = chessGame.fen();
-
-    // 1) advance local chess instance + FEN immediately
-    setChessGame(testChess);
-    setLiveGameState((prev) =>
-      prev
-        ? {
-            ...prev,
-            current_fen: testChess.fen(),
-            current_turn: prev.current_turn === 'white' ? 'black' : 'white',
-            move_count: prev.move_count + 1,
-          }
-        : prev
-    );
-
-    // 2) add optimistic move so lastMove highlights correctly
-    const optimisticId = `optimistic-${Date.now()}`;
-    pendingOptimisticIdRef.current = optimisticId;
-    // In handleDrop, add this logging before creating the optimistic move:
-    setLiveMoves((prev) => {
-      const currentMoveCount = liveGameState?.move_count || 0;
-      const calculatedMoveNumber = currentMoveCount + 1;
-
-      console.log('🔍 OPTIMISTIC MOVE DEBUG:', {
-        currentMoveCount,
-        calculatedMoveNumber,
-        existingMovesLength: prev.length,
-        lastExistingMoveNumber:
-          prev.length > 0 ? prev[prev.length - 1].move_number : 'none',
-        liveGameStateMoveCount: liveGameState?.move_count,
-      });
-
-      return [
-        ...prev,
-        {
-          id: optimisticId,
-          game_id: gameId!,
-          player_id: currentUser!.id,
-          move_number: calculatedMoveNumber,
-          move_from: from,
-          move_to: to,
-          move_san: move.san,
-          move_fen: testChess.fen(),
-          created_at: new Date().toISOString(),
-        } as any,
-      ];
-    });
-
-    // 3) let server confirm
-    liveMovesService
-      .makeMove(gameId!, from, to, 'q')
-      .then((result) => {
-        if (!result.success) {
-          // ❌ rollback if server rejects
-          if (prevFenRef.current) {
-            const rollback = new Chess(prevFenRef.current);
-            setChessGame(rollback);
-            setLiveGameState((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    current_fen: rollback.fen(),
-                    current_turn: myColor,
-                  }
-                : prev
-            );
-          }
-          // remove optimistic move
-          setLiveMoves((prev) => prev.filter((m) => m.id !== optimisticId));
-          pendingOptimisticIdRef.current = null;
-
-          showViolations([createViolation.invalidMove(result.error)]);
-        } else {
-          clearViolations();
-        }
-      })
-      .finally(() => setTimeout(() => setIsProcessingMove(false), 120));
-
-    // In a controlled board, returning true/false doesn’t move the piece itself;
-    // the FEN update we just did will render the new position.
-    return true;
-  };
-
-  const handleResign = async () => {
-    if (!gameId) return;
-
-    console.log('🏳️ Resigning game...');
-    const success = await liveMovesService.resignGame(gameId);
-
-    if (success) {
-      console.log('✅ Resignation successful');
-    }
-
-    setShowResignConfirm(false);
-  };
-
-  const handleOfferDraw = async () => {
-    if (!gameId) return;
-
-    console.log('🤝 Offering draw...');
-    const success = await liveMovesService.offerDraw(gameId);
-
-    if (success) {
-      console.log('✅ Draw offer sent');
-    }
-
-    setShowDrawOfferConfirm(false);
-  };
-
-  const handleAcceptDraw = async () => {
-    if (!gameId) return;
-
-    console.log('✅ Accepting draw...');
-    const success = await liveMovesService.respondToDrawOffer(gameId, true);
-
-    if (success) {
-      console.log('✅ Draw accepted');
-    }
-  };
-
-  const handleDeclineDraw = async () => {
-    if (!gameId) return;
-
-    console.log('❌ Declining draw...');
-    await liveMovesService.respondToDrawOffer(gameId, false);
-  };
-  useEffect(() => {
-    if (
-      liveGameState?.game_ended &&
-      liveGameState?.game_result &&
-      !gameResult
-    ) {
-      console.log(
-        '🏁 Game ended detected from server:',
-        liveGameState.game_result
-      );
-      handleGameEnd(liveGameState.game_result);
-    }
-  }, [liveGameState?.game_ended, liveGameState?.game_result, gameResult]);
-  const handleGameEnd = (result: GameResult) => {
-    console.log('🏁 Game ended:', result);
+  const handleGameEnd = useCallback((result: GameResult) => {
     setGameResult(result);
 
     // Show status first, then modal
@@ -574,145 +210,127 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       setShowGameEndModal(true);
       setGameEndStatus(null);
     }, 1000);
-  };
+  }, []);
 
-  const handleRematch = () => {
-    // TODO: Implement rematch logic
-    console.log('🔄 Rematch requested');
-    setGameResult(null);
-    setShowGameEndModal(false);
-  };
-
-  const handleLeaveTable = () => {
-    if (
-      window.confirm(
-        '⚠️ SURRENDER WARNING ⚠️\n\nLeaving will count as RESIGNATION!\n\nAre you sure?'
-      )
-    ) {
-      window.location.href = '/games';
-    }
-  };
-  const displayTimes = useSimplifiedTimer(
-    liveGameState,
-    async (timedOutPlayer) => {
-      if (gameId) {
-        await liveMovesService.handleTimeout(gameId, timedOutPlayer);
-      }
-    }
-  );
+  // Game end detection
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (liveGameState && displayTimes) {
-        const formatTime = (ms: number) => {
-          const minutes = Math.floor(ms / 60000);
-          const seconds = Math.floor((ms % 60000) / 1000);
-          return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        };
+    if (
+      liveGameState?.game_ended &&
+      liveGameState?.game_result &&
+      !gameResult
+    ) {
+      handleGameEnd(liveGameState.game_result);
+    }
+  }, [
+    liveGameState?.game_ended,
+    liveGameState?.game_result,
+    gameResult,
+    handleGameEnd,
+  ]);
 
-        console.log('🕐 TIMER DEBUG:', {
-          serverWhite: formatTime(liveGameState.white_time_ms),
-          serverBlack: formatTime(liveGameState.black_time_ms),
-          displayWhite: formatTime(displayTimes.white),
-          displayBlack: formatTime(displayTimes.black),
-          currentTurn: liveGameState.current_turn,
-          gameEnded: liveGameState.game_ended,
-          timestamp: new Date().toLocaleTimeString(),
-        });
-      }
-    }, 2000); // Log every 2 seconds
+  // ═══════════════════════════════════════════════════════════════
+  // 🎮 GAME ACTION HANDLERS
+  // ═══════════════════════════════════════════════════════════════
 
-    return () => clearInterval(interval);
-  }, [liveGameState, displayTimes]);
+  const handleResign = useCallback(async () => {
+    if (!gameId) return;
+    const success = await liveMovesService.resignGame(gameId);
+    if (success) {
+      // Handle success
+    }
+    setShowResignConfirm(false);
+  }, [gameId]);
+
+  const handleOfferDraw = useCallback(async () => {
+    if (!gameId) return;
+    const success = await liveMovesService.offerDraw(gameId);
+    if (success) {
+      // Handle success
+    }
+    setShowDrawOfferConfirm(false);
+  }, [gameId]);
+
+  const handleAcceptDraw = useCallback(async () => {
+    if (!gameId) return;
+    const success = await liveMovesService.respondToDrawOffer(gameId, true);
+    if (success) {
+      // Handle success
+    }
+  }, [gameId]);
+
+  const handleDeclineDraw = useCallback(async () => {
+    if (!gameId) return;
+    await liveMovesService.respondToDrawOffer(gameId, false);
+  }, [gameId]);
+
+
+  const handleLeaveTable = useCallback(() => {
+    navigate('/games');
+  }, [navigate]);
+
   // ═══════════════════════════════════════════════════════════════
   // 🎨 COMPUTED VALUES
   // ═══════════════════════════════════════════════════════════════
 
+  const defaultPlayerData = useMemo(
+    () => ({ name: 'Loading...', rating: 1500, isHost: false }),
+    []
+  );
+
   const myPlayerData = useMemo(() => {
-    if (!currentUser || !myColor)
-      return { name: 'Loading...', rating: 1500, isHost: false };
+    if (!currentUser || !myColor) return defaultPlayerData;
 
     return {
       name: `${currentUser.username} (${
         myColor === 'white' ? 'White' : 'Black'
       })`,
       rating: currentUser.rating || 1500,
-      isHost: true, // You can determine this from room data
+      isHost: true,
     };
-  }, [currentUser, myColor]);
+  }, [currentUser, myColor, defaultPlayerData]);
 
   const players = useMemo(
     () => ({
       white:
-        myColor === 'white'
-          ? myPlayerData
-          : opponentData || { name: 'Loading...', rating: 1500, isHost: false },
+        myColor === 'white' ? myPlayerData : opponentData || defaultPlayerData,
       black:
-        myColor === 'black'
-          ? myPlayerData
-          : opponentData || { name: 'Loading...', rating: 1500, isHost: false },
+        myColor === 'black' ? myPlayerData : opponentData || defaultPlayerData,
     }),
-    [myColor, myPlayerData, opponentData]
+    [myColor, myPlayerData, opponentData, defaultPlayerData]
   );
-
-  const isMyTurn = useMemo(() => {
-    if (!chessGame || !myColor) return false;
-    const chessTurnColor = chessGame.turn() === 'w' ? 'white' : 'black';
-    return chessTurnColor === myColor;
-  }, [chessGame, myColor]);
-
-  const currentDrawOffer = useMemo(() => {
-    if (!drawOffer || !drawOffer.is_active) return null;
-    return drawOffer.offering_player;
-  }, [drawOffer]);
-
-  // Add this debug useEffect after your other useEffects
-  const lastDebugRef = React.useRef<{
-    fen: string | null;
-    turn: string | null;
-    mc: number | null;
-  }>({ fen: null, turn: null, mc: null });
-  useEffect(() => {
-    const fen = chessGame?.fen() ?? null;
-    const turn = liveGameState?.current_turn ?? null;
-    const mc = liveGameState?.move_count ?? null;
-    if (
-      fen !== lastDebugRef.current.fen ||
-      turn !== lastDebugRef.current.turn ||
-      mc !== lastDebugRef.current.mc
-    ) {
-      lastDebugRef.current = { fen, turn, mc };
-      console.log('🐛 DEBUG STATE:', { fen, turn, mc });
-    }
-  }, [chessGame, liveGameState?.current_turn, liveGameState?.move_count]);
-
-  useEffect(() => {
-    if (
-      liveGameState?.game_ended &&
-      liveGameState?.game_result && // ✅ Add this null check
-      !gameResult
-    ) {
-      console.log(
-        '🏆 Blind phase checkmate detected, showing modal after delay'
-      );
-      setTimeout(() => {
-        handleGameEnd(liveGameState.game_result!); // ✅ Use non-null assertion since we checked above
-      }, 500);
-    }
-  }, [liveGameState?.game_ended, liveGameState?.game_result, gameResult]);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎬 RENDER
   // ═══════════════════════════════════════════════════════════════
 
+  const finalFen = useMemo(
+    () => memoizedGameStateData?.reveal?.finalFen,
+    [memoizedGameStateData?.reveal?.finalFen]
+  );
+
   if (loading || !liveGameState || !chessGame || !myColor) {
     return (
       <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+        {/* Always render GameInitializer even during loading */}
+        <GameInitializer
+          gameId={gameId}
+          currentUser={currentUser}
+          finalFen={finalFen}
+          onGameStateLoaded={handleGameStateLoaded}
+          onLoadingChange={setLoading}
+        />
+
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">⚔️</div>
           <div className="text-2xl font-bold mb-2">
             Preparing Live Battle...
           </div>
-          <div className="text-gray-400">Initializing multiplayer chess</div>
+          <div className="text-gray-400">
+            {loading && 'Initializing multiplayer chess'}
+            {!loading && !liveGameState && 'Loading game state...'}
+            {!loading && !chessGame && 'Setting up chess board...'}
+            {!loading && !myColor && 'Determining player color...'}
+          </div>
         </div>
       </div>
     );
@@ -720,179 +338,226 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex overflow-hidden relative">
-      {/* WAR BACKGROUND */}
+      {/* Logic Components */}
+      <GameSubscriptions
+        gameId={gameId}
+        myColor={myColor}
+        currentUser={currentUser}
+        liveGameState={liveGameState}
+        loading={loading}
+        pendingOptimisticIdRef={pendingOptimisticIdRef}
+        setLiveGameState={setLiveGameState}
+        setLiveMoves={setLiveMoves}
+        setChessGame={setChessGame}
+        setDrawOffer={setDrawOffer}
+        clearViolations={clearViolations}
+      />
+
+      {/* Modern Background with Glassmorphism */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-red-500/[0.07] rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/[0.05] rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-3/4 left-3/4 w-64 h-64 bg-yellow-500/[0.04] rounded-full blur-3xl animate-pulse delay-2000" />
+        {/* Primary gradient orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-emerald-500/8 to-teal-500/8 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-3/4 right-1/3 w-64 h-64 bg-gradient-to-r from-amber-500/6 to-orange-500/6 rounded-full blur-3xl animate-pulse delay-2000" />
+
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(148, 163, 184, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(148, 163, 184, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '80px 80px',
+          }}
+        />
       </div>
 
-      {/* 🎯 COMPACT GAME END STATUS OVERLAY */}
-      {gameEndStatus && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl blur-lg animate-pulse" />
-            <div className="relative bg-gray-900/95 border border-red-500/50 rounded-xl px-6 py-4 shadow-xl">
-              <div className="flex items-center gap-3">
-                <div className="text-2xl">
-                  {gameResult?.type === 'checkmate'
-                    ? '👑'
-                    : gameResult?.type === 'timeout'
-                    ? '⏰'
-                    : gameResult?.type === 'resignation'
-                    ? '🏳️'
-                    : '⚖️'}
-                </div>
-                <h1 className="text-xl font-bold text-white">
-                  {gameEndStatus}
-                </h1>
-              </div>
+      {/* Game Status Overlay */}
+      <GameStatusOverlay
+        gameEndStatus={gameEndStatus}
+        gameResult={gameResult}
+      />
+
+      {/* THREE-COLUMN LAYOUT */}
+      <div className="flex flex-col lg:flex-row w-full h-full">
+        {/* LEFT PANEL: Rewards, Timeline, Stats */}
+        <div className="w-full lg:w-80 bg-black/40 backdrop-blur-xl border-r lg:border-r border-b lg:border-b-0 border-white/10 p-4 flex flex-col gap-4 lg:h-full">
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-4 h-full">
+            <RewardsBox gameId={gameId!} myColor={myColor} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
+            <PhaseTimeline className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
+            <GameStats liveMoves={liveMoves} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300 flex-1" />
+          </div>
+        </div>
+
+        {/* CENTER PANEL: Chess Board with Player Bars */}
+        <div className="flex-1 flex flex-col justify-center p-6 overflow-visible relative">
+          {/* Opponent Player Bar */}
+          <PlayerBar
+            player={{
+              name: players[myColor === 'white' ? 'black' : 'white'].name,
+              rating: players[myColor === 'white' ? 'black' : 'white'].rating,
+            }}
+            timeRemaining={formatTime(displayTimes[myColor === 'white' ? 'black' : 'white'])}
+            isActive={liveGameState?.current_turn !== myColor}
+            color={myColor === 'white' ? 'black' : 'white'}
+            position="top"
+            className="mb-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+          />
+
+          {/* Chess Board - HERO ELEMENT */}
+          <div className="flex justify-center relative z-[999]">
+            <div className="bg-white/8 border border-white/15 rounded-lg p-4 shadow-xl relative z-[999]">
+              <LiveGameBoard
+                liveGameState={liveGameState}
+                chessGame={chessGame}
+                myColor={myColor}
+                liveMoves={liveMoves}
+                onPieceDrop={handleDrop}
+                large={true}
+              />
+            </div>
+          </div>
+
+          {/* My Player Bar */}
+          <PlayerBar
+            player={{
+              name: players[myColor].name,
+              rating: players[myColor].rating,
+            }}
+            timeRemaining={formatTime(displayTimes[myColor])}
+            isActive={liveGameState?.current_turn === myColor}
+            color={myColor}
+            position="bottom"
+            className="mt-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+          />
+        </div>
+
+        {/* RIGHT PANEL: Move Log, Action Buttons */}
+        <div className="w-full lg:w-80 bg-black/40 backdrop-blur-xl border-l lg:border-l border-t lg:border-t-0 border-white/10 p-4 flex flex-col gap-4 lg:h-full">
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-4 h-full">
+            <MoveLog
+              liveMoves={liveMoves}
+              blindMoves={memoizedGameStateData.reveal?.moveLog || ([] as MoveLogItem[])}
+              className="flex-1 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            />
+            <ActionButtons
+              onResign={() => setShowResignConfirm(true)}
+              onOfferDraw={() => setShowDrawOfferConfirm(true)}
+              onLeaveGame={handleLeaveTable}
+              onRematch={() => {
+                setGameResult(null);
+                setShowGameEndModal(false);
+              }}
+              gameEnded={liveGameState?.game_ended || false}
+              disabled={isProcessingMove}
+              className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Confirmation Modals */}
+      {showResignConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Resign Game?</h3>
+            <p className="text-gray-300 mb-6">Are you sure you want to resign? This will end the game immediately.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleResign}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              >
+                Resign
+              </button>
+              <button
+                onClick={() => setShowResignConfirm(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Left: Warriors */}
-      <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col justify-between relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          {myColor === 'white' ? (
-            // White player view: Black opponent at top, White self at bottom
-            <>
-              <div className="flex justify-end">
-                <WarriorCard
-                  player="black"
-                  playerData={players.black}
-                  timeMs={displayTimes.black} // ✅ Use hook timer, not server timer
-                  active={
-                    liveGameState.current_turn === 'black' &&
-                    !liveGameState.game_ended
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <WarriorCard
-                  player="white"
-                  playerData={players.white}
-                  timeMs={displayTimes.white} // ✅ Use hook timer, not server timer
-                  active={
-                    liveGameState.current_turn === 'white' &&
-                    !liveGameState.game_ended
-                  }
-                />
-              </div>
-            </>
-          ) : (
-            // Black player view: White opponent at top, Black self at bottom
-            <>
-              <div className="flex justify-end">
-                <WarriorCard
-                  player="white"
-                  playerData={players.white}
-                  timeMs={displayTimes.white} // ✅ Use hook timer, not server timer
-                  active={
-                    liveGameState.current_turn === 'white' &&
-                    !liveGameState.game_ended
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <WarriorCard
-                  player="black"
-                  playerData={players.black}
-                  timeMs={displayTimes.black} // ✅ Use hook timer, not server timer
-                  active={
-                    liveGameState.current_turn === 'black' &&
-                    !liveGameState.game_ended
-                  }
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Center: BATTLEFIELD */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 rounded-3xl blur-xl animate-pulse" />
-          <div className="relative z-10">
-            <UnifiedChessBoard
-              fen={liveGameState.current_fen}
-              game={chessGame}
-              onPieceDrop={handleDrop}
-              isFlipped={myColor === 'black'} // Black player sees flipped board
-              boardWidth={Math.min(
-                700,
-                window.innerWidth * 0.5,
-                window.innerHeight * 0.85
-              )}
-              gameEnded={liveGameState.game_ended}
-              currentTurn={liveGameState.current_turn === 'white' ? 'w' : 'b'}
-              lastMove={
-                liveMoves.length > 0
-                  ? {
-                      from: liveMoves[liveMoves.length - 1].move_from,
-                      to: liveMoves[liveMoves.length - 1].move_to,
-                    }
-                  : null
-              }
-              phase="live"
-            />
+      {showDrawOfferConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Offer Draw?</h3>
+            <p className="text-gray-300 mb-6">Do you want to offer a draw to your opponent?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleOfferDraw}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
+              >
+                Offer Draw
+              </button>
+              <button
+                onClick={() => setShowDrawOfferConfirm(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Right: War Move History + Actions */}
-      <div className="w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 p-6 flex flex-col relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex flex-col h-full">
-          <div className="mb-3 space-y-2">
-            <PotDisplay gameId={gameId!} />
-            <BlindPhaseGoldSummary gameId={gameId!} />
-          </div>
-          <div className="flex-1  overflow-hidden">
-            <WarMoveHistory
-              liveMoves={liveMoves.map((move) => move.move_san)}
-              blindMoves={gameState.gameState.reveal.moveLog || []}
-            />
+      {/* Draw Offer Response */}
+      {drawOffer && !drawOffer.responded_at && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Draw Offer</h3>
+            <p className="text-gray-300 mb-6">Your opponent has offered a draw. Do you accept?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAcceptDraw}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+              >
+                Accept
+              </button>
+              <button
+                onClick={handleDeclineDraw}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              >
+                Decline
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* WAR MODALS */}
-      <WarModal
-        isOpen={showResignConfirm}
-        title="SURRENDER BATTLE?"
-        message="Are you sure you want to surrender this epic war? Your opponent will claim total victory!"
-        confirmText="Surrender"
-        confirmColor="bg-red-600 hover:bg-red-700"
-        onConfirm={handleResign}
-        onCancel={() => setShowResignConfirm(false)}
-        icon="🏳️"
-      />
-
-      <WarModal
-        isOpen={showDrawOfferConfirm}
-        title="OFFER PEACE TREATY?"
-        message="Do you want to offer your opponent an honorable ceasefire? The war will end if they accept."
-        confirmText="Offer Peace"
-        confirmColor="bg-blue-600 hover:bg-blue-700"
-        onConfirm={handleOfferDraw}
-        onCancel={() => setShowDrawOfferConfirm(false)}
-        icon="🤝"
-      />
-
-      {/* ENHANCED GAME END MODAL */}
-      <GameEndModal
-        isOpen={showGameEndModal}
-        gameResult={gameResult}
-        gameId={gameId!}
-        myColor={myColor!}
-        onRematch={handleRematch}
-        onReturnToLobby={() => (window.location.href = '/games')}
-        onClose={() => setShowGameEndModal(false)}
-      />
+      {/* Game End Modal */}
+      {showGameEndModal && gameResult && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Game Over</h3>
+            <p className="text-gray-300 mb-6">
+              {gameResult.type === 'checkmate' && `${gameResult.winner} wins by checkmate!`}
+              {gameResult.type === 'timeout' && `${gameResult.winner} wins by time!`}
+              {gameResult.type === 'resignation' && `${gameResult.winner} wins by resignation!`}
+              {gameResult.type === 'draw' && 'Game is a draw!'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleLeaveTable}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              >
+                Return to Lobby
+              </button>
+              <button
+                onClick={() => setShowGameEndModal(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -56,6 +56,7 @@ export const useAnimatedReveal = ({
   // Game data state
   const [roomPlayers, setRoomPlayers] = useState<any[]>([]);
   const [myColor, setMyColor] = useState<'white' | 'black' | null>(null);
+  const [playerDataLoaded, setPlayerDataLoaded] = useState(false);
 
   const totalMoves = moveLog.length;
   const progressPercentage =
@@ -104,17 +105,21 @@ export const useAnimatedReveal = ({
   }, [gameMode]);
 
   // Fetch player data
-  // In useAnimatedReveal.ts, update the fetchGameData function with debug logs:
   useEffect(() => {
     const fetchGameData = async () => {
-      if (!gameId || !playerData) {
-        console.log('❌ Missing gameId or playerData:', { gameId, playerData });
+      // Set loading state when starting
+      if (!gameId) {
+        console.log('❌ Missing gameId');
+        setPlayerDataLoaded(false);
+        return;
+      }
+
+      if (!playerData) {
+        setPlayerDataLoaded(false);
         return;
       }
 
       try {
-        console.log('🔍 Fetching players for gameId:', gameId);
-        console.log('👤 Current playerData:', playerData);
 
         const { data: players, error } = await supabase
           .from('game_room_players')
@@ -122,36 +127,26 @@ export const useAnimatedReveal = ({
           .eq('room_id', gameId)
           .order('created_at', { ascending: true });
 
-        console.log('📊 Query result:', { players, error });
-
         if (error) {
           console.error('❌ Database error:', error);
           return;
         }
 
         if (players && players.length >= 2) {
-          console.log('✅ Found players:', players);
           setRoomPlayers(players);
 
           const playerColor =
             players[0].player_id === playerData.id ? 'white' : 'black';
-          console.log(
-            '🎨 Determined color:',
-            playerColor,
-            'for player:',
-            playerData.id
-          );
-          console.log(
-            '👥 Player IDs:',
-            players.map((p) => ({ id: p.player_id, name: p.player_username }))
-          );
 
           setMyColor(playerColor);
+          setPlayerDataLoaded(true); // Mark as loaded when all data is ready
         } else {
           console.warn('⚠️ Not enough players found:', players?.length || 0);
+          setPlayerDataLoaded(false);
         }
       } catch (error) {
         console.error('💥 Failed to fetch game data:', error);
+        setPlayerDataLoaded(false);
       }
     };
 
@@ -276,8 +271,13 @@ export const useAnimatedReveal = ({
     setCurrentMoveIndex(nextIndex);
   };
 
-  // Animation timing effects
+  // Animation timing effects - wait for player data to load
   useEffect(() => {
+    // Don't start animation until player data is loaded
+    if (!playerDataLoaded) {
+      return;
+    }
+
     const startTimer = setTimeout(() => {
       setIsStarting(false);
       if (totalMoves > 0) {
@@ -288,7 +288,7 @@ export const useAnimatedReveal = ({
     }, 800);
 
     return () => clearTimeout(startTimer);
-  }, [totalMoves, onRevealComplete]);
+  }, [totalMoves, onRevealComplete, playerDataLoaded]); // Add playerDataLoaded dependency
 
   useEffect(() => {
     if (
@@ -300,7 +300,7 @@ export const useAnimatedReveal = ({
         () => {
           playNextMove();
         },
-        gameMode === 'robot_chaos' ? 30000 : 40000
+        gameMode === 'robot_chaos' ? 1000 : 2000
       );
 
       return () => clearTimeout(timer);
@@ -320,6 +320,7 @@ export const useAnimatedReveal = ({
   // Computed values
   const isComplete = progressPercentage >= 100;
   const isEmpty = totalMoves === 0;
+  const isReady = playerDataLoaded; // Animation is ready when player data is loaded
 
   return {
     // Animation state
@@ -344,5 +345,7 @@ export const useAnimatedReveal = ({
     // Status
     isComplete,
     isEmpty,
+    isReady, // New: indicates if all required data is loaded
+    playerDataLoaded, // New: specific to player data loading state
   };
 };

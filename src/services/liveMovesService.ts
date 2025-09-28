@@ -178,15 +178,32 @@ class LiveMovesService {
     startingFen: string
   ): Promise<LiveGameState | null> {
     try {
+      // Check if live game state already exists
       const { data: existingState, error: checkError } = await supabase
         .from('game_live_state')
         .select('*')
         .eq('game_id', gameId)
         .single();
 
-      if (existingState && !checkError) {
+      // If state exists, return it regardless of the error type
+      if (existingState) {
+        console.log(
+          '✅ Live game state already exists, returning existing state'
+        );
         return existingState;
       }
+
+      // Only proceed to create if we got a "not found" error (PGRST116)
+      // Any other error indicates a real problem
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error(
+          '❌ Unexpected error checking for existing state:',
+          checkError
+        );
+        return null;
+      }
+
+      console.log('🔧 No existing live game state found, creating new one...');
 
       // ✅ Get time control from the room settings
       const { data: roomData, error: roomError } = await supabase
@@ -214,25 +231,52 @@ class LiveMovesService {
       });
 
       // Create new live game state
+      // Create or update live game state (UPSERT to avoid 409 conflicts)
       const { data: newState, error } = await supabase
         .from('game_live_state')
-        .insert({
-          game_id: gameId,
-          white_player_id: whitePlayerId,
-          black_player_id: blackPlayerId,
-          current_fen: startingFen,
-          current_turn: 'white', // White always starts live phase
-          move_count: 0,
-          white_time_ms: timeMs, // ✅ Use actual time control
-          black_time_ms: timeMs, // ✅ Use actual time control
-          time_control_minutes: minutes, // ✅ Store parsed minutes
-          time_increment_seconds: increment, // ✅ Store parsed increment
-          last_move_time: new Date().toISOString(),
-        })
+        .upsert(
+          {
+            game_id: gameId,
+            white_player_id: whitePlayerId,
+            black_player_id: blackPlayerId,
+            current_fen: startingFen,
+            current_turn: 'white', // White always starts live phase
+            move_count: 0,
+            white_time_ms: timeMs,
+            black_time_ms: timeMs,
+            time_control_minutes: minutes,
+            time_increment_seconds: increment,
+            last_move_time: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'game_id' } // ✅ prevents duplicate key error
+        )
         .select()
         .single();
 
       if (error) {
+        // If we get a duplicate key error, try to fetch the existing record
+        if (
+          error.code === '23505' &&
+          error.message.includes('game_live_state_game_id_key')
+        ) {
+          console.log(
+            '🔄 Duplicate key error, fetching existing live game state...'
+          );
+          const { data: existingState } = await supabase
+            .from('game_live_state')
+            .select('*')
+            .eq('game_id', gameId)
+            .single();
+
+          if (existingState) {
+            console.log(
+              '✅ Retrieved existing live game state after duplicate key error'
+            );
+            return existingState;
+          }
+        }
+
         console.error('❌ Error initializing live game:', error);
         return null;
       }

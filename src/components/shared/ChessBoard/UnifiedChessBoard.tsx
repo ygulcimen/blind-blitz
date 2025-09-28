@@ -334,12 +334,14 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
 
   // Board styling
   const boardContainerClass = useMemo(() => {
-    return 'relative rounded-lg shadow-xl bg-gradient-to-br from-amber-50 to-amber-100';
+    return 'relative rounded-lg shadow-xl bg-gradient-to-br from-amber-50 to-amber-100 z-[1001]';
   }, []);
 
   const boardStyle = useMemo(
     () => ({
       borderRadius: '8px',
+      position: 'relative',
+      zIndex: 1002,
     }),
     []
   );

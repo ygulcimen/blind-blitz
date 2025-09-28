@@ -54,6 +54,8 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
 
     // Status
     isEmpty,
+    isReady,
+    playerDataLoaded,
   } = useAnimatedReveal({
     initialFen,
     moveLog,
@@ -63,9 +65,21 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
     onRevealComplete,
   });
 
-  // Show loading while determining state
-  if (isEmpty) {
-    return <LoadingReveal modeInfo={modeInfo} gameMode={gameMode} />;
+  // Show loading while player data is loading or if game is empty
+  if (!isReady || isEmpty) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-spin">⚔️</div>
+          <div className="text-2xl font-bold mb-2">
+            {!playerDataLoaded ? 'Loading Player Data...' : 'Preparing Battle Reveal...'}
+          </div>
+          <div className="text-gray-400">
+            {!playerDataLoaded ? 'Fetching game participants' : 'Analyzing battle moves'}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
