@@ -63,6 +63,12 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
 
     const unsubscribe = liveMovesService.subscribeToGameUpdates(gameId, {
       onGameStateUpdate: (newGameState) => {
+        console.log('🔄 GAME STATE UPDATE:', {
+          game_ended: newGameState.game_ended,
+          game_result: newGameState.game_result,
+          move_count: newGameState.move_count
+        });
+
         setLiveGameState(prev => {
           if (!prev) return newGameState;
 
@@ -70,7 +76,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
           const serverIsNewer = (newGameState.move_count ?? 0) > (prev.move_count ?? 0);
           const acceptFen = serverIsNewer && !optimisticPending;
 
-          return {
+          const updatedState = {
             ...prev,
             white_time_ms: newGameState.white_time_ms,
             black_time_ms: newGameState.black_time_ms,
@@ -80,6 +86,13 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
             move_count: acceptFen ? newGameState.move_count : prev.move_count,
             current_fen: acceptFen ? newGameState.current_fen : prev.current_fen,
           };
+
+          console.log('🔄 UPDATED GAME STATE:', {
+            game_ended: updatedState.game_ended,
+            game_result: updatedState.game_result
+          });
+
+          return updatedState;
         });
       },
 
@@ -111,6 +124,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
       },
 
       onDrawOfferUpdate: (offer) => {
+        console.log('🤝 DRAW OFFER UPDATE:', offer);
         setDrawOffer(offer);
       },
     });

@@ -501,6 +501,8 @@ class LiveMovesService {
    */
   async getGameState(gameId: string): Promise<LiveGameState | null> {
     try {
+      console.log('🔍 GET GAME STATE: Fetching from database for gameId:', gameId);
+
       const { data, error } = await supabase
         .from('game_live_state')
         .select('*')
@@ -508,13 +510,21 @@ class LiveMovesService {
         .single();
 
       if (error) {
-        console.error('❌ Error getting game state:', error);
+        console.error('❌ GET GAME STATE: Error getting game state:', error);
         return null;
       }
 
+      console.log('✅ GET GAME STATE: Retrieved data from database', {
+        gameId: data?.game_id,
+        game_ended: data?.game_ended,
+        game_result: data?.game_result,
+        move_count: data?.move_count,
+        updated_at: data?.updated_at
+      });
+
       return data;
     } catch (error) {
-      console.error('❌ Failed to get game state:', error);
+      console.error('❌ GET GAME STATE: Failed to get game state:', error);
       return null;
     }
   }
@@ -644,6 +654,8 @@ class LiveMovesService {
    * Respond to a draw offer
    */
   async respondToDrawOffer(gameId: string, accept: boolean): Promise<boolean> {
+    console.log('🤝 DRAW RESPONSE: Starting respondToDrawOffer', { gameId, accept });
+
     try {
       const {
         data: { user },
@@ -651,10 +663,14 @@ class LiveMovesService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
+        console.log('❌ DRAW RESPONSE: Auth error or no user', { authError, user: !!user });
         return false;
       }
 
+      console.log('🤝 DRAW RESPONSE: User authenticated', { userId: user.id });
+
       // Get active draw offer
+      console.log('🤝 DRAW RESPONSE: Fetching active draw offer for gameId:', gameId);
       const { data: offer, error: offerError } = await supabase
         .from('game_draw_offers')
         .select('*')
@@ -663,11 +679,14 @@ class LiveMovesService {
         .single();
 
       if (offerError || !offer) {
-        console.error('❌ No active draw offer found');
+        console.error('❌ DRAW RESPONSE: No active draw offer found', { offerError, offer });
         return false;
       }
 
+      console.log('🤝 DRAW RESPONSE: Found active draw offer', offer);
+
       // Update draw offer
+      console.log('🤝 DRAW RESPONSE: Updating draw offer to inactive with response', { accept });
       const { error: updateError } = await supabase
         .from('game_draw_offers')
         .update({
@@ -678,32 +697,80 @@ class LiveMovesService {
         .eq('id', offer.id);
 
       if (updateError) {
-        console.error('❌ Error updating draw offer:', updateError);
+        console.error('❌ DRAW RESPONSE: Error updating draw offer:', updateError);
         return false;
       }
 
+      console.log('✅ DRAW RESPONSE: Successfully updated draw offer');
+
       // If accepted, end the game
       if (accept) {
+        console.log('🏁 DRAW RESPONSE: Draw accepted, ending game...');
+
         const gameResult: GameResult = {
           type: 'draw',
           winner: 'draw',
           reason: 'agreement',
         };
 
-        await supabase
+        console.log('🏁 DRAW RESPONSE: Created game result', gameResult);
+
+        // Create a clean update payload with only known fields
+        const cleanGameResult = {
+          type: 'draw' as const,
+          winner: 'draw' as const,
+          reason: 'agreement'
+        };
+
+        console.log('🏁 DRAW RESPONSE: Using clean game result payload:', cleanGameResult);
+
+        // Clean database update with explicit field mapping
+        console.log('🏁 DRAW RESPONSE: Attempting clean database update...');
+        const updatePayload = {
+          game_ended: true,
+          game_result: cleanGameResult,
+          updated_at: new Date().toISOString()
+        };
+
+        console.log('🏁 DRAW RESPONSE: Update payload:', updatePayload);
+        console.log('🏁 DRAW RESPONSE: Payload JSON:', JSON.stringify(updatePayload, null, 2));
+        console.log('🏁 DRAW RESPONSE: About to call supabase.from(game_live_state).update()');
+
+        const { data: gameEndData, error: gameEndError } = await supabase
           .from('game_live_state')
-          .update({
-            game_ended: true,
-            game_result: gameResult,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('game_id', gameId);
+          .update(updatePayload)
+          .eq('game_id', gameId)
+          .select();
+
+        if (gameEndError) {
+          console.error('❌ DRAW RESPONSE: Clean update failed:', gameEndError);
+          console.error('❌ DRAW RESPONSE: Error details:', JSON.stringify(gameEndError, null, 2));
+
+          // Ultra-minimal fallback: Just set game_ended
+          console.log('🔧 DRAW RESPONSE: Trying ultra-minimal update (game_ended only)...');
+          const { data: minimalData, error: minimalError } = await supabase
+            .from('game_live_state')
+            .update({ game_ended: true })
+            .eq('game_id', gameId)
+            .select();
+
+          if (minimalError) {
+            console.error('❌ DRAW RESPONSE: Even minimal update failed:', minimalError);
+            return false;
+          }
+
+          console.log('✅ DRAW RESPONSE: Minimal update succeeded', minimalData);
+        } else {
+          console.log('✅ DRAW RESPONSE: Clean update succeeded', gameEndData);
+        }
       } else {
+        console.log('🚫 DRAW RESPONSE: Draw declined, game continues');
       }
 
+      console.log('✅ DRAW RESPONSE: respondToDrawOffer completed successfully');
       return true;
     } catch (error) {
-      console.error('❌ Failed to respond to draw offer:', error);
+      console.error('❌ DRAW RESPONSE: Failed to respond to draw offer:', error);
       return false;
     }
   }
@@ -798,10 +865,27 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         async (payload) => {
+          console.log('📡 REALTIME: Received game_live_state change', {
+            gameId,
+            event: payload.eventType,
+            new: payload.new,
+            old: payload.old
+          });
+
           if (callbacks.onGameStateUpdate) {
+            console.log('📡 REALTIME: Fetching updated game state...');
             const gameState = await this.getGameState(gameId);
+            console.log('📡 REALTIME: Retrieved game state', {
+              gameState,
+              game_ended: gameState?.game_ended,
+              game_result: gameState?.game_result
+            });
+
             if (gameState) {
+              console.log('📡 REALTIME: Calling onGameStateUpdate callback');
               callbacks.onGameStateUpdate(gameState);
+            } else {
+              console.log('❌ REALTIME: No game state retrieved');
             }
           }
         }
@@ -836,9 +920,18 @@ class LiveMovesService {
           table: 'game_draw_offers',
           filter: `game_id=eq.${gameId}`,
         },
-        async () => {
+        async (payload) => {
+          console.log('📡 REALTIME: Received game_draw_offers change', {
+            gameId,
+            event: payload.eventType,
+            new: payload.new,
+            old: payload.old
+          });
+
           if (callbacks.onDrawOfferUpdate) {
+            console.log('📡 REALTIME: Fetching active draw offer...');
             const offer = await this.getActiveDrawOffer(gameId);
+            console.log('📡 REALTIME: Retrieved draw offer', { offer });
             callbacks.onDrawOfferUpdate(offer);
           }
         }

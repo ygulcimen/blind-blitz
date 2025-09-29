@@ -24,18 +24,25 @@ export const LiveGameBoard: React.FC<LiveGameBoardProps> = ({
 }) => {
   const calculateBoardWidth = () => {
     if (large) {
-      // For the 60% center panel, use more space efficiently while respecting container bounds
-      return Math.min(
-        560, // Reduced from 600 to account for container padding
-        window.innerWidth * 0.42, // Reduced from 0.45 to prevent overflow
-        window.innerHeight * 0.70 // Reduced from 0.75 to prevent vertical overflow
+      // Responsive board sizing for different viewport widths
+      const maxBoardSize = Math.min(
+        560, // Maximum board size
+        Math.max(320, window.innerWidth * 0.35), // Scale with viewport but never smaller than 320px
+        window.innerHeight * 0.65 // Scale with height too
       );
+
+      // Adjust for developer tools or narrow viewports
+      if (window.innerWidth < 1200) {
+        return Math.min(maxBoardSize, window.innerWidth * 0.45);
+      }
+
+      return maxBoardSize;
     } else {
-      // Original sizing for compact mode
+      // Compact mode sizing
       return Math.min(
-        480, // Reduced from 500
-        window.innerWidth * 0.38, // Reduced from 0.4
-        window.innerHeight * 0.55 // Reduced from 0.6
+        400,
+        Math.max(280, window.innerWidth * 0.3),
+        window.innerHeight * 0.50
       );
     }
   };
@@ -47,7 +54,7 @@ export const LiveGameBoard: React.FC<LiveGameBoardProps> = ({
         <div className="w-[600px] h-[600px] bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 rounded-3xl blur-xl animate-pulse" />
       </div>
 
-      <div className="relative z-[1000]">
+      <div className="relative z-10">
         <UnifiedChessBoard
               fen={liveGameState.current_fen}
               game={chessGame}

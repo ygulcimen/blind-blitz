@@ -33,6 +33,7 @@ export const MoveLog: React.FC<MoveLogProps> = ({
 
   // Combine blind moves and live moves into a unified format
   const allMoves = React.useMemo(() => {
+
     const moves: Array<{
       moveNumber: number;
       white?: string;
@@ -73,17 +74,20 @@ export const MoveLog: React.FC<MoveLogProps> = ({
       });
     });
 
-    // Process live moves
+    // Process live moves - group by chess move pairs
     const liveMovePairs = new Map<number, { white?: string; black?: string }>();
 
-    liveMoves.forEach((move, index) => {
-      const moveNum = Math.ceil((index + 1) / 2) + blindMovePairs.size;
-      if (!liveMovePairs.has(moveNum)) {
-        liveMovePairs.set(moveNum, {});
-      }
-      const pair = liveMovePairs.get(moveNum)!;
+    liveMoves.forEach((move) => {
+      // Calculate chess move number: move_number 1,2 = chess move 1; move_number 3,4 = chess move 2
+      const chessMoveNumber = Math.ceil(move.move_number / 2) + blindMovePairs.size;
 
-      if (index % 2 === 0) {
+      if (!liveMovePairs.has(chessMoveNumber)) {
+        liveMovePairs.set(chessMoveNumber, {});
+      }
+      const pair = liveMovePairs.get(chessMoveNumber)!;
+
+      // Use the actual player_color from the database
+      if (move.player_color === 'white') {
         pair.white = move.move_san;
       } else {
         pair.black = move.move_san;
@@ -99,6 +103,7 @@ export const MoveLog: React.FC<MoveLogProps> = ({
         isBlindPhase: false,
       });
     });
+
 
     return moves.sort((a, b) => a.moveNumber - b.moveNumber);
   }, [liveMoves, blindMoves]);

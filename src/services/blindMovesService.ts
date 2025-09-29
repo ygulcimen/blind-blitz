@@ -531,6 +531,55 @@ class BlindMovesService {
       return false;
     }
   }
+
+  /**
+   * Get blind moves in MoveLog format for display
+   */
+  async getBlindMovesForMoveLog(gameId: string): Promise<Array<{
+    player: 'P1' | 'P2';
+    san: string;
+    isInvalid: boolean;
+    from?: string;
+    to?: string;
+    moveNumber?: number;
+  }>> {
+    try {
+      console.log('📝 Getting blind moves for move log:', gameId);
+
+      // Get all blind moves for this game
+      const { data: moves, error: movesError } = await supabase
+        .from('game_blind_moves')
+        .select('*')
+        .eq('game_id', gameId)
+        .order('move_number');
+
+      if (movesError) {
+        console.error('❌ Error getting blind moves for move log:', movesError);
+        return [];
+      }
+
+      if (!moves || moves.length === 0) {
+        console.log('📝 No blind moves found for move log');
+        return [];
+      }
+
+      // Convert to MoveLog format
+      const moveLogItems = moves.map(move => ({
+        player: (move.player_color === 'white' ? 'P1' : 'P2') as 'P1' | 'P2',
+        san: move.move_san,
+        isInvalid: false, // We'll assume all moves are valid for now
+        from: move.move_from,
+        to: move.move_to,
+        moveNumber: move.move_number,
+      }));
+
+      console.log('📝 Converted blind moves for move log:', moveLogItems.length);
+      return moveLogItems;
+    } catch (error) {
+      console.error('💥 Failed to get blind moves for move log:', error);
+      return [];
+    }
+  }
 }
 
 export const blindMovesService = new BlindMovesService();

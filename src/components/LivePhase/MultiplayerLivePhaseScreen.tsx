@@ -14,6 +14,7 @@ import {
   type LiveMove,
   type DrawOffer,
 } from '../../services/liveMovesService';
+import { blindMovesService } from '../../services/blindMovesService';
 import type { GameResult } from '../../types/GameTypes';
 
 // Custom hooks
@@ -27,13 +28,16 @@ import { useMoveHandler } from './MoveHandler';
 
 // UI Components
 import { LiveGameBoard } from './GameBoard/LiveGameBoard';
-import { GameStatusOverlay } from './GameStatus/GameStatusOverlay';
 import { PlayerBar } from './PlayerBar/PlayerBar';
 import { RewardsBox } from './LeftPanel/RewardsBox';
 import { PhaseTimeline } from './LeftPanel/PhaseTimeline';
 import { GameStats } from './LeftPanel/GameStats';
 import { MoveLog } from './RightPanel/MoveLog';
 import { ActionButtons } from './RightPanel/ActionButtons';
+import { GameEndModal } from '../shared/GameEndModal/GameEndModal';
+import { DrawOfferModal } from '../shared/DrawOfferModal/DrawOfferModal';
+import { ResignationModal } from '../shared/ResignationModal/ResignationModal';
+import { DrawOfferNotification } from '../shared/DrawOfferNotification/DrawOfferNotification';
 
 interface MoveLogItem {
   player: 'P1' | 'P2';
@@ -88,13 +92,13 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [myColor, setMyColor] = useState<'white' | 'black' | null>(null);
   const [opponentData, setOpponentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [blindMoves, setBlindMoves] = useState<MoveLogItem[]>([]);
 
   // UI State
   const [showResignConfirm, setShowResignConfirm] = useState(false);
   const [showDrawOfferConfirm, setShowDrawOfferConfirm] = useState(false);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showGameEndModal, setShowGameEndModal] = useState(false);
-  const [gameEndStatus, setGameEndStatus] = useState<string | null>(null);
   const [isProcessingMove, setIsProcessingMove] = useState(false);
 
   // Move processing refs
@@ -185,48 +189,70 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   // ═══════════════════════════════════════════════════════════════
 
   const handleGameEnd = useCallback((result: GameResult) => {
+    console.log('🏁 HANDLE GAME END: Called with result:', result);
+    console.log('🏁 HANDLE GAME END: Setting gameResult and showing modal');
     setGameResult(result);
-
-    // Show status first, then modal
-    let statusText = '';
-    switch (result.type) {
-      case 'checkmate':
-        statusText = `👑 ${result.winner.toUpperCase()} WINS BY CHECKMATE!`;
-        break;
-      case 'timeout':
-        statusText = `⏰ ${result.winner.toUpperCase()} WINS BY TIME!`;
-        break;
-      case 'resignation':
-        statusText = `🏳️ ${result.winner.toUpperCase()} WINS BY RESIGNATION!`;
-        break;
-      case 'draw':
-        statusText = '⚖️ DRAW!';
-        break;
-    }
-
-    setGameEndStatus(statusText);
-
-    setTimeout(() => {
-      setShowGameEndModal(true);
-      setGameEndStatus(null);
-    }, 1000);
+    setShowGameEndModal(true);
+    console.log('✅ HANDLE GAME END: Modal should now be visible');
   }, []);
 
   // Game end detection
   useEffect(() => {
+    console.log('🎮 GAME END DETECTION: Checking conditions', {
+      game_ended: liveGameState?.game_ended,
+      game_result: liveGameState?.game_result,
+      current_gameResult: gameResult,
+      myColor,
+      winner: liveGameState?.game_result?.winner,
+      showGameEndModal,
+      conditions: {
+        hasGameEnded: !!liveGameState?.game_ended,
+        hasGameResult: !!liveGameState?.game_result,
+        noCurrentResult: !gameResult
+      }
+    });
+
     if (
       liveGameState?.game_ended &&
       liveGameState?.game_result &&
       !gameResult
     ) {
+      console.log('🏁 GAME END DETECTION: All conditions met, triggering game end modal');
+      console.log('🏁 GAME END DETECTION: Game result details:', liveGameState.game_result);
       handleGameEnd(liveGameState.game_result);
+    } else {
+      console.log('❌ GAME END DETECTION: Conditions not met');
+      if (!liveGameState?.game_ended) console.log('   - Game not ended');
+      if (!liveGameState?.game_result) console.log('   - No game result');
+      if (gameResult) console.log('   - Already have game result:', gameResult);
     }
   }, [
     liveGameState?.game_ended,
     liveGameState?.game_result,
     gameResult,
     handleGameEnd,
+    myColor,
+    showGameEndModal,
   ]);
+
+  // Fetch blind moves on component mount/gameId change
+  useEffect(() => {
+    const fetchBlindMoves = async () => {
+      if (!gameId) return;
+
+      try {
+        console.log('🔍 Fetching blind moves for game:', gameId);
+        const moves = await blindMovesService.getBlindMovesForMoveLog(gameId);
+        setBlindMoves(moves);
+        console.log('✅ Blind moves loaded:', moves.length);
+      } catch (error) {
+        console.error('❌ Failed to fetch blind moves:', error);
+        setBlindMoves([]);
+      }
+    };
+
+    fetchBlindMoves();
+  }, [gameId]);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎮 GAME ACTION HANDLERS
@@ -251,12 +277,43 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   }, [gameId]);
 
   const handleAcceptDraw = useCallback(async () => {
-    if (!gameId) return;
-    const success = await liveMovesService.respondToDrawOffer(gameId, true);
-    if (success) {
-      // Handle success
+    console.log('🤝 DRAW ACCEPTANCE: Starting handleAcceptDraw', { gameId });
+    if (!gameId) {
+      console.log('❌ DRAW ACCEPTANCE: No gameId provided');
+      return;
     }
-  }, [gameId]);
+
+    console.log('🤝 DRAW ACCEPTANCE: Calling liveMovesService.respondToDrawOffer(gameId, true)');
+    const success = await liveMovesService.respondToDrawOffer(gameId, true);
+    console.log('🤝 DRAW ACCEPTANCE: Service response:', { success });
+
+    if (success) {
+      console.log('✅ DRAW ACCEPTANCE: Successfully accepted draw offer');
+
+      // TEMPORARY WORKAROUND: Force game end after 1 second if real-time doesn't work
+      console.log('⏰ DRAW ACCEPTANCE: Setting 1-second timeout for forced game end');
+      setTimeout(() => {
+        console.log('🔧 FORCED GAME END: Checking if game is still running...');
+        if (!gameResult && !showGameEndModal) {
+          console.log('🔧 FORCED GAME END: Game still running, forcing end with draw result');
+          const forcedDrawResult: GameResult = {
+            type: 'draw',
+            winner: 'draw',
+            reason: 'agreement',
+          };
+          console.log('🔧 FORCED GAME END: Using clean draw result:', forcedDrawResult);
+          handleGameEnd(forcedDrawResult);
+        } else {
+          console.log('✅ FORCED GAME END: Game already ended via real-time update');
+        }
+      }, 1000);
+
+      // The GameSubscriptions component should handle the game state update
+      // and trigger the GameEndModal via the game end detection useEffect
+    } else {
+      console.log('❌ DRAW ACCEPTANCE: Failed to accept draw offer');
+    }
+  }, [gameId, gameResult, showGameEndModal, handleGameEnd]);
 
   const handleDeclineDraw = useCallback(async () => {
     if (!gameId) return;
@@ -373,16 +430,11 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         />
       </div>
 
-      {/* Game Status Overlay */}
-      <GameStatusOverlay
-        gameEndStatus={gameEndStatus}
-        gameResult={gameResult}
-      />
 
       {/* THREE-COLUMN LAYOUT */}
-      <div className="flex flex-col lg:flex-row w-full h-full">
+      <div className="flex flex-row w-full h-full">
         {/* LEFT PANEL: Rewards, Timeline, Stats */}
-        <div className="w-full lg:w-80 bg-black/40 backdrop-blur-xl border-r lg:border-r border-b lg:border-b-0 border-white/10 p-4 flex flex-col gap-4 lg:h-full">
+        <div className="w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-r border-white/10 p-4 flex flex-col gap-4 h-full overflow-y-auto">
           <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-4 h-full">
             <RewardsBox gameId={gameId!} myColor={myColor} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
@@ -407,8 +459,8 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           />
 
           {/* Chess Board - HERO ELEMENT */}
-          <div className="flex justify-center relative z-[999]">
-            <div className="bg-white/8 border border-white/15 rounded-lg p-4 shadow-xl relative z-[999]">
+          <div className="flex justify-center items-center relative z-10">
+            <div className="bg-white/8 border border-white/15 rounded-lg p-4 shadow-xl relative z-10">
               <LiveGameBoard
                 liveGameState={liveGameState}
                 chessGame={chessGame}
@@ -435,12 +487,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         </div>
 
         {/* RIGHT PANEL: Move Log, Action Buttons */}
-        <div className="w-full lg:w-80 bg-black/40 backdrop-blur-xl border-l lg:border-l border-t lg:border-t-0 border-white/10 p-4 flex flex-col gap-4 lg:h-full">
+        <div className="w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-l border-white/10 p-4 flex flex-col gap-4 h-full overflow-y-auto">
           <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-4 h-full">
             <MoveLog
               liveMoves={liveMoves}
-              blindMoves={memoizedGameStateData.reveal?.moveLog || ([] as MoveLogItem[])}
+              blindMoves={blindMoves}
               className="flex-1 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
             />
             <ActionButtons
@@ -459,105 +511,41 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modals */}
-      {showResignConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-4">Resign Game?</h3>
-            <p className="text-gray-300 mb-6">Are you sure you want to resign? This will end the game immediately.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleResign}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-              >
-                Resign
-              </button>
-              <button
-                onClick={() => setShowResignConfirm(false)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modern Confirmation Modals */}
+      <ResignationModal
+        isOpen={showResignConfirm}
+        onConfirm={handleResign}
+        onCancel={() => setShowResignConfirm(false)}
+      />
 
-      {showDrawOfferConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-4">Offer Draw?</h3>
-            <p className="text-gray-300 mb-6">Do you want to offer a draw to your opponent?</p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleOfferDraw}
-                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
-              >
-                Offer Draw
-              </button>
-              <button
-                onClick={() => setShowDrawOfferConfirm(false)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DrawOfferModal
+        isOpen={showDrawOfferConfirm}
+        onConfirm={handleOfferDraw}
+        onCancel={() => setShowDrawOfferConfirm(false)}
+      />
 
-      {/* Draw Offer Response */}
-      {drawOffer && !drawOffer.responded_at && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-4">Draw Offer</h3>
-            <p className="text-gray-300 mb-6">Your opponent has offered a draw. Do you accept?</p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleAcceptDraw}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-              >
-                Accept
-              </button>
-              <button
-                onClick={handleDeclineDraw}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-              >
-                Decline
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Draw Offer Notification */}
+      <DrawOfferNotification
+        isVisible={drawOffer !== null && !drawOffer.responded_at}
+        onAccept={handleAcceptDraw}
+        onDecline={handleDeclineDraw}
+        onDismiss={handleDeclineDraw}
+        timeoutSeconds={30}
+      />
 
       {/* Game End Modal */}
-      {showGameEndModal && gameResult && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-600 max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-4">Game Over</h3>
-            <p className="text-gray-300 mb-6">
-              {gameResult.type === 'checkmate' && `${gameResult.winner} wins by checkmate!`}
-              {gameResult.type === 'timeout' && `${gameResult.winner} wins by time!`}
-              {gameResult.type === 'resignation' && `${gameResult.winner} wins by resignation!`}
-              {gameResult.type === 'draw' && 'Game is a draw!'}
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleLeaveTable}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-              >
-                Return to Lobby
-              </button>
-              <button
-                onClick={() => setShowGameEndModal(false)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GameEndModal
+        isOpen={showGameEndModal}
+        gameResult={gameResult}
+        gameId={gameId!}
+        myColor={myColor!}
+        onRematch={() => {
+          setGameResult(null);
+          setShowGameEndModal(false);
+        }}
+        onReturnToLobby={handleLeaveTable}
+        onClose={() => setShowGameEndModal(false)}
+      />
     </div>
   );
 };
