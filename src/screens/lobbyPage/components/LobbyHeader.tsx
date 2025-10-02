@@ -65,7 +65,7 @@ export const LobbyHeader: React.FC = () => {
             <span className="text-white font-bold text-sm">
               {(playerData.gold_balance || 0).toLocaleString()}
             </span>
-            <span className="text-gray-500 text-xs">Gold</span>
+            <span className="text-gray-500 text-xs">🪙</span>
           </div>
 
           <div className="w-px h-6 bg-gray-600"></div>

@@ -47,12 +47,20 @@ interface ResignationModalProps {
   isOpen: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
 }
 
 export const ResignationModal: React.FC<ResignationModalProps> = ({
   isOpen,
   onConfirm,
   onCancel,
+  title = 'RESIGN GAME?',
+  message = 'Surrender this battle? This cannot be undone.',
+  confirmText = 'Resign',
+  cancelText = 'Cancel',
 }) => {
   if (!isOpen) return null;
 
@@ -88,10 +96,10 @@ export const ResignationModal: React.FC<ResignationModalProps> = ({
                 🏳️
               </div>
               <h1 className="text-3xl font-black mb-2 tracking-wide text-red-100 drop-shadow-sm">
-                RESIGN GAME?
+                {title}
               </h1>
               <p className="text-gray-200 text-lg font-medium">
-                Surrender this battle? This cannot be undone.
+                {message}
               </p>
             </div>
 
@@ -113,7 +121,7 @@ export const ResignationModal: React.FC<ResignationModalProps> = ({
             <div className="flex gap-3 justify-center">
               <motion.button
                 onClick={onConfirm}
-                title="Resign Game"
+                title={confirmText}
                 variants={resignButtonVariants}
                 initial="initial"
                 whileHover="hover"
@@ -121,19 +129,19 @@ export const ResignationModal: React.FC<ResignationModalProps> = ({
                 className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl backdrop-blur-sm border border-red-400/20 shadow-lg flex items-center justify-center gap-2 transition-all duration-200"
               >
                 <Flag size={20} />
-                Resign
+                {confirmText}
               </motion.button>
 
               <motion.button
                 onClick={onCancel}
-                title="Cancel"
+                title={cancelText}
                 variants={cancelButtonVariants}
                 initial="initial"
                 whileHover="hover"
                 whileTap="tap"
                 className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-xl backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200"
               >
-                Cancel
+                {cancelText}
               </motion.button>
             </div>
           </div>

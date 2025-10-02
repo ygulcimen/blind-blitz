@@ -5,12 +5,14 @@ import { goldRewardsService, type BlindPhaseResults } from '../../../services/go
 interface RewardsBoxProps {
   gameId: string;
   myColor: 'white' | 'black';
+  gameMode?: 'classic' | 'robot_chaos';
   className?: string;
 }
 
 export const RewardsBox: React.FC<RewardsBoxProps> = ({
   gameId,
   myColor,
+  gameMode,
   className = '',
 }) => {
   const [rewards, setRewards] = useState<BlindPhaseResults | null>(null);
@@ -20,6 +22,10 @@ export const RewardsBox: React.FC<RewardsBoxProps> = ({
     const loadRewards = async () => {
       try {
         const data = await goldRewardsService.getBlindPhaseResults(gameId);
+        // Override game_mode if passed from props (for robot_chaos)
+        if (data && gameMode) {
+          data.game_mode = gameMode;
+        }
         setRewards(data);
       } catch (error) {
         console.error('Failed to load rewards:', error);
@@ -32,13 +38,17 @@ export const RewardsBox: React.FC<RewardsBoxProps> = ({
 
     // Subscribe to real-time updates
     const unsubscribe = goldRewardsService.subscribeToGoldUpdates(gameId, (updatedRewards) => {
+      // Override game_mode if passed from props (for robot_chaos)
+      if (updatedRewards && gameMode) {
+        updatedRewards.game_mode = gameMode;
+      }
       setRewards(updatedRewards);
     });
 
     return () => {
       unsubscribe();
     };
-  }, [gameId]);
+  }, [gameId, gameMode]);
 
   if (loading) {
     return (

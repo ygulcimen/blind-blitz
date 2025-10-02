@@ -30,15 +30,25 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
   clearViolations,
 }) => {
   // Heartbeat monitoring
-  useEffect(() => {
-    if (!gameId || !liveGameState || loading) return;
+  // Only start once when gameId is available, not on every liveGameState change
+  const heartbeatStartedRef = useRef(false);
 
-    liveMovesService.startHeartbeatMonitoring(gameId);
+  useEffect(() => {
+    if (!gameId || loading) return;
+
+    // Only start heartbeat once per gameId
+    if (!heartbeatStartedRef.current) {
+      liveMovesService.startHeartbeatMonitoring(gameId);
+      heartbeatStartedRef.current = true;
+    }
 
     return () => {
-      liveMovesService.stopHeartbeatMonitoring(gameId);
+      if (heartbeatStartedRef.current) {
+        liveMovesService.stopHeartbeatMonitoring(gameId);
+        heartbeatStartedRef.current = false;
+      }
     };
-  }, [gameId, liveGameState, loading]);
+  }, [gameId, loading]); // Removed liveGameState from dependencies
 
   // Browser event handling
   useEffect(() => {
@@ -60,13 +70,18 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
   useEffect(() => {
     if (!gameId || !myColor) return;
 
+    console.log('🔌 Setting up real-time subscriptions for game:', gameId);
 
     const unsubscribe = liveMovesService.subscribeToGameUpdates(gameId, {
       onGameStateUpdate: (newGameState) => {
         console.log('🔄 GAME STATE UPDATE:', {
           game_ended: newGameState.game_ended,
           game_result: newGameState.game_result,
-          move_count: newGameState.move_count
+          move_count: newGameState.move_count,
+          current_turn: newGameState.current_turn,
+          last_move_time: newGameState.last_move_time,
+          white_time_ms: newGameState.white_time_ms,
+          black_time_ms: newGameState.black_time_ms,
         });
 
         setLiveGameState(prev => {
@@ -81,6 +96,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
             white_time_ms: newGameState.white_time_ms,
             black_time_ms: newGameState.black_time_ms,
             current_turn: newGameState.current_turn,
+            last_move_time: newGameState.last_move_time, // CRITICAL: Update timestamp!
             game_ended: newGameState.game_ended,
             game_result: newGameState.game_result ?? prev.game_result,
             move_count: acceptFen ? newGameState.move_count : prev.move_count,
@@ -129,8 +145,11 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
       },
     });
 
-    return unsubscribe;
-  }, [gameId, myColor, currentUser, clearViolations, setLiveGameState, setLiveMoves, setChessGame, setDrawOffer, pendingOptimisticIdRef]);
+    return () => {
+      console.log('🔌 Cleaning up subscriptions for game:', gameId);
+      unsubscribe();
+    };
+  }, [gameId, myColor]); // Only re-subscribe when gameId or myColor changes
 
   return null; // This is a logic-only component
 };

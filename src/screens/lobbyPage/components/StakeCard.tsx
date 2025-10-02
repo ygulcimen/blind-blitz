@@ -195,7 +195,7 @@ export const StakeCard: React.FC<StakeCardProps> = ({
               <span className={`text-sm font-bold ${colors.accent}`}>
                 {displayRange}
               </span>
-              <span className="text-xs text-gray-400">gold</span>
+              <span className="text-xs text-gray-400">🪙</span>
             </div>
           </div>
 
@@ -226,7 +226,7 @@ export const StakeCard: React.FC<StakeCardProps> = ({
         {!canAfford && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <div className="bg-red-500/90 text-white text-xs font-bold px-2 py-1 rounded-full">
-              Need {minStake} gold
+              Need {minStake} 🪙
             </div>
           </div>
         )}

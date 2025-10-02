@@ -20,16 +20,173 @@ interface SimulationResultWithRewards {
 export const simulateBlindMovesWithRewards = (
   whiteMoves: BlindSequence,
   blackMoves: BlindSequence,
-  entryFee: number
+  entryFee: number,
+  gameMode?: 'classic' | 'robot_chaos'
 ): SimulationResultWithRewards => {
   const game = new Chess();
   const log: MoveLogItemWithRewards[] = [];
 
-  // Fixed reward amounts
-  const VALID_REWARD = 5;
-  const INVALID_PENALTY = 5;
-  const OPPONENT_BONUS = 10;
-  const CAPTURE_REWARD = 15;
+  // For RoboChaos: run simulation but return 0 rewards
+  if (gameMode === 'robot_chaos') {
+    let whiteIndex = 0;
+    let blackIndex = 0;
+
+    // Simulate moves without rewards
+    while (whiteIndex < whiteMoves.length || blackIndex < blackMoves.length) {
+      const isWhiteTurn = game.turn() === 'w';
+
+      if (isWhiteTurn) {
+        if (whiteIndex < whiteMoves.length) {
+          const move = whiteMoves[whiteIndex];
+          try {
+            const chessMove = game.move({
+              from: move.from,
+              to: move.to,
+              promotion: 'q',
+            });
+            if (chessMove) {
+              log.push({
+                player: 'P1',
+                san: chessMove.san,
+                isInvalid: false,
+                from: move.from,
+                to: move.to,
+                goldReward: 0,
+              });
+            } else {
+              log.push({
+                player: 'P1',
+                san: move.san,
+                isInvalid: true,
+                from: move.from,
+                to: move.to,
+                goldReward: 0,
+              });
+              forceTurnChange(game, 'b');
+            }
+          } catch {
+            log.push({
+              player: 'P1',
+              san: move.san,
+              isInvalid: true,
+              from: move.from,
+              to: move.to,
+              goldReward: 0,
+            });
+            forceTurnChange(game, 'b');
+          }
+          whiteIndex++;
+        } else {
+          forceTurnChange(game, 'b');
+        }
+      } else {
+        if (blackIndex < blackMoves.length) {
+          const move = blackMoves[blackIndex];
+          try {
+            const chessMove = game.move({
+              from: move.from,
+              to: move.to,
+              promotion: 'q',
+            });
+            if (chessMove) {
+              log.push({
+                player: 'P2',
+                san: chessMove.san,
+                isInvalid: false,
+                from: move.from,
+                to: move.to,
+                goldReward: 0,
+              });
+            } else {
+              log.push({
+                player: 'P2',
+                san: move.san,
+                isInvalid: true,
+                from: move.from,
+                to: move.to,
+                goldReward: 0,
+              });
+              forceTurnChange(game, 'w');
+            }
+          } catch {
+            log.push({
+              player: 'P2',
+              san: move.san,
+              isInvalid: true,
+              from: move.from,
+              to: move.to,
+              goldReward: 0,
+            });
+            forceTurnChange(game, 'w');
+          }
+          blackIndex++;
+        } else {
+          forceTurnChange(game, 'w');
+        }
+      }
+    }
+
+    // Determine who starts live phase based on who is in check
+    const parts = game.fen().split(' ');
+
+    // Test if WHITE is in check
+    parts[1] = 'w';
+    let whiteInCheck = false;
+    try {
+      const testWhite = new Chess(parts.join(' '));
+      whiteInCheck = testWhite.inCheck();
+    } catch (e) {
+      whiteInCheck = false;
+    }
+
+    // Test if BLACK is in check
+    parts[1] = 'b';
+    let blackInCheck = false;
+    try {
+      const testBlack = new Chess(parts.join(' '));
+      blackInCheck = testBlack.inCheck();
+    } catch (e) {
+      blackInCheck = false;
+    }
+
+    // Decision logic
+    if (blackInCheck && !whiteInCheck) {
+      // Only black is in check - black starts
+      console.log('⚠️ Black is in check - Black starts live phase');
+      parts[1] = 'b';
+    } else if (whiteInCheck && !blackInCheck) {
+      // Only white is in check - white starts
+      console.log('⚠️ White is in check - White starts live phase');
+      parts[1] = 'w';
+    } else {
+      // Normal case (no one in check) - white starts
+      console.log('✅ Normal position - White starts live phase');
+      parts[1] = 'w';
+    }
+
+    game.load(parts.join(' '));
+
+    return {
+      fen: game.fen(),
+      log,
+      whiteGold: 0,
+      blackGold: 0,
+      checkmateOccurred: false,
+    };
+  }
+
+  // Calculate scaled rewards based on entry fee
+  const totalPot = entryFee * 2;
+  const commission = Math.floor(totalPot * 0.05);
+  const availablePot = totalPot - commission;
+  const blindPhasePool = Math.floor(availablePot * 0.4); // 40% for blind phase
+
+  // Scale all rewards proportionally
+  const baseReward = Math.floor(blindPhasePool / 50); // Base unit
+  const VALID_REWARD = baseReward * 5;
+  const INVALID_PENALTY = baseReward * 5;
+  const OPPONENT_BONUS = baseReward * 10;
+  const CAPTURE_REWARD = baseReward * 15;
 
   let whiteGold = 0;
   let blackGold = 0;
@@ -165,6 +322,47 @@ export const simulateBlindMovesWithRewards = (
     checkmateOccurred,
     checkmateWinner,
   });
+
+  // Determine who starts live phase based on who is in check
+  const parts = game.fen().split(' ');
+
+  // Test if WHITE is in check
+  parts[1] = 'w';
+  let whiteInCheck = false;
+  try {
+    const testWhite = new Chess(parts.join(' '));
+    whiteInCheck = testWhite.inCheck();
+  } catch (e) {
+    whiteInCheck = false;
+  }
+
+  // Test if BLACK is in check
+  parts[1] = 'b';
+  let blackInCheck = false;
+  try {
+    const testBlack = new Chess(parts.join(' '));
+    blackInCheck = testBlack.inCheck();
+  } catch (e) {
+    blackInCheck = false;
+  }
+
+  // Decision logic
+  if (blackInCheck && !whiteInCheck) {
+    // Only black is in check - black starts
+    console.log('⚠️ Black is in check - Black starts live phase');
+    parts[1] = 'b';
+  } else if (whiteInCheck && !blackInCheck) {
+    // Only white is in check - white starts
+    console.log('⚠️ White is in check - White starts live phase');
+    parts[1] = 'w';
+  } else {
+    // Normal case (no one in check) - white starts
+    console.log('✅ Normal position - White starts live phase');
+    parts[1] = 'w';
+  }
+
+  game.load(parts.join(' '));
+  console.log('🎯 FINAL FEN BEING RETURNED:', game.fen());
 
   return {
     fen: game.fen(),

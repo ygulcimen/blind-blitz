@@ -34,7 +34,10 @@ export const useMoveHandler = ({
   const { showViolations, createViolation, clearViolations } = useViolations();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const pendingOptimisticIdRef = useRef<string | null>(null);
-  const prevFenRef = useRef<string | null>(null);
+  const stateSnapshotRef = useRef<{
+    fen: string;
+    gameState: LiveGameState;
+  } | null>(null);
 
   const handleDrop = useCallback((from: string, to: string, piece: string): boolean => {
     if (isProcessingMove) return false;
@@ -75,9 +78,12 @@ export const useMoveHandler = ({
       return false;
     }
 
-    // Start optimistic update
+    // Capture state snapshot before optimistic update
     setIsProcessingMove(true);
-    prevFenRef.current = chessGame.fen();
+    stateSnapshotRef.current = {
+      fen: chessGame.fen(),
+      gameState: { ...liveGameState },
+    };
 
     // Update local state immediately
     setChessGame(testChess);
@@ -121,19 +127,13 @@ export const useMoveHandler = ({
       .makeMove(gameId, from, to, 'q')
       .then(result => {
         if (!result.success) {
-          // Rollback on failure
-          if (prevFenRef.current) {
-            const rollback = new Chess(prevFenRef.current);
-            setChessGame(rollback);
-            setLiveGameState(prev =>
-              prev
-                ? {
-                    ...prev,
-                    current_fen: rollback.fen(),
-                    current_turn: myColor,
-                  }
-                : prev
-            );
+          // Full rollback on failure
+          if (stateSnapshotRef.current) {
+            console.log('🔄 Rolling back failed move');
+            const rollbackChess = new Chess(stateSnapshotRef.current.fen);
+            setChessGame(rollbackChess);
+            setLiveGameState(stateSnapshotRef.current.gameState);
+            stateSnapshotRef.current = null;
           }
 
           // Remove optimistic move
@@ -142,8 +142,23 @@ export const useMoveHandler = ({
 
           showViolations([createViolation.invalidMove(result.error)]);
         } else {
+          // Success - clear snapshot
+          stateSnapshotRef.current = null;
           clearViolations();
         }
+      })
+      .catch(error => {
+        // Network error - rollback
+        console.error('❌ Move failed due to network error:', error);
+        if (stateSnapshotRef.current) {
+          const rollbackChess = new Chess(stateSnapshotRef.current.fen);
+          setChessGame(rollbackChess);
+          setLiveGameState(stateSnapshotRef.current.gameState);
+          stateSnapshotRef.current = null;
+        }
+        setLiveMoves(prev => prev.filter(m => m.id !== optimisticId));
+        pendingOptimisticIdRef.current = null;
+        showViolations([createViolation.invalidMove('Network error')]);
       })
       .finally(() => {
         setTimeout(() => setIsProcessingMove(false), 120);

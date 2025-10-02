@@ -80,7 +80,7 @@ const LobbyPage: React.FC = () => {
   const handleQuickMatch = async (minStake: number, maxStake: number) => {
     if (!playerData || playerData.gold_balance < minStake) {
       alert(
-        `Insufficient gold! You need at least ${minStake} gold to enter this arena.`
+        `Insufficient gold! You need at least ${minStake} 🪙 to enter this arena.`
       );
       return;
     }
@@ -161,7 +161,7 @@ const LobbyPage: React.FC = () => {
     if (affordableOption) {
       handleQuickMatch(affordableOption.minStake, affordableOption.maxStake);
     } else {
-      alert('Insufficient gold for any arena. Please earn more gold first.');
+      alert('Insufficient gold for any arena. Please earn more 🪙 first.');
     }
   };
 
@@ -356,7 +356,7 @@ const LobbyPage: React.FC = () => {
                       ?.displayRange
                   }
                 </span>{' '}
-                gold range
+                🪙 range
               </p>
 
               {/* Timer */}

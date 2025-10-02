@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ViolationProvider } from './components/shared/ViolationSystem';
 import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
 import { ModalProvider } from './context/ModalContext'; // ✅ NEW
+import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 
 // Import all screens
@@ -20,6 +21,7 @@ import AboutPage from './screens/AboutPage';
 import FAQPage from './screens/FAQPage';
 import LoginPage from './screens/auth/LoginPage';
 import SignUpPage from './screens/auth/SignUpPage';
+import ForgotPasswordPage from './screens/auth/ForgotPasswordPage';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './screens/auth/ProtectedRoute';
 import { AuthRedirect } from './screens/auth/AuthRedirect';
@@ -35,14 +37,13 @@ function App() {
     testDatabase();
   }, []);
   return (
-    <AuthProvider>
-      <PlayerEconomyProvider>
-        <ViolationProvider>
-          <ModalProvider>
-            {' '}
-            {/* ✅ Wrap here */}
-            <Router>
-              <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <PlayerEconomyProvider>
+          <ViolationProvider>
+            <ModalProvider>
+              <Router>
+                <Routes>
                 <Route
                   path="/"
                   element={
@@ -132,6 +133,16 @@ function App() {
                   }
                 />
                 <Route
+                  path="/forgot-password"
+                  element={
+                    <AuthRedirect>
+                      <AppLayout hideNavigation={true} hideFooter={true}>
+                        <ForgotPasswordPage />
+                      </AppLayout>
+                    </AuthRedirect>
+                  }
+                />
+                <Route
                   path="/profile"
                   element={
                     <ProtectedRoute>
@@ -150,11 +161,12 @@ function App() {
                   }
                 />
               </Routes>
-            </Router>
-          </ModalProvider>
-        </ViolationProvider>
-      </PlayerEconomyProvider>
-    </AuthProvider>
+              </Router>
+            </ModalProvider>
+          </ViolationProvider>
+        </PlayerEconomyProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

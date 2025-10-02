@@ -30,6 +30,7 @@ interface UnifiedChessBoardProps {
   // Phase-specific props
   phase?: 'blind' | 'reveal' | 'live';
   currentTurn?: 'w' | 'b';
+  myColor?: 'w' | 'b' | null; // Player's color for validation
 
   // Animation props
   animationDuration?: number;
@@ -49,6 +50,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
   lastMove = null,
   phase = 'live',
   currentTurn = 'w',
+  myColor = null,
   animationDuration = 150,
   showMoveEffect = false,
 }) => {
@@ -244,13 +246,42 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
     // Apply custom styles from props
     Object.assign(styles, customSquareStyles);
 
+    // Check highlight - find king square if in check
+    if (game && phase === 'live') {
+      try {
+        if (game.inCheck()) {
+          // Find the king square for the current player in check
+          const turn = game.turn();
+          const board = game.board();
+
+          for (let rank = 0; rank < 8; rank++) {
+            for (let file = 0; file < 8; file++) {
+              const piece = board[rank][file];
+              if (piece && piece.type === 'k' && piece.color === turn) {
+                const files = 'abcdefgh';
+                const kingSquare = files[file] + (8 - rank);
+                styles[kingSquare] = {
+                  backgroundColor: 'rgba(255, 0, 0, 0.6)', // Red highlight for check
+                  boxShadow: '0 0 10px rgba(255, 0, 0, 0.8)',
+                };
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+
     // Last move highlight (live phase only)
     if (lastMove && phase === 'live') {
       styles[lastMove.from] = {
-        backgroundColor: 'rgba(255, 255, 0, 0.15)', // Subtle yellow
+        ...styles[lastMove.from],
+        backgroundColor: styles[lastMove.from]?.backgroundColor || 'rgba(255, 255, 0, 0.15)', // Subtle yellow
       };
       styles[lastMove.to] = {
-        backgroundColor: 'rgba(255, 255, 0, 0.25)', // More visible destination
+        ...styles[lastMove.to],
+        backgroundColor: styles[lastMove.to]?.backgroundColor || 'rgba(255, 255, 0, 0.25)', // More visible destination
       };
     }
 
@@ -312,6 +343,7 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
     selectedSquare,
     legalMoves,
     pieceIndicators,
+    game,
   ]);
 
   const handleMouseOverSquare = useCallback(
@@ -319,13 +351,20 @@ export const UnifiedChessBoard: React.FC<UnifiedChessBoardProps> = ({
       if (selectedSquare || gameEnded || !game) return;
       const piece = game.get(square as any);
       if (!piece) return;
+
+      // In live phase, only show hints for player's own pieces
       if (phase === 'live') {
+        // Check if it's my piece
+        if (myColor && piece.color !== myColor) return;
+
+        // Also check if it's my turn
         const turn = getEffectiveTurn();
         if (piece.color !== turn) return;
       }
+
       setLegalMoves(getPossibleMoves(square));
     },
-    [selectedSquare, gameEnded, game, phase, getEffectiveTurn, getPossibleMoves]
+    [selectedSquare, gameEnded, game, phase, myColor, getEffectiveTurn, getPossibleMoves]
   );
 
   const handleMouseOutSquare = useCallback(() => {

@@ -6,22 +6,45 @@ interface RobotAnimatorProps {
 }
 
 const RobotAnimator: React.FC<RobotAnimatorProps> = ({ status, dialogue }) => {
+  const getRobotAnimation = () => {
+    switch (status) {
+      case 'thinking':
+        return 'animate-spin';
+      case 'moving':
+        return 'animate-bounce scale-110';
+      case 'finished':
+        return 'animate-pulse scale-125';
+      case 'preparing':
+        return 'animate-ping';
+      default:
+        return 'hover:scale-105';
+    }
+  };
+
+  const getRobotEmoji = () => {
+    switch (status) {
+      case 'thinking':
+        return '🧠';
+      case 'moving':
+        return '⚡';
+      case 'finished':
+        return '🎉';
+      case 'preparing':
+        return '🔄';
+      default:
+        return '🤖';
+    }
+  };
+
   return (
     <div className="text-center mb-6">
       <div
-        className={`text-8xl mb-4 transition-all duration-500 ${
-          status === 'thinking'
-            ? 'animate-spin'
-            : status === 'moving'
-            ? 'animate-bounce'
-            : status === 'finished'
-            ? 'animate-pulse'
-            : status === 'preparing'
-            ? 'animate-ping'
-            : ''
-        }`}
+        className={`text-8xl mb-4 transition-all duration-500 cursor-pointer ${getRobotAnimation()}`}
+        style={{
+          filter: status === 'moving' ? 'drop-shadow(0 0 20px rgba(147, 51, 234, 0.7))' : '',
+        }}
       >
-        🤖
+        {getRobotEmoji()}
       </div>
 
       <div

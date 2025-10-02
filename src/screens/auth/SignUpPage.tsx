@@ -1,23 +1,149 @@
 // src/screens/auth/SignUpPage.tsx - With Real Supabase Authentication
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import {
+  validateEmail,
+  validatePassword,
+  getPasswordStrength,
+  validateUsername,
+  checkUsernameUniqueness,
+  translateSupabaseError,
+  validatePasswordMatch
+} from '../../utils/authValidation';
+import AnimatedBackground from '../../components/AnimatedBackground';
 
 const SignUpPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const { signUp } = useAuth();
+
+  // Validation functions
+  const validateUsernameField = async (username: string, immediate = false) => {
+    const basicValidation = validateUsername(username);
+    if (!basicValidation.isValid) {
+      setUsernameError(basicValidation.message || '');
+      return false;
+    }
+
+    if (!immediate) {
+      // Debounced username uniqueness check
+      if (usernameCheckTimeout) clearTimeout(usernameCheckTimeout);
+      setUsernameChecking(true);
+
+      const timeout = setTimeout(async () => {
+        const uniquenessCheck = await checkUsernameUniqueness(username);
+        setUsernameError(uniquenessCheck.isValid ? '' : uniquenessCheck.message || '');
+        setUsernameChecking(false);
+      }, 800);
+
+      setUsernameCheckTimeout(timeout);
+      return true;
+    }
+
+    return true;
+  };
+
+  const validateEmailField = (email: string) => {
+    const result = validateEmail(email);
+    setEmailError(result.isValid ? '' : result.message || '');
+    return result.isValid;
+  };
+
+  const validatePasswordField = (password: string) => {
+    const result = validatePassword(password);
+    setPasswordError(result.isValid ? '' : result.message || '');
+    return result.isValid;
+  };
+
+  const validateConfirmPasswordField = (confirmPassword: string) => {
+    const result = validatePasswordMatch(password, confirmPassword);
+    setConfirmPasswordError(result.isValid ? '' : result.message || '');
+    return result.isValid;
+  };
+
+  // Input handlers
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    if (newUsername) {
+      validateUsernameField(newUsername);
+    } else {
+      setUsernameError('');
+      if (usernameCheckTimeout) clearTimeout(usernameCheckTimeout);
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    if (newEmail) {
+      validateEmailField(newEmail);
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (newPassword) {
+      validatePasswordField(newPassword);
+    } else {
+      setPasswordError('');
+    }
+
+    // Re-validate confirm password if it has been entered
+    if (confirmPassword) {
+      validateConfirmPasswordField(confirmPassword);
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    if (newConfirmPassword) {
+      validateConfirmPasswordField(newConfirmPassword);
+    } else {
+      setConfirmPasswordError('');
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    // Validate all fields
+    const isUsernameValid = await validateUsernameField(username, true);
+    const isEmailValid = validateEmailField(email);
+    const isPasswordValid = validatePasswordField(password);
+    const isConfirmPasswordValid = validateConfirmPasswordField(confirmPassword);
+
+    // Check for immediate username uniqueness
+    if (isUsernameValid) {
+      setUsernameChecking(true);
+      const uniquenessCheck = await checkUsernameUniqueness(username);
+      setUsernameChecking(false);
+      if (!uniquenessCheck.isValid) {
+        setUsernameError(uniquenessCheck.message || '');
+        return;
+      }
+    }
+
+    if (!isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
       return;
     }
 
@@ -27,106 +153,421 @@ const SignUpPage: React.FC = () => {
     try {
       const { error } = await signUp(email, password, username);
       if (error) {
-        setError(error.message);
+        setError(translateSupabaseError(error));
       } else {
         navigate('/games'); // Success! Go to games with 1000 gold
       }
     } catch (err) {
-      setError('Something went wrong');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-white/3 rounded-full blur-3xl"></div>
-      </div>
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (usernameCheckTimeout) clearTimeout(usernameCheckTimeout);
+    };
+  }, [usernameCheckTimeout]);
 
-      <div className="relative z-10 w-full max-w-md">
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 relative">
+      {/* Enhanced Animated Background */}
+      <AnimatedBackground />
+
+      <motion.div
+        className="relative z-10 w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <button
+        <motion.div
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <motion.button
             onClick={() => navigate('/')}
-            className="flex items-center gap-3 mx-auto mb-6 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 mx-auto mb-6 transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+            <motion.div
+              className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-lg"
+              whileHover={{
+                boxShadow: "0 0 20px rgba(251, 191, 36, 0.4)"
+              }}
+            >
               <span className="text-black font-black text-lg">BC</span>
-            </div>
-            <span className="text-white font-bold text-xl">BLINDCHESS</span>
-          </button>
-          <h1 className="text-3xl font-black text-white mb-2">
-            Join BlindChess
-          </h1>
-          <p className="text-gray-400">
-            Create your account and start earning gold
-          </p>
-        </div>
+            </motion.div>
+            <span className="text-transparent bg-gradient-to-r from-white via-amber-100 to-amber-200 bg-clip-text font-bold text-xl">
+              BLINDCHESS
+            </span>
+          </motion.button>
+          <motion.h1
+            className="text-3xl font-black text-white mb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Join the Elite Arena
+          </motion.h1>
+          <motion.p
+            className="text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Become a chess champion and claim your rewards
+          </motion.p>
+        </motion.div>
 
         {/* Signup Form */}
-        <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 backdrop-blur-sm">
+        <motion.div
+          className="bg-gray-900/40 border border-amber-500/20 rounded-2xl p-8 backdrop-blur-xl shadow-2xl"
+          style={{
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 191, 36, 0.1)"
+          }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           <form onSubmit={handleSignUp} className="space-y-5">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Username
               </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
-                placeholder="Choose a username"
-                required
-                disabled={loading}
-              />
-            </div>
+              <motion.div
+                className="relative"
+                animate={usernameError ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.input
+                  type="text"
+                  value={username}
+                  onChange={handleUsernameChange}
+                  className={`w-full px-4 py-3 pr-10 bg-gray-800/60 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
+                    usernameError
+                      ? 'border-red-500'
+                      : username && !usernameError && !usernameChecking
+                      ? 'border-emerald-500'
+                      : 'border-gray-600 focus:border-amber-400'
+                  }`}
+                  animate={{
+                    boxShadow: usernameError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
+                      : username && !usernameError && !usernameChecking
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
+                      : "0 0 0 3px rgba(0, 0, 0, 0)"
+                  }}
+                  whileFocus={{
+                    scale: 1.02,
+                    boxShadow: usernameError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
+                      : username && !usernameError && !usernameChecking
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
+                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                  }}
+                  placeholder="Choose a username"
+                  required
+                  disabled={loading}
+                />
+                <AnimatePresence>
+                  {usernameChecking && (
+                    <motion.div
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                    >
+                      <motion.div
+                        className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+              <AnimatePresence>
+                {usernameError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-red-400 text-xs">⚠️</span>
+                    <p className="text-xs text-red-400">{usernameError}</p>
+                  </motion.div>
+                )}
+                {username && !usernameError && !usernameChecking && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-emerald-400 text-xs">✅</span>
+                    <p className="text-xs text-emerald-400">Username is available</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
-                placeholder="Enter your email"
-                required
-                disabled={loading}
-              />
-            </div>
+              <motion.div
+                animate={emailError ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.input
+                  type="email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  className={`w-full px-4 py-3 bg-gray-800/60 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
+                    emailError
+                      ? 'border-red-500'
+                      : email && !emailError
+                      ? 'border-emerald-500'
+                      : 'border-gray-600 focus:border-amber-400'
+                  }`}
+                  animate={{
+                    boxShadow: emailError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
+                      : email && !emailError
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
+                      : "0 0 0 3px rgba(0, 0, 0, 0)"
+                  }}
+                  whileFocus={{
+                    scale: 1.02,
+                    boxShadow: emailError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
+                      : email && !emailError
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
+                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                  }}
+                  placeholder="Enter your email"
+                  required
+                  disabled={loading}
+                />
+              </motion.div>
+              <AnimatePresence>
+                {emailError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-red-400 text-xs">⚠️</span>
+                    <p className="text-xs text-red-400">{emailError}</p>
+                  </motion.div>
+                )}
+                {email && !emailError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-emerald-400 text-xs">✅</span>
+                    <p className="text-xs text-emerald-400">Valid email</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
-                placeholder="Create a password"
-                required
-                disabled={loading}
-              />
-            </div>
+              <motion.div
+                className="relative"
+                animate={passwordError ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={handlePasswordChange}
+                  className={`w-full px-4 py-3 pr-12 bg-gray-800/60 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
+                    passwordError
+                      ? 'border-red-500'
+                      : password && !passwordError
+                      ? 'border-emerald-500'
+                      : 'border-gray-600 focus:border-amber-400'
+                  }`}
+                  animate={{
+                    boxShadow: passwordError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
+                      : password && !passwordError
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
+                      : "0 0 0 3px rgba(0, 0, 0, 0)"
+                  }}
+                  whileFocus={{
+                    scale: 1.02,
+                    boxShadow: passwordError
+                      ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
+                      : password && !passwordError
+                      ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
+                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                  }}
+                  placeholder="Create a password"
+                  required
+                  disabled={loading}
+                />
+                <motion.button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-300 transition-colors"
+                  disabled={loading}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </motion.button>
+              </motion.div>
+
+              <AnimatePresence>
+                {password && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="mt-3"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-gray-400">Password strength:</span>
+                      <motion.span
+                        className={`text-xs font-bold ${
+                          getPasswordStrength(password).strength === 'weak' ? 'text-red-400' :
+                          getPasswordStrength(password).strength === 'medium' ? 'text-amber-400' :
+                          'text-emerald-400'
+                        }`}
+                        animate={{
+                          scale: [1, 1.05, 1],
+                          textShadow: getPasswordStrength(password).strength === 'strong'
+                            ? "0 0 8px rgba(16, 185, 129, 0.6)"
+                            : "none"
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {getPasswordStrength(password).strength.toUpperCase()}
+                      </motion.span>
+                      {getPasswordStrength(password).strength === 'strong' && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="text-emerald-400"
+                        >
+                          🛡️
+                        </motion.span>
+                      )}
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <motion.div
+                        className={`h-full rounded-full ${
+                          getPasswordStrength(password).strength === 'weak' ? 'bg-gradient-to-r from-red-500 to-red-400' :
+                          getPasswordStrength(password).strength === 'medium' ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
+                          'bg-gradient-to-r from-emerald-500 to-green-400'
+                        }`}
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: `${getPasswordStrength(password).score}%`,
+                          boxShadow: getPasswordStrength(password).strength === 'strong'
+                            ? "0 0 10px rgba(16, 185, 129, 0.4)"
+                            : "none"
+                        }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {passwordError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-red-400 text-xs">⚠️</span>
+                    <p className="text-xs text-red-400">{passwordError}</p>
+                  </motion.div>
+                )}
+                {password && !passwordError && getPasswordStrength(password).strength === 'strong' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="flex items-center gap-1 mt-1"
+                  >
+                    <span className="text-emerald-400 text-xs">✅</span>
+                    <p className="text-xs text-emerald-400">Excellent password security!</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
-                placeholder="Confirm your password"
-                required
-                disabled={loading}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  className={`w-full px-4 py-3 pr-12 bg-gray-800/60 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 transition-all ${
+                    confirmPasswordError
+                      ? 'border-red-500 focus:border-red-400 focus:ring-red-400'
+                      : confirmPassword && !confirmPasswordError
+                      ? 'border-green-500 focus:border-green-400 focus:ring-green-400'
+                      : 'border-gray-600 focus:border-white focus:ring-white'
+                  }`}
+                  placeholder="Confirm your password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {confirmPasswordError && (
+                <p className="mt-1 text-xs text-red-400">{confirmPasswordError}</p>
+              )}
+              {confirmPassword && !confirmPasswordError && (
+                <p className="mt-1 text-xs text-green-400">Passwords match</p>
+              )}
             </div>
 
             {/* Error Display */}
@@ -154,61 +595,179 @@ const SignUpPage: React.FC = () => {
               </span>
             </div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
-              className="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-100 transition-colors transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+              whileHover={{
+                scale: loading ? 1 : 1.02,
+                boxShadow: loading ? "" : "0 0 25px rgba(251, 191, 36, 0.4)"
+              }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
+              {loading && (
+                <motion.div
+                  className="w-4 h-4 border-2 border-black border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
+              )}
+              <motion.span
+                animate={{
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? 'Joining Arena...' : 'Join the Elite'}
+              </motion.span>
+              {!loading && (
+                <motion.span
+                  initial={{ x: 0 }}
+                  whileHover={{ x: 3 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  👑
+                </motion.span>
+              )}
+            </motion.button>
           </form>
 
           {/* Welcome Bonus */}
-          <div className="mt-6 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border border-yellow-500/30 rounded-lg p-4 text-center">
-            <div className="text-yellow-400 text-2xl mb-2">🎁</div>
-            <div className="text-white font-semibold mb-1">Welcome Bonus</div>
-            <div className="text-gray-400 text-sm">
-              Get 1000 Gold to start playing!
-            </div>
-          </div>
+          <motion.div
+            className="mt-6 bg-gradient-to-r from-amber-500/15 to-yellow-500/10 border border-amber-400/40 rounded-lg p-4 text-center relative overflow-hidden"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+            style={{
+              boxShadow: "0 0 20px rgba(251, 191, 36, 0.1)"
+            }}
+            whileHover={{
+              boxShadow: "0 0 25px rgba(251, 191, 36, 0.2)"
+            }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-transparent"
+              animate={{
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div
+              className="text-amber-400 text-3xl mb-2 relative z-10"
+              animate={{
+                y: [0, -2, 0],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              🎁
+            </motion.div>
+            <motion.div
+              className="text-white font-bold mb-1 relative z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
+            >
+              Champion's Welcome Bonus
+            </motion.div>
+            <motion.div
+              className="text-amber-200 text-sm relative z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3 }}
+            >
+              Start with <span className="font-bold text-amber-300">1000 Gold</span> and claim victory! 🏆
+            </motion.div>
 
-          {/* Social Signup */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-gray-900/40 text-gray-400">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {/* Sparkle effects */}
+            <motion.div
+              className="absolute top-2 right-3 text-amber-300 text-xs"
+              animate={{
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                delay: 0.5
+              }}
+            >
+              ✨
+            </motion.div>
+            <motion.div
+              className="absolute bottom-2 left-4 text-yellow-300 text-xs"
+              animate={{
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                delay: 1.2
+              }}
+            >
+              ⭐
+            </motion.div>
+          </motion.div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button className="flex justify-center items-center px-4 py-3 border border-gray-600 rounded-lg hover:bg-gray-800/40 transition-colors">
-                <span className="text-lg">🌐</span>
-                <span className="ml-2 text-sm text-gray-300">Google</span>
-              </button>
-              <button className="flex justify-center items-center px-4 py-3 border border-gray-600 rounded-lg hover:bg-gray-800/40 transition-colors">
-                <span className="text-lg">📱</span>
-                <span className="ml-2 text-sm text-gray-300">Discord</span>
-              </button>
-            </div>
-          </div>
+          {/* More options coming soon */}
+          <motion.div
+            className="mt-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1 }}
+          >
+            <p className="text-xs text-gray-500">
+              More registration options coming soon ✨
+            </p>
+          </motion.div>
 
           {/* Login Link */}
-          <p className="mt-6 text-center text-sm text-gray-400">
-            Already have an account?{' '}
-            <button
+          <motion.p
+            className="mt-6 text-center text-sm text-gray-400"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+          >
+            Already a champion?{' '}
+            <motion.button
               onClick={() => navigate('/login')}
-              className="text-white hover:underline font-medium transition-colors"
+              className="text-amber-300 hover:text-amber-200 font-medium transition-colors relative"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Sign in
-            </button>
-          </p>
-        </div>
-      </div>
+              <motion.span
+                className="relative"
+                whileHover={{
+                  textShadow: "0 0 8px rgba(251, 191, 36, 0.6)"
+                }}
+              >
+                Return to Arena
+                <motion.div
+                  className="absolute bottom-0 left-0 right-0 h-px bg-amber-300"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </motion.span>
+            </motion.button>
+          </motion.p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { Chess } from 'chess.js';
 import type { BlindSequence, MoveLogItem } from '../types/BlindTypes';
+import { withErrorHandling, handleServiceError } from '../utils/errorHandling';
 
 export interface BlindGameState {
   gameId: string;
@@ -13,6 +14,7 @@ export interface BlindGameState {
   blackSubmitted: boolean;
   bothSubmitted: boolean;
   maxMoves: number;
+  blindPhaseStartedAt?: string; // ISO timestamp when blind phase started
 }
 
 export interface BlindPhaseResults {
@@ -45,10 +47,14 @@ class CleanBlindMovesService {
         return null;
       }
 
-      // Update room to blind phase
+      // Update room to blind phase and record start time
+      const blindPhaseStartTime = new Date().toISOString();
       await supabase
         .from('game_rooms')
-        .update({ status: 'blind' })
+        .update({
+          status: 'blind',
+          blind_phase_started_at: blindPhaseStartTime
+        })
         .eq('id', roomId);
 
       return {
@@ -61,9 +67,10 @@ class CleanBlindMovesService {
         blackSubmitted: false,
         bothSubmitted: false,
         maxMoves: this.MAX_MOVES,
+        blindPhaseStartedAt: blindPhaseStartTime,
       };
     } catch (error) {
-      console.error('Failed to initialize blind game:', error);
+      handleServiceError(error, 'initializeBlindGame');
       return null;
     }
   }
@@ -121,7 +128,7 @@ class CleanBlindMovesService {
 
       return true;
     } catch (error) {
-      console.error('Error adding blind move:', error);
+      handleServiceError(error, 'addBlindMove');
       return false;
     }
   }
@@ -214,6 +221,13 @@ class CleanBlindMovesService {
    */
   async getBlindGameState(gameId: string): Promise<BlindGameState | null> {
     try {
+      // Get room info including blind phase start time
+      const { data: room } = await supabase
+        .from('game_rooms')
+        .select('blind_phase_started_at')
+        .eq('id', gameId)
+        .single();
+
       // Get players
       const { data: players } = await supabase
         .from('game_room_players')
@@ -283,6 +297,7 @@ class CleanBlindMovesService {
         blackSubmitted,
         bothSubmitted: whiteSubmitted && blackSubmitted,
         maxMoves: this.MAX_MOVES,
+        blindPhaseStartedAt: room?.blind_phase_started_at || undefined,
       };
     } catch (error) {
       console.error('Failed to get blind game state:', error);

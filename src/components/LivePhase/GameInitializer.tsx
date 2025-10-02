@@ -33,7 +33,7 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
 }) => {
   const initializationAttempted = useRef(false);
 
-  // Reset initialization flag when key props change
+  // Reset init flag if props change
   useEffect(() => {
     initializationAttempted.current = false;
   }, [gameId, currentUser?.id]);
@@ -41,14 +41,10 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
   useEffect(() => {
     const initializeMultiplayerGame = async () => {
       if (!gameId || !currentUser) {
-        if (gameId && !currentUser) {
-          return; // wait for user to load
-        }
-        if (!gameId) {
-          if (!initializationAttempted.current) {
-            onLoadingChange(false);
-            initializationAttempted.current = true;
-          }
+        if (gameId && !currentUser) return; // wait for user
+        if (!gameId && !initializationAttempted.current) {
+          onLoadingChange(false);
+          initializationAttempted.current = true;
         }
         return;
       }
@@ -59,54 +55,22 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
       onLoadingChange(true);
 
       try {
-        // Get existing live game state
+        // 1. Try to load existing live game state
         let gameStateData = await liveMovesService.getGameState(gameId);
 
-        // Fix initial turn if needed
-        if (
-          gameStateData &&
-          gameStateData.move_count === 0 &&
-          gameStateData.current_turn !== 'white'
-        ) {
-          const fixedFen = gameStateData.current_fen.replace(/\s[wb]\s/, ' w ');
-          try {
-            await supabase
-              .from('game_live_state')
-              .update({
-                current_turn: 'white',
-                current_fen: fixedFen,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('game_id', gameId);
-
-            gameStateData = {
-              ...gameStateData,
-              current_turn: 'white',
-              current_fen: fixedFen,
-            };
-          } catch (e) {
-          }
-        }
-
-        // Create if not exists
+        // 2. If no state exists, create new one
         if (!gameStateData) {
-
           const blindGameState = await blindMovesService.getBlindGameState(
             gameId
           );
-          if (!blindGameState) {
-            throw new Error('No blind game state');
-          }
+          if (!blindGameState) throw new Error('No blind game state');
 
-          // Prepare starting FEN
-          const rawFen =
-            finalFen ||
-            'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-          const parts = rawFen.split(' ');
-          if (parts.length >= 2) parts[1] = 'w';
-          const liveStartingFen = parts.join(' ');
+          // ✅ Use simulation finalFen directly, fallback to startpos
+          const liveStartingFen =
+            typeof finalFen === 'string'
+              ? finalFen
+              : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-          // Initialize live game (use upsert in liveMovesService to avoid 409s)
           gameStateData = await liveMovesService.initializeLiveGame(
             gameId,
             blindGameState.whitePlayerId,
@@ -114,25 +78,22 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
             liveStartingFen
           );
 
-          if (!gameStateData) {
-            throw new Error('Failed to initialize live game');
-          }
-
+          if (!gameStateData) throw new Error('Failed to initialize live game');
         }
 
-        // Determine my color
+        // 3. Determine my color
         const playerColor =
           gameStateData.white_player_id === currentUser.id ? 'white' : 'black';
 
-        // Load opponent data
+        // 4. Load opponent data
         let opponentData = null;
         try {
-          const { data: roomPlayers, error: playersError } = await supabase
+          const { data: roomPlayers } = await supabase
             .from('game_room_players')
             .select('player_id, player_username, player_rating')
             .eq('room_id', gameId);
 
-          if (!playersError && roomPlayers) {
+          if (roomPlayers) {
             const opponent = roomPlayers.find(
               (p) => p.player_id !== currentUser.id
             );
@@ -147,10 +108,20 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
               };
             }
           }
-        } catch (error) {
+        } catch {
+          // ignore opponent fetch errors
         }
 
-        // Load moves + draw offers
+        // 5. Start the game clock (if not already started)
+        await liveMovesService.startGameClock(gameId);
+
+        // 6. CRITICAL: Reload game state after starting clock to get updated last_move_time
+        const freshGameState = await liveMovesService.getGameState(gameId);
+        if (freshGameState) {
+          gameStateData = freshGameState;
+        }
+
+        // 7. Load moves, draw offers, and set up chess
         const moves = await liveMovesService.getMoves(gameId);
         const chess = new Chess(gameStateData.current_fen);
         const activeDrawOffer = await liveMovesService.getActiveDrawOffer(
@@ -166,10 +137,9 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
           myColor: playerColor,
           opponentData,
         });
-
       } catch (error) {
+        console.error('❌ GameInitializer failed:', error);
       } finally {
-        // ✅ Always unset loading
         onLoadingChange(false);
       }
     };
@@ -177,5 +147,5 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
     initializeMultiplayerGame();
   }, [gameId, currentUser, finalFen]);
 
-  return null; // logic-only component
+  return null;
 };

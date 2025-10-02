@@ -18,7 +18,7 @@ import { blindMovesService } from '../../services/blindMovesService';
 import type { GameResult } from '../../types/GameTypes';
 
 // Custom hooks
-import { useGameTimer } from '../../hooks/useGameTimer';
+import { useLiveTimer } from '../../hooks/useLiveTimer';
 import { useViolations } from '../shared/ViolationSystem';
 
 // Focused components
@@ -51,11 +51,13 @@ interface MoveLogItem {
 interface MultiplayerLivePhaseScreenProps {
   gameState: any;
   gameId?: string;
+  gameMode?: 'classic' | 'robot_chaos';
 }
 
 const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   gameState,
   gameId,
+  gameMode = 'classic',
 }) => {
   const navigate = useNavigate();
   const { clearViolations } = useViolations();
@@ -97,6 +99,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   // UI State
   const [showResignConfirm, setShowResignConfirm] = useState(false);
   const [showDrawOfferConfirm, setShowDrawOfferConfirm] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showGameEndModal, setShowGameEndModal] = useState(false);
   const [isProcessingMove, setIsProcessingMove] = useState(false);
@@ -141,7 +144,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     [gameId]
   );
 
-  const { displayTimes } = useGameTimer(liveGameState, handleTimeout);
+  const displayTimes = useLiveTimer(liveGameState, handleTimeout);
 
   // Helper function to format time
   const formatTime = useCallback((timeMs: number) => {
@@ -322,8 +325,29 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
 
   const handleLeaveTable = useCallback(() => {
+    // If game hasn't ended, show confirmation modal
+    if (!liveGameState?.game_ended) {
+      setShowLeaveConfirm(true);
+    } else {
+      // Game already ended, just navigate
+      navigate('/games');
+    }
+  }, [liveGameState?.game_ended, navigate]);
+
+  const handleConfirmLeave = useCallback(async () => {
+    if (!gameId) return;
+
+    // Resign the game
+    await liveMovesService.resignGame(gameId);
+
+    // Navigate to lobby
+    setShowLeaveConfirm(false);
     navigate('/games');
-  }, [navigate]);
+  }, [gameId, navigate]);
+
+  const handleCancelLeave = useCallback(() => {
+    setShowLeaveConfirm(false);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎨 COMPUTED VALUES
@@ -437,7 +461,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         <div className="w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-r border-white/10 p-4 flex flex-col gap-4 h-full overflow-y-auto">
           <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-4 h-full">
-            <RewardsBox gameId={gameId!} myColor={myColor} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
+            <RewardsBox gameId={gameId!} myColor={myColor} gameMode={gameMode} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
             <PhaseTimeline className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
             <GameStats liveMoves={liveMoves} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300 flex-1" />
           </div>
@@ -518,6 +542,16 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         onCancel={() => setShowResignConfirm(false)}
       />
 
+      <ResignationModal
+        isOpen={showLeaveConfirm}
+        onConfirm={handleConfirmLeave}
+        onCancel={handleCancelLeave}
+        title="Leave Game?"
+        message="Leaving this game will count as a resignation and you will lose. Are you sure you want to leave?"
+        confirmText="Leave & Resign"
+        cancelText="Stay in Game"
+      />
+
       <DrawOfferModal
         isOpen={showDrawOfferConfirm}
         onConfirm={handleOfferDraw}
@@ -526,7 +560,11 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
       {/* Draw Offer Notification */}
       <DrawOfferNotification
-        isVisible={drawOffer !== null && !drawOffer.responded_at}
+        isVisible={
+          drawOffer !== null &&
+          !drawOffer.responded_at &&
+          drawOffer.offering_player !== myColor
+        }
         onAccept={handleAcceptDraw}
         onDecline={handleDeclineDraw}
         onDismiss={handleDeclineDraw}

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useGameStateManager } from '../state/GameStateManager';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   ViolationToast,
   useViolations,
@@ -100,7 +101,7 @@ const GameScreen: React.FC = () => {
 
       case 'LIVE':
         return (
-          <MultiplayerLivePhaseScreen gameState={gameState} gameId={gameId} />
+          <MultiplayerLivePhaseScreen gameState={gameState} gameId={gameId} gameMode={gameMode} />
         );
 
       default:
@@ -216,36 +217,38 @@ const GameScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Modern Background Effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
-      </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        {/* Modern Background Effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
+        </div>
 
-      {/* Game Header - Only shows during REVEAL and ANIMATED_REVEAL phases */}
-      {renderGameHeader()}
+        {/* Game Header - Only shows during REVEAL and ANIMATED_REVEAL phases */}
+        {renderGameHeader()}
 
-      {/* Main Game Content */}
-      <div className="relative z-10">{renderGamePhase()}</div>
+        {/* Main Game Content */}
+        <div className="relative z-10">{renderGamePhase()}</div>
 
-      {/* Violation System */}
-      <ViolationToast
-        show={showViolation}
-        violations={violations}
-        position="top"
-      />
-
-      {/* Exit Confirmation Modal */}
-      {showExitModal && (
-        <ExitGameModal
-          onContinue={handleContinueGame}
-          onExit={handleExitGame}
-          gameMode={gameMode}
+        {/* Violation System */}
+        <ViolationToast
+          show={showViolation}
+          violations={violations}
+          position="top"
         />
-      )}
-    </div>
+
+        {/* Exit Confirmation Modal */}
+        {showExitModal && (
+          <ExitGameModal
+            onContinue={handleContinueGame}
+            onExit={handleExitGame}
+            gameMode={gameMode}
+          />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 };
 

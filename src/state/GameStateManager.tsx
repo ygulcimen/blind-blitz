@@ -67,9 +67,9 @@ export interface GameState {
 }
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const BLIND_TIMER_DURATION = 100 * 1000; // 100 seconds
-const LIVE_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes
-const LIVE_INCREMENT = 2 * 1000; // 2 seconds
+const BLIND_TIMER_DURATION = 30 * 1000; // 100 seconds (TODO: Change to production value)
+const LIVE_TIMER_DURATION = 5 * 60 * 1000; // 5 minutes
+const LIVE_INCREMENT = 0; // No increment
 
 const validateAndFixFEN = (fen: string): string => {
   if (!fen || typeof fen !== 'string') {
@@ -139,6 +139,7 @@ export const useGameStateManager = (gameId?: string) => {
   const lastTickRef = useRef<number>(Date.now());
   const subscriptionsRef = useRef<(() => void)[]>([]);
   const hasStartedRef = useRef(false);
+  const blindPhaseStartTimeRef = useRef<number | null>(null);
 
   const deriveMyColor = useCallback(
     async (bs: BlindGameState): Promise<'white' | 'black' | null> => {
@@ -269,23 +270,16 @@ export const useGameStateManager = (gameId?: string) => {
                 .eq('id', gameId)
                 .single();
 
-              let fen, log;
-              if (room?.game_mode === 'classic') {
-                const result = simulateBlindMovesWithRewards(
-                  blindState.whiteMoves,
-                  blindState.blackMoves,
-                  room.entry_fee
-                );
-                fen = result.fen;
-                log = result.log;
-              } else {
-                const result = simulateBlindMoves(
-                  blindState.whiteMoves,
-                  blindState.blackMoves
-                );
-                fen = result.fen;
-                log = result.log;
-              }
+              // Remove the if-else, just call once
+              const result = simulateBlindMovesWithRewards(
+                blindState.whiteMoves,
+                blindState.blackMoves,
+                room?.entry_fee || 100,
+                room?.game_mode || 'classic'
+              );
+
+              const fen = result.fen;
+              const log = result.log;
 
               setGameState((prev) => ({
                 ...prev,
@@ -297,8 +291,24 @@ export const useGameStateManager = (gameId?: string) => {
             break;
 
           case 'blind':
-            console.log('Room is in blind phase');
+            console.log('Room is in blind phase - recovering state');
             await initializeGame();
+
+            // Load blind game state to get start time
+            const bs = await blindMovesService.getBlindGameState(gameId);
+            if (bs?.blindPhaseStartedAt) {
+              blindPhaseStartTimeRef.current = new Date(
+                bs.blindPhaseStartedAt
+              ).getTime();
+              console.log(
+                'Blind phase start time recovered:',
+                bs.blindPhaseStartedAt
+              );
+            } else {
+              blindPhaseStartTimeRef.current = Date.now();
+              console.warn('No blind phase start time found during recovery');
+            }
+
             return 'BLIND';
 
           default:
@@ -385,34 +395,108 @@ export const useGameStateManager = (gameId?: string) => {
     return true;
   }, [gameId, gameState.blind.myColor]);
 
-  // Updated to use cleanBlindMovesService
-  const submitBlindMoves = useCallback(async () => {
-    if (
-      !gameId ||
-      !gameState.blind.myColor ||
-      gameState.blind.myMoves.length === 0
-    ) {
-      return false;
-    }
+  // Add the missing updateBlindMoves function for robot chaos
+  const updateBlindMoves = useCallback((moves: BlindSequence) => {
+    setGameState((prev) => ({
+      ...prev,
+      blind: {
+        ...prev.blind,
+        myMoves: moves,
+      },
+    }));
+  }, []);
 
-    const success = await blindMovesService.submitMoves(
-      gameId,
-      gameState.blind.myColor
-    );
+  // Updated to directly insert moves into game_blind_moves table
+  const submitBlindMoves = useCallback(
+    async (moves?: BlindSequence, player?: 'P1' | 'P2') => {
+      if (!gameId) {
+        return false;
+      }
 
-    if (success) {
-      setGameState((prev) => ({
-        ...prev,
-        blind: {
-          ...prev.blind,
-          mySubmitted: true,
-        },
-        timer: { ...prev.timer, isRunning: false },
-      }));
-    }
+      // If moves and player are provided (robot chaos mode), use them
+      if (moves && player) {
+        const color = player === 'P1' ? 'white' : 'black';
+        console.log('📤 submitBlindMoves:', {
+          color,
+          movesCount: moves.length,
+        });
 
-    return success;
-  }, [gameId, gameState.blind.myColor, gameState.blind.myMoves.length]);
+        // Get player_id based on color
+        const playerIdQuery = await supabase
+          .from('game_room_players')
+          .select('player_id')
+          .eq('room_id', gameId)
+          .eq('color', color)
+          .single();
+
+        if (!playerIdQuery.data) {
+          console.error('📤 Player ID not found for color:', color);
+          return false;
+        }
+
+        const playerId = playerIdQuery.data.player_id;
+
+        // Insert each move
+        for (let i = 0; i < moves.length; i++) {
+          const { error } = await supabase.from('game_blind_moves').insert({
+            game_id: gameId,
+            player_id: playerId,
+            player_color: color,
+            move_number: i + 1,
+            move_from: moves[i].from,
+            move_to: moves[i].to,
+            move_san: moves[i].san,
+            is_submitted: i === moves.length - 1,
+          });
+
+          if (error) console.error('📤 Insert error:', error);
+        }
+
+        console.log('📤 All moves inserted for', color);
+        return true;
+      }
+
+      // Original logic for normal player submission
+      if (!gameState.blind.myColor) {
+        return false;
+      }
+
+      // If player has 0 moves, still mark as submitted (time expired or chose not to move)
+      if (gameState.blind.myMoves.length === 0) {
+        console.log(
+          '⏰ Submitting with 0 moves (time expired or no moves made)'
+        );
+        setGameState((prev) => ({
+          ...prev,
+          blind: {
+            ...prev.blind,
+            mySubmitted: true,
+          },
+          timer: { ...prev.timer, isRunning: false },
+        }));
+        return true;
+      }
+
+      const success = await blindMovesService.submitMoves(
+        gameId,
+        gameState.blind.myColor
+      );
+
+      if (success) {
+        setGameState((prev) => ({
+          ...prev,
+          blind: {
+            ...prev.blind,
+            mySubmitted: true,
+          },
+          timer: { ...prev.timer, isRunning: false },
+        }));
+      }
+
+      return success;
+    },
+    [gameId, gameState.blind.myColor, gameState.blind.myMoves.length]
+  );
 
   // Updated proceedToReveal to work with new reward system
   // Updated proceedToReveal function in GameStateManager.tsx
@@ -438,7 +522,7 @@ export const useGameStateManager = (gameId?: string) => {
 
       const { data: room } = await supabase
         .from('game_rooms')
-        .select('entry_fee')
+        .select('entry_fee, game_mode')
         .eq('id', gameId)
         .single();
 
@@ -455,7 +539,8 @@ export const useGameStateManager = (gameId?: string) => {
       } = simulateBlindMovesWithRewards(
         freshBlindState.whiteMoves,
         freshBlindState.blackMoves,
-        entryFee
+        entryFee,
+        room?.game_mode
       );
 
       console.log('Simulation results:', {
@@ -504,15 +589,11 @@ export const useGameStateManager = (gameId?: string) => {
       }
 
       // ALWAYS initialize live game (even for checkmate)
-      const parts = fen.split(' ');
-      if (parts.length >= 2) parts[1] = 'w';
-      const liveFenWhiteToMove = parts.join(' ');
-
       await liveMovesService.initializeLiveGame(
         gameId,
         freshBlindState.whitePlayerId,
         freshBlindState.blackPlayerId,
-        liveFenWhiteToMove
+        fen // ✅ Use the FEN directly from simulation (already has correct turn)
       );
 
       // Set game state with checkmate info if applicable
@@ -551,6 +632,20 @@ export const useGameStateManager = (gameId?: string) => {
     (blindGameState: BlindGameState) => {
       const { myColor } = gameState.blind;
       if (!myColor) return;
+
+      // Set blind phase start time from server if available
+      if (
+        blindGameState.blindPhaseStartedAt &&
+        blindPhaseStartTimeRef.current === null
+      ) {
+        blindPhaseStartTimeRef.current = new Date(
+          blindGameState.blindPhaseStartedAt
+        ).getTime();
+        console.log(
+          'Blind phase start time set:',
+          blindGameState.blindPhaseStartedAt
+        );
+      }
 
       console.log('Blind game state updated:', {
         whiteMoves: blindGameState.whiteMoves.length,
@@ -671,16 +766,13 @@ export const useGameStateManager = (gameId?: string) => {
               'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
           }
 
-          const fenParts = correctedFen.split(' ');
-          fenParts[1] = 'w';
-          const whiteTurnFen = fenParts.join(' ');
-
+          // ✅ Use the FEN as-is from reveal phase (already has correct turn)
           return {
             ...next,
             live: {
               ...next.live,
-              game: new Chess(whiteTurnFen),
-              fen: whiteTurnFen,
+              game: new Chess(correctedFen), // Changed from whiteTurnFen
+              fen: correctedFen, // Changed from whiteTurnFen
             },
             timer: {
               whiteTime: LIVE_TIMER_DURATION,
@@ -799,6 +891,23 @@ export const useGameStateManager = (gameId?: string) => {
               const bs = await blindMovesService.getBlindGameState(gameId);
 
               if (bs) {
+                // Set blind phase start time from server
+                if (bs.blindPhaseStartedAt) {
+                  blindPhaseStartTimeRef.current = new Date(
+                    bs.blindPhaseStartedAt
+                  ).getTime();
+                  console.log(
+                    'Blind phase initialized with start time:',
+                    bs.blindPhaseStartedAt
+                  );
+                } else {
+                  // Fallback: use current time if not set
+                  blindPhaseStartTimeRef.current = Date.now();
+                  console.warn(
+                    'No blind phase start time from server, using client time'
+                  );
+                }
+
                 const myColor = await deriveMyColor(bs);
                 setGameState((prev) => {
                   const iAmWhite = myColor === 'white';
@@ -906,18 +1015,18 @@ export const useGameStateManager = (gameId?: string) => {
 
     timerRef.current = window.setInterval(() => {
       const now = Date.now();
-      const elapsed = now - lastTickRef.current;
-      lastTickRef.current = now;
 
       setGameState((prev) => {
         if (prev.phase === 'BLIND') {
-          const newWhiteTime = Math.max(0, prev.timer.whiteTime - elapsed);
-          const newBlackTime = Math.max(0, prev.timer.blackTime - elapsed);
+          // Use ABSOLUTE time calculation to prevent drift
+          let remainingTime = BLIND_TIMER_DURATION;
 
-          if (
-            (newWhiteTime === 0 || newBlackTime === 0) &&
-            !prev.blind.mySubmitted
-          ) {
+          if (blindPhaseStartTimeRef.current !== null) {
+            const elapsed = now - blindPhaseStartTimeRef.current;
+            remainingTime = Math.max(0, BLIND_TIMER_DURATION - elapsed);
+          }
+
+          if (remainingTime === 0 && !prev.blind.mySubmitted) {
             setTimeout(() => submitBlindMoves(), 100);
           }
 
@@ -925,26 +1034,14 @@ export const useGameStateManager = (gameId?: string) => {
             ...prev,
             timer: {
               ...prev.timer,
-              whiteTime: newWhiteTime,
-              blackTime: newBlackTime,
+              whiteTime: remainingTime,
+              blackTime: remainingTime,
             },
           };
         } else if (prev.phase === 'LIVE') {
-          const isWhiteTurn = prev.live.game.turn() === 'w';
-
-          if (isWhiteTurn) {
-            const newTime = Math.max(0, prev.timer.whiteTime - elapsed);
-            if (newTime === 0 && gameId) {
-              liveMovesService.handleTimeout(gameId, 'white');
-            }
-            return { ...prev, timer: { ...prev.timer, whiteTime: newTime } };
-          } else {
-            const newTime = Math.max(0, prev.timer.blackTime - elapsed);
-            if (newTime === 0 && gameId) {
-              liveMovesService.handleTimeout(gameId, 'black');
-            }
-            return { ...prev, timer: { ...prev.timer, blackTime: newTime } };
-          }
+          // Live phase: timer is managed by server, we don't tick down here
+          // useSimplifiedTimer handles live phase timing
+          return prev;
         }
         return prev;
       });
@@ -955,7 +1052,7 @@ export const useGameStateManager = (gameId?: string) => {
         clearInterval(timerRef.current);
       }
     };
-  }, [gameState.timer.isRunning, gameState.phase, gameId, submitBlindMoves]);
+  }, [gameState.timer.isRunning, gameState.phase, submitBlindMoves]);
 
   // Auto-transition from REVEAL to ANIMATED_REVEAL
   useEffect(() => {
@@ -973,8 +1070,10 @@ export const useGameStateManager = (gameId?: string) => {
     saveBlindMove,
     undoBlindMove,
     clearBlindMoves,
+    updateBlindMoves,
     submitBlindMoves,
     // Phase transition methods
+    proceedToReveal,
     startAnimatedReveal,
     completeAnimatedReveal,
     transitionToPhase,

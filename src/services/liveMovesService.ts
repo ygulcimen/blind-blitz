@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { Chess } from 'chess.js';
 import type { GameResult } from '../types/GameTypes';
+import { withErrorHandling, handleServiceError } from '../utils/errorHandling';
 
 export interface LiveMove {
   id: string;
@@ -161,16 +162,6 @@ class LiveMovesService {
     }
   }
 
-  private parseTimeControl(timeControl: string): {
-    minutes: number;
-    increment: number;
-  } {
-    const parts = timeControl.split('+');
-    const minutes = parseInt(parts[0]) || 3; // Default to 3 minutes
-    const increment = parseInt(parts[1]) || 2; // Default to 2 seconds increment
-
-    return { minutes, increment };
-  }
   async initializeLiveGame(
     gameId: string,
     whitePlayerId: string,
@@ -178,60 +169,18 @@ class LiveMovesService {
     startingFen: string
   ): Promise<LiveGameState | null> {
     try {
-      // Check if live game state already exists
-      const { data: existingState, error: checkError } = await supabase
-        .from('game_live_state')
-        .select('*')
-        .eq('game_id', gameId)
-        .single();
+      console.log('⏰ Initializing live game with 5 minute time control');
 
-      // If state exists, return it regardless of the error type
-      if (existingState) {
-        console.log(
-          '✅ Live game state already exists, returning existing state'
-        );
-        return existingState;
-      }
+      // Fixed time control: 5 minutes, no increment
+      const minutes = 5;
+      const increment = 0;
+      const timeMs = minutes * 60 * 1000; // 5 minutes = 300,000ms
 
-      // Only proceed to create if we got a "not found" error (PGRST116)
-      // Any other error indicates a real problem
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error(
-          '❌ Unexpected error checking for existing state:',
-          checkError
-        );
-        return null;
-      }
+      const chess = new Chess(startingFen);
+      const actualTurn = chess.turn() === 'w' ? 'white' : 'black';
 
-      console.log('🔧 No existing live game state found, creating new one...');
-
-      // ✅ Get time control from the room settings
-      const { data: roomData, error: roomError } = await supabase
-        .from('game_rooms')
-        .select('time_control')
-        .eq('id', gameId)
-        .single();
-
-      if (roomError) {
-        console.warn(
-          '⚠️ Could not get room time control, using default:',
-          roomError
-        );
-      }
-
-      const timeControl = roomData?.time_control || '3+2'; // Fallback to 3+2
-      const { minutes, increment } = this.parseTimeControl(timeControl);
-      const timeMs = minutes * 60 * 1000; // Convert to milliseconds
-
-      console.log('⏰ Using time control from room:', {
-        timeControl,
-        minutes,
-        increment,
-        timeMs,
-      });
-
-      // Create new live game state
-      // Create or update live game state (UPSERT to avoid 409 conflicts)
+      // Use UPSERT with ignoreDuplicates to handle concurrent initialization
+      // This is atomic and prevents race conditions
       const { data: newState, error } = await supabase
         .from('game_live_state')
         .upsert(
@@ -240,44 +189,39 @@ class LiveMovesService {
             white_player_id: whitePlayerId,
             black_player_id: blackPlayerId,
             current_fen: startingFen,
-            current_turn: 'white', // White always starts live phase
+            current_turn: actualTurn,
             move_count: 0,
             white_time_ms: timeMs,
             black_time_ms: timeMs,
             time_control_minutes: minutes,
             time_increment_seconds: increment,
-            last_move_time: new Date().toISOString(),
+            last_move_time: null, // Clock starts when first player enters
             updated_at: new Date().toISOString(),
           },
-          { onConflict: 'game_id' } // ✅ prevents duplicate key error
+          {
+            onConflict: 'game_id',
+            ignoreDuplicates: false, // Return existing if duplicate
+          }
         )
         .select()
         .single();
 
       if (error) {
-        // If we get a duplicate key error, try to fetch the existing record
-        if (
-          error.code === '23505' &&
-          error.message.includes('game_live_state_game_id_key')
-        ) {
-          console.log(
-            '🔄 Duplicate key error, fetching existing live game state...'
-          );
-          const { data: existingState } = await supabase
-            .from('game_live_state')
-            .select('*')
-            .eq('game_id', gameId)
-            .single();
+        console.error('❌ Error in upsert, attempting to fetch existing state:', error);
 
-          if (existingState) {
-            console.log(
-              '✅ Retrieved existing live game state after duplicate key error'
-            );
-            return existingState;
-          }
+        // Fallback: Try to fetch existing state
+        const { data: existingState } = await supabase
+          .from('game_live_state')
+          .select('*')
+          .eq('game_id', gameId)
+          .single();
+
+        if (existingState) {
+          console.log('✅ Retrieved existing live game state');
+          return existingState;
         }
 
-        console.error('❌ Error initializing live game:', error);
+        console.error('❌ Failed to initialize or retrieve live game');
         return null;
       }
 
@@ -286,6 +230,34 @@ class LiveMovesService {
     } catch (error) {
       console.error('❌ Failed to initialize live game:', error);
       return null;
+    }
+  }
+
+  /**
+   * Start the game clock (called after countdown finishes)
+   */
+  async startGameClock(gameId: string): Promise<boolean> {
+    try {
+      console.log('⏰ Starting game clock');
+
+      const { error } = await supabase
+        .from('game_live_state')
+        .update({
+          last_move_time: new Date().toISOString(),
+        })
+        .eq('game_id', gameId)
+        .is('last_move_time', null); // Only update if not already set
+
+      if (error) {
+        console.error('❌ Error starting game clock:', error);
+        return false;
+      }
+
+      console.log('✅ Game clock started');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to start game clock:', error);
+      return false;
     }
   }
 
@@ -342,16 +314,20 @@ class LiveMovesService {
         return { success: false, error: 'Invalid move' };
       }
 
-      // Calculate time taken
-      const currentTime = new Date().toISOString();
-      const lastMoveTime = new Date(gameState.last_move_time || currentTime);
-      const timeTaken = Math.max(0, Date.now() - lastMoveTime.getTime());
+      // Calculate time taken for this move
+      const now = Date.now();
+      let timeTaken = 0;
+
+      if (gameState.last_move_time) {
+        // Calculate elapsed time since turn started
+        const turnStartTime = new Date(gameState.last_move_time).getTime();
+        timeTaken = Math.max(0, now - turnStartTime);
+      }
 
       console.log('⏱️ Time calculation:', {
         currentPlayer: playerColor,
-        timeTaken: `${timeTaken}ms`,
-        lastMoveTime: gameState.last_move_time,
-        currentTime,
+        timeTaken: `${timeTaken}ms (${(timeTaken / 1000).toFixed(1)}s)`,
+        turnStartedAt: gameState.last_move_time || 'Not started',
       });
 
       const timeIncrement = gameState.time_increment_seconds * 1000;
@@ -435,12 +411,7 @@ class LiveMovesService {
         updated_at: new Date().toISOString(),
       };
 
-      // Update player times
-      if (playerColor === 'white') {
-        updateData.white_time_ms = Math.max(0, newTimeRemaining);
-      } else {
-        updateData.black_time_ms = Math.max(0, newTimeRemaining);
-      }
+      // DO NOT update times here - database trigger handles it automatically
 
       // If game ended, update game state
       if (gameEnded) {
@@ -460,8 +431,8 @@ class LiveMovesService {
 
       return { success: true, move: moveData };
     } catch (error) {
-      console.error('❌ Failed to make move:', error);
-      return { success: false, error: 'Internal error' };
+      const gameError = handleServiceError(error, 'makeMove');
+      return { success: false, error: gameError.userMessage };
     }
   }
   // Add to liveMovesService.ts
@@ -501,7 +472,10 @@ class LiveMovesService {
    */
   async getGameState(gameId: string): Promise<LiveGameState | null> {
     try {
-      console.log('🔍 GET GAME STATE: Fetching from database for gameId:', gameId);
+      console.log(
+        '🔍 GET GAME STATE: Fetching from database for gameId:',
+        gameId
+      );
 
       const { data, error } = await supabase
         .from('game_live_state')
@@ -519,7 +493,7 @@ class LiveMovesService {
         game_ended: data?.game_ended,
         game_result: data?.game_result,
         move_count: data?.move_count,
-        updated_at: data?.updated_at
+        updated_at: data?.updated_at,
       });
 
       return data;
@@ -654,7 +628,10 @@ class LiveMovesService {
    * Respond to a draw offer
    */
   async respondToDrawOffer(gameId: string, accept: boolean): Promise<boolean> {
-    console.log('🤝 DRAW RESPONSE: Starting respondToDrawOffer', { gameId, accept });
+    console.log('🤝 DRAW RESPONSE: Starting respondToDrawOffer', {
+      gameId,
+      accept,
+    });
 
     try {
       const {
@@ -663,14 +640,20 @@ class LiveMovesService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        console.log('❌ DRAW RESPONSE: Auth error or no user', { authError, user: !!user });
+        console.log('❌ DRAW RESPONSE: Auth error or no user', {
+          authError,
+          user: !!user,
+        });
         return false;
       }
 
       console.log('🤝 DRAW RESPONSE: User authenticated', { userId: user.id });
 
       // Get active draw offer
-      console.log('🤝 DRAW RESPONSE: Fetching active draw offer for gameId:', gameId);
+      console.log(
+        '🤝 DRAW RESPONSE: Fetching active draw offer for gameId:',
+        gameId
+      );
       const { data: offer, error: offerError } = await supabase
         .from('game_draw_offers')
         .select('*')
@@ -679,14 +662,20 @@ class LiveMovesService {
         .single();
 
       if (offerError || !offer) {
-        console.error('❌ DRAW RESPONSE: No active draw offer found', { offerError, offer });
+        console.error('❌ DRAW RESPONSE: No active draw offer found', {
+          offerError,
+          offer,
+        });
         return false;
       }
 
       console.log('🤝 DRAW RESPONSE: Found active draw offer', offer);
 
       // Update draw offer
-      console.log('🤝 DRAW RESPONSE: Updating draw offer to inactive with response', { accept });
+      console.log(
+        '🤝 DRAW RESPONSE: Updating draw offer to inactive with response',
+        { accept }
+      );
       const { error: updateError } = await supabase
         .from('game_draw_offers')
         .update({
@@ -697,7 +686,10 @@ class LiveMovesService {
         .eq('id', offer.id);
 
       if (updateError) {
-        console.error('❌ DRAW RESPONSE: Error updating draw offer:', updateError);
+        console.error(
+          '❌ DRAW RESPONSE: Error updating draw offer:',
+          updateError
+        );
         return false;
       }
 
@@ -719,22 +711,30 @@ class LiveMovesService {
         const cleanGameResult = {
           type: 'draw' as const,
           winner: 'draw' as const,
-          reason: 'agreement'
+          reason: 'agreement',
         };
 
-        console.log('🏁 DRAW RESPONSE: Using clean game result payload:', cleanGameResult);
+        console.log(
+          '🏁 DRAW RESPONSE: Using clean game result payload:',
+          cleanGameResult
+        );
 
         // Clean database update with explicit field mapping
         console.log('🏁 DRAW RESPONSE: Attempting clean database update...');
         const updatePayload = {
           game_ended: true,
           game_result: cleanGameResult,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
         console.log('🏁 DRAW RESPONSE: Update payload:', updatePayload);
-        console.log('🏁 DRAW RESPONSE: Payload JSON:', JSON.stringify(updatePayload, null, 2));
-        console.log('🏁 DRAW RESPONSE: About to call supabase.from(game_live_state).update()');
+        console.log(
+          '🏁 DRAW RESPONSE: Payload JSON:',
+          JSON.stringify(updatePayload, null, 2)
+        );
+        console.log(
+          '🏁 DRAW RESPONSE: About to call supabase.from(game_live_state).update()'
+        );
 
         const { data: gameEndData, error: gameEndError } = await supabase
           .from('game_live_state')
@@ -744,10 +744,15 @@ class LiveMovesService {
 
         if (gameEndError) {
           console.error('❌ DRAW RESPONSE: Clean update failed:', gameEndError);
-          console.error('❌ DRAW RESPONSE: Error details:', JSON.stringify(gameEndError, null, 2));
+          console.error(
+            '❌ DRAW RESPONSE: Error details:',
+            JSON.stringify(gameEndError, null, 2)
+          );
 
           // Ultra-minimal fallback: Just set game_ended
-          console.log('🔧 DRAW RESPONSE: Trying ultra-minimal update (game_ended only)...');
+          console.log(
+            '🔧 DRAW RESPONSE: Trying ultra-minimal update (game_ended only)...'
+          );
           const { data: minimalData, error: minimalError } = await supabase
             .from('game_live_state')
             .update({ game_ended: true })
@@ -755,11 +760,17 @@ class LiveMovesService {
             .select();
 
           if (minimalError) {
-            console.error('❌ DRAW RESPONSE: Even minimal update failed:', minimalError);
+            console.error(
+              '❌ DRAW RESPONSE: Even minimal update failed:',
+              minimalError
+            );
             return false;
           }
 
-          console.log('✅ DRAW RESPONSE: Minimal update succeeded', minimalData);
+          console.log(
+            '✅ DRAW RESPONSE: Minimal update succeeded',
+            minimalData
+          );
         } else {
           console.log('✅ DRAW RESPONSE: Clean update succeeded', gameEndData);
         }
@@ -767,10 +778,15 @@ class LiveMovesService {
         console.log('🚫 DRAW RESPONSE: Draw declined, game continues');
       }
 
-      console.log('✅ DRAW RESPONSE: respondToDrawOffer completed successfully');
+      console.log(
+        '✅ DRAW RESPONSE: respondToDrawOffer completed successfully'
+      );
       return true;
     } catch (error) {
-      console.error('❌ DRAW RESPONSE: Failed to respond to draw offer:', error);
+      console.error(
+        '❌ DRAW RESPONSE: Failed to respond to draw offer:',
+        error
+      );
       return false;
     }
   }
@@ -869,7 +885,7 @@ class LiveMovesService {
             gameId,
             event: payload.eventType,
             new: payload.new,
-            old: payload.old
+            old: payload.old,
           });
 
           if (callbacks.onGameStateUpdate) {
@@ -878,7 +894,7 @@ class LiveMovesService {
             console.log('📡 REALTIME: Retrieved game state', {
               gameState,
               game_ended: gameState?.game_ended,
-              game_result: gameState?.game_result
+              game_result: gameState?.game_result,
             });
 
             if (gameState) {
@@ -925,7 +941,7 @@ class LiveMovesService {
             gameId,
             event: payload.eventType,
             new: payload.new,
-            old: payload.old
+            old: payload.old,
           });
 
           if (callbacks.onDrawOfferUpdate) {

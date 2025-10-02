@@ -63,6 +63,7 @@ export const LiveGameBoard: React.FC<LiveGameBoardProps> = ({
               boardWidth={calculateBoardWidth()}
               gameEnded={liveGameState.game_ended}
               currentTurn={liveGameState.current_turn === 'white' ? 'w' : 'b'}
+              myColor={myColor === 'white' ? 'w' : 'b'}
               lastMove={
                 liveMoves.length > 0
                   ? {

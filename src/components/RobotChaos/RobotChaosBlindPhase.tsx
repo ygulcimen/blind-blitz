@@ -1,4 +1,3 @@
-// components/RobotChaos/RobotChaosBlindPhase.tsx - DEBUG VERSION
 import React, { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { UnifiedChessBoard } from '../shared/ChessBoard/UnifiedChessBoard';
@@ -13,221 +12,366 @@ interface RobotChaosBlindPhaseProps {
 }
 
 const MAX_MOVES = 5;
-const MAX_PER_PIECE = 2;
+const MOVE_INTERVAL = 2000; // 2 seconds per move
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-const generateRobotMoves = (color: 'w' | 'b'): { moves: BlindSequence } => {
-  console.log(`🤖 generateRobotMoves called for color: ${color}`);
+const ROBOT_MESSAGES = {
+  starting: [
+    "Time to show you how it's really done!",
+    'Activating chaos protocols... standby human',
+    'Prepare to witness artificial unintelligence!',
+  ],
+  moving: [
+    "This move is 200 IQ, you wouldn't understand",
+    "Trust the process, human. I'm helping... probably",
+    'This is strategic chaos, not random chaos!',
+    'Humans play chess, I play 4D interdimensional warfare',
+    'Beep boop, chaos executed successfully!',
+  ],
+  finishing: [
+    'Chaos complete! Proceeding to reveal...',
+    "My masterpiece is complete. You're welcome!",
+    'Five moves of pure artistic chaos complete!',
+  ],
+};
+
+const getRandomMessage = (category: keyof typeof ROBOT_MESSAGES) => {
+  const msgs = ROBOT_MESSAGES[category];
+  return msgs[Math.floor(Math.random() * msgs.length)];
+};
+
+const generateRobotMoves = (color: 'w' | 'b'): BlindSequence => {
   const game = new Chess(INITIAL_FEN);
   const moves: BlindSequence = [];
-  const pieceMoves: Record<string, number> = {};
 
+  // Set starting turn
   if (color === 'b') {
     const parts = game.fen().split(' ');
     parts[1] = 'b';
     game.load(parts.join(' '));
   }
 
-  while (moves.length < MAX_MOVES) {
+  // Generate 5 moves in sequence
+  for (let i = 0; i < MAX_MOVES; i++) {
     const allMoves = game.moves({ verbose: true });
-    const validMoves = allMoves.filter((m) => {
-      const piece = game.get(m.from);
-      return (
-        piece?.color === color && (pieceMoves[m.from] || 0) < MAX_PER_PIECE
-      );
-    });
-    const candidates = validMoves.length ? validMoves : allMoves;
-    if (!candidates.length) break;
+    if (!allMoves.length) break;
 
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-    const result = game.move(chosen);
-    if (!result) break;
+    const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+    const result = game.move({ from: randomMove.from, to: randomMove.to });
 
-    pieceMoves[chosen.from] = (pieceMoves[chosen.from] || 0) + 1;
-    moves.push({ from: result.from, to: result.to, san: result.san });
+    if (result) {
+      moves.push({ from: result.from, to: result.to, san: result.san });
 
-    const parts = game.fen().split(' ');
-    parts[1] = color;
-    game.load(parts.join(' '));
+      // Keep turn as same color for next move
+      const parts = game.fen().split(' ');
+      parts[1] = color;
+      game.load(parts.join(' '));
+    }
   }
 
-  console.log(`🤖 Generated ${moves.length} moves for ${color}:`, moves);
-  return { moves };
+  return moves;
 };
 
 const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
   gameState,
-  gameId,
 }) => {
-  const isWhite = gameState.gameState.blind.myColor === 'white';
-  const [moves, setMoves] = useState<BlindSequence>([]);
-  const [currentMove, setCurrentMove] = useState(0);
-  const [status, setStatus] = useState<
-    'preparing' | 'thinking' | 'moving' | 'finished'
-  >('preparing');
-  const [dialogue, setDialogue] = useState('');
-  const displayGameRef = useRef(new Chess(INITIAL_FEN));
-  const [displayFen, setDisplayFen] = useState(INITIAL_FEN);
-  const startedRef = useRef(false);
-
-  const getRandomDialogue = (category: keyof typeof ROBOT_DIALOGUES) => {
-    const opts = ROBOT_DIALOGUES[category];
-    return opts[Math.floor(Math.random() * opts.length)];
-  };
-
-  useEffect(() => {
-    if (startedRef.current) {
-      console.log('🤖 Already started, returning');
-      return;
-    }
-    startedRef.current = true;
-
-    if (!isWhite) {
-      console.log('🤖 Black player detected, generating black moves...');
-      const { moves: blackMoves } = generateRobotMoves('b');
-      console.log('🤖 Submitting black moves:', blackMoves);
-      gameState.submitBlindMoves(blackMoves, 'P2');
-      return;
-    }
-
-    console.log('🤖 White player detected, starting animation sequence...');
-    const { moves: robotMoves } = generateRobotMoves('w');
-    console.log('🤖 White moves to animate:', robotMoves);
-
-    const internalGame = new Chess(INITIAL_FEN);
-
-    let idx = 0;
-    setStatus('preparing');
-    setDialogue(getRandomDialogue('starting'));
-
-    const runMoveStep = () => {
-      console.log(
-        `🤖 runMoveStep - idx: ${idx}, total moves: ${robotMoves.length}`
-      );
-
-      if (idx >= robotMoves.length) {
-        console.log('🤖 All moves complete, finishing...');
-        setStatus('finished');
-        setDialogue('🤖 "Chaos complete! Proceeding to reveal..."');
-        setTimeout(() => {
-          console.log('🤖 Submitting white moves:', robotMoves);
-          gameState.submitBlindMoves(robotMoves, 'P1');
-          const { moves: blackMoves } = generateRobotMoves('b');
-          console.log('🤖 Submitting black moves:', blackMoves);
-          gameState.submitBlindMoves(blackMoves, 'P2');
-        }, 2000);
-        return;
-      }
-
-      const move = robotMoves[idx];
-      console.log(`🤖 Processing move ${idx + 1}/${robotMoves.length}:`, move);
-
-      setCurrentMove(idx + 1);
-      setStatus('thinking');
-      setDialogue(`🤖 Calculating move ${idx + 1}...`);
-
-      setTimeout(() => {
-        setStatus('moving');
-        setDialogue(getRandomDialogue('moving'));
-
-        setTimeout(() => {
-          setMoves((prev) => {
-            console.log(
-              `🤖 Adding move to list. Previous count: ${prev.length}`
-            );
-            return [...prev, move];
-          });
-
-          try {
-            console.log(
-              '🤖 Before move - internalGame FEN:',
-              internalGame.fen()
-            );
-            console.log('🤖 Attempting move:', move);
-
-            const moveResult = internalGame.move(move);
-            console.log('🤖 Move result:', moveResult);
-
-            if (moveResult) {
-              // Force turn back to white
-              const fenBefore = internalGame.fen();
-              console.log('🤖 FEN before turn manipulation:', fenBefore);
-
-              const parts = internalGame.fen().split(' ');
-              parts[1] = 'w';
-              internalGame.load(parts.join(' '));
-
-              console.log(
-                '🤖 FEN after turn manipulation:',
-                internalGame.fen()
-              );
-
-              // Update display
-              displayGameRef.current = new Chess(internalGame.fen());
-              setDisplayFen(displayGameRef.current.fen());
-              console.log('🤖 Display updated successfully');
-            }
-          } catch (error) {
-            console.error(`🤖 Display move failed: ${move.san}`, error);
-          }
-
-          setDialogue(`🤖 "Move ${idx + 1}: ${move.san}"`);
-          idx++;
-          console.log(`🤖 Incrementing idx to ${idx}, scheduling next move...`);
-          runMoveStep();
-        }, 900);
-      }, 1000);
-    };
-
-    console.log('🤖 Starting runMoveStep...');
-    runMoveStep();
-  }, []);
-
-  useEffect(() => {
-    if (isWhite && moves.length) {
-      console.log(`🤖 Updating blind moves. Count: ${moves.length}`);
-      gameState.updateBlindMoves(moves);
-    }
-  }, [moves, gameState, isWhite]);
-
-  if (!isWhite) {
+  // Safety check for gameState structure
+  if (!gameState?.gameState?.blind) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-blue-950 text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">🤖</div>
-          <h2 className="text-2xl font-bold mb-2">Black Robot Thinking...</h2>
-          <p className="text-gray-300">Generating chaotic moves</p>
+          <div className="text-6xl mb-4">🤖</div>
+          <div className="text-xl">Initializing robot chaos...</div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-blue-950 text-white overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-128 h-128 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
+  const [whiteMoves, setWhiteMoves] = useState<BlindSequence>([]);
+  const [blackMoves, setBlackMoves] = useState<BlindSequence>([]);
+
+  // Refs to store moves for setTimeout callbacks (fixes closure bug)
+  const whiteMoveRef = useRef<BlindSequence>([]);
+  const blackMoveRef = useRef<BlindSequence>([]);
+
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const [status, setStatus] = useState<
+    'preparing' | 'thinking' | 'moving' | 'finished'
+  >('preparing');
+  const [dialogue, setDialogue] = useState('');
+  const [displayFen, setDisplayFen] = useState(INITIAL_FEN);
+  const hasStarted = useRef(false);
+  const animationTimeouts = useRef<NodeJS.Timeout[]>([]);
+
+  // Determine player color and board orientation with safety checks
+  const myColor = gameState.gameState?.blind?.myColor;
+  if (!myColor) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-blue-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚡</div>
+          <div className="text-xl">Waiting for player assignment...</div>
+        </div>
       </div>
-      <div className="relative z-10 h-screen flex items-center justify-center px-4 pt-16">
-        <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-3 flex items-center justify-center">
+    );
+  }
+
+  const isBlackPlayer = myColor === 'black';
+  const robotColor = isBlackPlayer ? 'b' : 'w';
+
+  // Skip animation function
+  const handleSkipAnimation = () => {
+    console.log('🤖 Skipping animation...');
+
+    // Clear all existing timeouts
+    animationTimeouts.current.forEach((timeout) => clearTimeout(timeout));
+    animationTimeouts.current = [];
+
+    // Force complete animation state
+    setCurrentMoveIndex(5);
+    setStatus('finished');
+    setDialogue(getRandomMessage('finishing'));
+
+    // Set final board state with all moves applied
+    const finalGame = new Chess(INITIAL_FEN);
+    if (isBlackPlayer) {
+      const parts = finalGame.fen().split(' ');
+      parts[1] = 'b';
+      finalGame.load(parts.join(' '));
+    }
+
+    const playerMoves = isBlackPlayer
+      ? blackMoveRef.current
+      : whiteMoveRef.current;
+    playerMoves.forEach((move) => {
+      finalGame.move({ from: move.from, to: move.to });
+      const parts = finalGame.fen().split(' ');
+      parts[1] = robotColor;
+      finalGame.load(parts.join(' '));
+    });
+
+    setDisplayFen(finalGame.fen());
+
+    // Submit moves immediately
+    setTimeout(async () => {
+      console.log('🤖 Submitting moves after skip');
+      if (gameState.submitBlindMoves) {
+        console.log('🤖 White moves:', whiteMoveRef.current);
+        console.log('🤖 Black moves:', blackMoveRef.current);
+
+        try {
+          await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
+          await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+          console.log('🤖 Both players moves submitted');
+
+          // Manually trigger reveal transition for RobotChaos
+          if (gameState.proceedToReveal) {
+            console.log('🤖 Triggering reveal phase');
+            setTimeout(() => {
+              gameState.proceedToReveal();
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('🤖 Error submitting moves:', error);
+        }
+      }
+    }, 500);
+  };
+
+  useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
+    // Generate moves for both players immediately
+    console.log('🤖 Generating robot moves...');
+    const white = generateRobotMoves('w');
+    const black = generateRobotMoves('b');
+
+    console.log('🤖 Generated white moves:', white);
+    console.log('🤖 Generated black moves:', black);
+
+    // Store in both state (for UI) and refs (for setTimeout callbacks)
+    whiteMoveRef.current = white;
+    blackMoveRef.current = black;
+    setWhiteMoves(white);
+    setBlackMoves(black);
+
+    console.log('🤖 Moves stored in state and refs');
+    setStatus('preparing');
+    setDialogue(getRandomMessage('starting'));
+
+    // Start animation sequence after 1 second - use player's color moves
+    setTimeout(() => {
+      const playerMoves = isBlackPlayer ? black : white;
+      animateMoves(playerMoves);
+    }, 1000);
+  }, [isBlackPlayer]);
+
+  const animateMoves = (moves: BlindSequence) => {
+    let index = 0;
+    const game = new Chess(INITIAL_FEN); // Single instance that accumulates moves
+
+    // Set correct starting turn
+    if (isBlackPlayer) {
+      const parts = game.fen().split(' ');
+      parts[1] = 'b';
+      game.load(parts.join(' '));
+      setDisplayFen(game.fen());
+    }
+
+    const animateNextMove = () => {
+      console.log(
+        `🤖 animateNextMove called - index: ${index}, total moves: ${moves.length}, robot color: ${robotColor}`
+      );
+
+      if (index >= moves.length) {
+        // All moves animated
+        console.log('🤖 Animation complete, transitioning to finished state');
+        setStatus('finished');
+        setDialogue(getRandomMessage('finishing'));
+
+        // Submit both players' moves after 2 seconds
+        setTimeout(async () => {
+          console.log('🤖 Submitting moves for both players');
+          if (gameState.submitBlindMoves) {
+            console.log('🤖 White moves:', whiteMoveRef.current);
+            console.log('🤖 Black moves:', blackMoveRef.current);
+
+            try {
+              await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
+              await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+              console.log('🤖 Both players moves submitted');
+
+              // Manually trigger reveal transition for RobotChaos
+              if (gameState.proceedToReveal) {
+                console.log('🤖 Triggering reveal phase');
+                setTimeout(() => {
+                  gameState.proceedToReveal();
+                }, 1000);
+              }
+            } catch (error) {
+              console.error('🤖 Error submitting moves:', error);
+            }
+          }
+        }, 2000);
+        return;
+      }
+
+      const move = moves[index];
+      console.log(`🤖 Processing move ${index + 1}/${moves.length}:`, move);
+      setCurrentMoveIndex(index + 1);
+      setStatus('thinking');
+      setDialogue(`Calculating move ${index + 1}...`);
+
+      const moveTimeout = setTimeout(() => {
+        setStatus('moving');
+        setDialogue(getRandomMessage('moving'));
+
+        // Make move on the SAME game instance (accumulating)
+        const moveResult = game.move({ from: move.from, to: move.to });
+        console.log('🤖 Move result:', moveResult);
+
+        if (moveResult) {
+          // Force turn back to robot color for next move
+          const parts = game.fen().split(' ');
+          parts[1] = robotColor;
+          game.load(parts.join(' '));
+          setDisplayFen(game.fen());
+          console.log('🤖 Display FEN updated to:', game.fen());
+        }
+
+        index++;
+        console.log(
+          `🤖 Incrementing index to ${index}, scheduling next move in ${MOVE_INTERVAL}ms`
+        );
+        const nextMoveTimeout = setTimeout(() => {
+          console.log('🤖 Timeout callback executing, calling animateNextMove');
+          animateNextMove();
+        }, MOVE_INTERVAL);
+        animationTimeouts.current.push(nextMoveTimeout);
+      }, 500);
+      animationTimeouts.current.push(moveTimeout);
+    };
+
+    console.log(
+      `🤖 Starting animation sequence for ${robotColor} robot with accumulating moves`
+    );
+    animateNextMove();
+  };
+
+  return (
+    <div className="h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-violet-950 text-white overflow-hidden relative">
+      {/* Cyberpunk animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-128 h-128 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-3/4 left-3/4 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000" />
+
+        {/* Digital grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(147, 51, 234, 0.4) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(147, 51, 234, 0.4) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        {/* Animated scanlines */}
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div className="h-full w-full bg-gradient-to-b from-transparent via-purple-500/20 to-transparent animate-pulse" />
+        </div>
+      </div>
+
+      <div className="relative z-10 h-screen flex overflow-hidden">
+        {/* Left: Robot Animator */}
+        <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-purple-500/20 p-4 flex items-center justify-center relative">
+          {/* Panel glow */}
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 via-cyan-500/5 to-transparent pointer-events-none" />
+
+          <div className="relative z-10">
             <RobotAnimator status={status} dialogue={dialogue} />
           </div>
-          <div className="lg:col-span-6 flex justify-center items-center">
-            <UnifiedChessBoard
-              fen={displayFen}
-              game={displayGameRef.current}
-              isFlipped={false}
-              onPieceDrop={() => false}
-              customSquareStyles={{}}
-              phase="blind"
-              boardWidth={Math.min(450, window.innerWidth - 32)}
-            />
-          </div>
-          <div className="lg:col-span-3 flex flex-col gap-4 justify-center">
-            <RobotMoveLog moves={moves} />
-            <RobotStatusPanel status={status} moveCount={moves.length} />
+        </div>
+
+        {/* Center: Board */}
+        <div className="flex-1 flex items-center justify-center">
+          <UnifiedChessBoard
+            fen={displayFen}
+            game={new Chess(displayFen)}
+            isFlipped={isBlackPlayer}
+            onPieceDrop={() => false}
+            customSquareStyles={{}}
+            phase="blind"
+            boardWidth={Math.min(500, window.innerWidth - 600)}
+          />
+        </div>
+
+        {/* Right: Move Log & Controls */}
+        <div className="w-72 bg-black/40 backdrop-blur-xl border-l border-purple-500/20 p-4 flex flex-col relative">
+          {/* Panel glow */}
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex-1">
+              <RobotMoveLog
+                moves={(isBlackPlayer ? blackMoves : whiteMoves).slice(
+                  0,
+                  currentMoveIndex
+                )}
+                maxMoves={MAX_MOVES}
+              />
+            </div>
+
+            <div className="mt-4">
+              <RobotStatusPanel
+                status={status}
+                moveCount={currentMoveIndex}
+                onSkip={status !== 'finished' ? handleSkipAnimation : undefined}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -236,23 +380,3 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
 };
 
 export default RobotChaosBlindPhase;
-
-const ROBOT_DIALOGUES = {
-  starting: [
-    "🤖 'Time to show you how it's really done!'",
-    "🤖 'Activating chaos protocols... standby human'",
-    "🤖 'Prepare to witness artificial unintelligence!'",
-  ],
-  moving: [
-    "🤖 'This move is 200 IQ, you wouldn't understand'",
-    "🤖 'Trust the process, human. I'm helping... probably'",
-    "🤖 'This is strategic chaos, not random chaos!'",
-    "🤖 'Humans play chess, I play 4D interdimensional warfare'",
-    "🤖 'Beep boop, chaos executed successfully!'",
-  ],
-  finishing: [
-    "🤖 'Chaos complete! Proceeding to reveal...'",
-    "🤖 'My masterpiece is complete. You're welcome!'",
-    "🤖 'Five moves of pure artistic chaos complete!'",
-  ],
-};
