@@ -1,13 +1,18 @@
 // Error handling utilities
 
 export class GameError extends Error {
+  code: string;
+  userMessage: string;
+
   constructor(
     message: string,
-    public code: string,
-    public userMessage: string
+    code: string,
+    userMessage: string
   ) {
     super(message);
     this.name = 'GameError';
+    this.code = code;
+    this.userMessage = userMessage;
   }
 }
 

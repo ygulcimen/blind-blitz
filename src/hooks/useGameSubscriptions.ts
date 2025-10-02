@@ -73,8 +73,6 @@ export const useGameSubscriptions = ({
   useEffect(() => {
     if (!gameId || !myColor) return;
 
-    console.log('📡 Setting up real-time subscriptions...');
-
     const unsubscribe = liveMovesService.subscribeToGameUpdates(gameId, {
       onGameStateUpdate: (newGameState) => {
         setLiveGameState(prev => {
@@ -130,7 +128,6 @@ export const useGameSubscriptions = ({
       },
 
       onDrawOfferUpdate: (offer) => {
-        console.log('🔄 Draw offer updated:', offer);
         setDrawOffer(offer);
       },
     });
@@ -145,7 +142,7 @@ export const useGameSubscriptions = ({
       liveGameState?.game_result &&
       typeof onGameEnd === 'function'
     ) {
-      console.log('🏁 Game ended detected from server:', liveGameState.game_result);
+      console.log('Game ended:', liveGameState.game_result.type);
       onGameEnd(liveGameState.game_result);
     }
   }, [liveGameState?.game_ended, liveGameState?.game_result, onGameEnd]);
@@ -154,7 +151,6 @@ export const useGameSubscriptions = ({
   useEffect(() => {
     const interval = setInterval(() => {
       if (pendingOptimisticIdRef.current) {
-        console.log('Clearing stuck pending state');
         pendingOptimisticIdRef.current = null;
       }
     }, 5000);

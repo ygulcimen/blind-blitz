@@ -43,11 +43,6 @@ class MatchmakingService {
     preferences: MatchmakingPreferences
   ): Promise<MatchmakingResult> {
     try {
-      console.log(
-        '🎯 Starting BlindChess 5+0 matchmaking with preferences:',
-        preferences
-      );
-
       // Get current user
       const {
         data: { user },
@@ -72,7 +67,7 @@ class MatchmakingService {
       });
 
       if (error) {
-        console.error('❌ Matchmaking error:', error);
+        console.error('Matchmaking error:', error);
         return {
           success: false,
           action: 'error',
@@ -90,8 +85,6 @@ class MatchmakingService {
         };
       }
 
-      console.log('✅ Matchmaking result:', data);
-
       return {
         success: true,
         action: data.action as 'joined_existing' | 'created_room',
@@ -105,7 +98,7 @@ class MatchmakingService {
         nextPhase: data.next_phase as 'payment' | 'waiting_for_opponent',
       };
     } catch (error) {
-      console.error('💥 Matchmaking service error:', error);
+      console.error('Matchmaking service error:', error);
       return {
         success: false,
         action: 'error',

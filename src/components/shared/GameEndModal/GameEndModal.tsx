@@ -17,11 +17,11 @@ const rematchButtonVariants = {
   hover: {
     scale: 1.05,
     boxShadow: "0 8px 30px rgba(59, 130, 246, 0.5)",
-    transition: { type: "spring", stiffness: 300, damping: 20 }
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 }
   },
   tap: {
     scale: 0.95,
-    transition: { type: "spring", stiffness: 400, damping: 25 }
+    transition: { type: "spring" as const, stiffness: 400, damping: 25 }
   }
 };
 
@@ -30,11 +30,11 @@ const homeButtonVariants = {
   hover: {
     scale: 1.05,
     boxShadow: "0 8px 30px rgba(34, 197, 94, 0.5)",
-    transition: { type: "spring", stiffness: 300, damping: 20 }
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 }
   },
   tap: {
     scale: 0.95,
-    transition: { type: "spring", stiffness: 400, damping: 25 }
+    transition: { type: "spring" as const, stiffness: 400, damping: 25 }
   }
 };
 
@@ -42,11 +42,11 @@ const closeButtonVariants = {
   initial: { scale: 1 },
   hover: {
     scale: 1.1,
-    transition: { type: "spring", stiffness: 300, damping: 20 }
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 }
   },
   tap: {
     scale: 0.9,
-    transition: { type: "spring", stiffness: 400, damping: 25 }
+    transition: { type: "spring" as const, stiffness: 400, damping: 25 }
   }
 };
 

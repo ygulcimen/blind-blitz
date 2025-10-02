@@ -1,7 +1,4 @@
 // App.tsx
-import { useEffect } from 'react';
-import { supabase } from './lib/supabase';
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ViolationProvider } from './components/shared/ViolationSystem';
 import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
@@ -27,15 +24,6 @@ import { ProtectedRoute } from './screens/auth/ProtectedRoute';
 import { AuthRedirect } from './screens/auth/AuthRedirect';
 
 function App() {
-  useEffect(() => {
-    const testDatabase = async () => {
-      const { data, error } = await supabase.from('players').select('*');
-
-      console.log('Players data:', data);
-      console.log('Any errors:', error);
-    };
-    testDatabase();
-  }, []);
   return (
     <ErrorBoundary>
       <AuthProvider>

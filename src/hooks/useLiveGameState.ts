@@ -43,8 +43,6 @@ export const useLiveGameState = ({
   const initializeGame = async () => {
     if (!gameId || !currentUser) return;
 
-    console.log('🎯 Initializing multiplayer live game...');
-
     try {
       // Get existing game state first
       let gameStateData = await liveMovesService.getGameState(gameId);
@@ -71,21 +69,18 @@ export const useLiveGameState = ({
             current_turn: 'white',
             current_fen: fixedFen,
           };
-          console.log('✅ Corrected LIVE start: forced White to move.');
         } catch (e) {
-          console.error('❌ Failed to correct LIVE start turn:', e);
+          console.error('Failed to correct LIVE start turn:', e);
         }
       }
 
       // Create game if not exists
       if (!gameStateData) {
-        console.log('🔧 Live game not initialized yet, creating...');
-
         const blindGameState = await blindMovesService.getBlindGameState(
           gameId
         );
         if (!blindGameState) {
-          console.error('❌ No blind game state found');
+          console.error('No blind game state found');
           return;
         }
 
@@ -106,24 +101,17 @@ export const useLiveGameState = ({
         );
 
         if (!gameStateData) {
-          console.error('❌ Failed to initialize live game');
+          console.error('Failed to initialize live game');
           return;
         }
-
-        console.log('✅ Live game created successfully');
       }
 
-      console.log('🎮 Game state data:', gameStateData);
       setLiveGameState(gameStateData);
-      console.log('🔥 liveGameState set', gameStateData);
 
       // Determine player color
       const playerColor =
         gameStateData.white_player_id === currentUser.id ? 'white' : 'black';
       setMyColor(playerColor);
-      console.log('🔥 myColor set', playerColor);
-
-      console.log('🎨 My color:', playerColor, 'My ID:', currentUser.id);
 
       // Load opponent data
       try {
@@ -145,34 +133,27 @@ export const useLiveGameState = ({
               rating: opponent.player_rating || 1500,
               isHost: false,
             });
-            console.log(
-              '✅ Real opponent data loaded:',
-              opponent.player_username
-            );
           }
         }
       } catch (error) {
-        console.error('❌ Failed to fetch opponent data:', error);
+        console.error('Failed to fetch opponent data:', error);
       }
 
       // Load existing moves
       const moves = await liveMovesService.getMoves(gameId);
       setLiveMoves(moves);
-      console.log('📝 Loaded moves:', moves.length);
 
       // Initialize chess game
       const chess = new Chess(gameStateData.current_fen);
       setChessGame(chess);
-      console.log('🔥 chessGame set', chess.fen());
 
       // Get draw offer
       const activeDrawOffer = await liveMovesService.getActiveDrawOffer(gameId);
       setDrawOffer(activeDrawOffer);
 
       setLoading(false);
-      console.log('✅ Multiplayer live game initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize multiplayer game:', error);
+      console.error('Failed to initialize multiplayer game:', error);
       setLoading(false);
     }
   };

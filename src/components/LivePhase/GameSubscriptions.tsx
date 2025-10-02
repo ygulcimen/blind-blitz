@@ -20,7 +20,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
   gameId,
   myColor,
   currentUser,
-  liveGameState,
+  liveGameState: _liveGameState,
   loading,
   pendingOptimisticIdRef,
   setLiveGameState,

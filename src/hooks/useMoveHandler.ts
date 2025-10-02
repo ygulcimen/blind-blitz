@@ -44,7 +44,6 @@ export const useMoveHandler = ({
     if (!liveGameState || !chessGame || !myColor || !gameId || !currentUser) return false;
 
     if (pendingOptimisticIdRef.current) {
-      console.log('Move already pending, ignoring');
       return false;
     }
 
@@ -129,7 +128,6 @@ export const useMoveHandler = ({
         if (!result.success) {
           // Full rollback on failure
           if (stateSnapshotRef.current) {
-            console.log('🔄 Rolling back failed move');
             const rollbackChess = new Chess(stateSnapshotRef.current.fen);
             setChessGame(rollbackChess);
             setLiveGameState(stateSnapshotRef.current.gameState);
@@ -184,7 +182,6 @@ export const useMoveHandler = ({
   useEffect(() => {
     const interval = setInterval(() => {
       if (pendingOptimisticIdRef.current) {
-        console.log('Clearing stuck pending state');
         pendingOptimisticIdRef.current = null;
         setIsProcessingMove(false);
       }

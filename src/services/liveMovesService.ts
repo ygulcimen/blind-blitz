@@ -481,10 +481,16 @@ class LiveMovesService {
         .from('game_live_state')
         .select('*')
         .eq('game_id', gameId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to allow 0 or 1 results
 
       if (error) {
         console.error('❌ GET GAME STATE: Error getting game state:', error);
+        return null;
+      }
+
+      // Return null if no data found (game not in live phase yet)
+      if (!data) {
+        console.log('ℹ️ GET GAME STATE: No live game state found (game not in live phase yet)');
         return null;
       }
 

@@ -146,14 +146,14 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
     if (!gameId) return;
 
     try {
-      console.log('🎯 Charging entry fees for room:', gameId);
+      console.log('Payment processing started');
 
       const result = await matchmakingService.processPaymentAndStartGame(
         gameId
       );
 
       if (result.success) {
-        console.log('✅ Payments processed successfully - starting countdown');
+        console.log('Payment successful - game starting');
         setPaymentPhase('game_starting');
 
         // Start countdown
@@ -165,14 +165,14 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
                 clearInterval(countdownIntervalRef.current);
                 countdownIntervalRef.current = null;
               }
-              console.log('Game starting now!');
+              console.log('Game started');
               return 0;
             }
             return prev - 1;
           });
         }, 1000);
       } else {
-        console.error('❌ Payment processing failed:', result.message);
+        console.error('Payment failed:', result.message);
         setPaymentError(result.message);
         setPaymentPhase('payment_failed');
 
@@ -184,7 +184,7 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
         }, 5000);
       }
     } catch (error) {
-      console.error('💥 Payment processing error:', error);
+      console.error('Payment processing error:', error);
       setPaymentError('Network error during payment processing');
       setPaymentPhase('payment_failed');
 
@@ -199,8 +199,6 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
   useEffect(() => {
     if (!gameId) return;
 
-    console.log('Setting up subscription for room:', gameId);
-
     subscriptionRef.current = supabase
       .channel(`room-${gameId}-${Date.now()}`)
       .on(
@@ -211,7 +209,6 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
           table: 'game_room_players',
         },
         () => {
-          console.log('Player table changed - reloading room data');
           loadRoomData();
         }
       )
@@ -222,8 +219,7 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
           schema: 'public',
           table: 'game_rooms',
         },
-        (payload) => {
-          console.log('Room table changed:', payload);
+        () => {
           loadRoomData();
         }
       )
@@ -231,7 +227,6 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
 
     return () => {
       if (subscriptionRef.current) {
-        console.log('Cleaning up subscription');
         supabase.removeChannel(subscriptionRef.current);
       }
       if (countdownIntervalRef.current) {
@@ -250,7 +245,6 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
 
   useEffect(() => {
     if (allPlayersReady && paymentPhase === 'waiting' && roomData) {
-      console.log('All players ready - processing payments...');
       setPaymentPhase('processing_payment');
       processPayments();
     }

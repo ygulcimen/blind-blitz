@@ -164,8 +164,6 @@ export const useGameStateManager = (gameId?: string) => {
   const initializeGame = useCallback(async () => {
     if (!gameId) return;
 
-    console.log('Initializing game:', gameId);
-
     try {
       const { data: room, error: roomErr } = await supabase
         .from('game_rooms')
@@ -179,7 +177,6 @@ export const useGameStateManager = (gameId?: string) => {
       }
 
       if (room.status !== 'blind') {
-        console.log('initializeGame: room.status is not blind, skipping init');
         return;
       }
 
@@ -189,17 +186,12 @@ export const useGameStateManager = (gameId?: string) => {
         .eq('room_id', gameId);
 
       if (!players || players.length < 2) {
-        console.log(
-          'initializeGame: need 2 players, found',
-          players?.length || 0
-        );
         return;
       }
 
       const blindGameState = await blindMovesService.initializeBlindGame(
         gameId
       );
-      console.log('Blind game initialized/pulled:', !!blindGameState);
     } catch (error) {
       console.error('Initialization failed:', error);
     }
@@ -208,11 +200,9 @@ export const useGameStateManager = (gameId?: string) => {
   const recoverGameState = useCallback(
     async (gameId: string) => {
       try {
-        console.log('Recovering game state for:', gameId);
-
         const liveGameState = await liveMovesService.getGameState(gameId);
         if (liveGameState && !liveGameState.game_ended) {
-          console.log('Found active live game, transitioning to LIVE');
+          console.log('Game started - transitioning to LIVE');
 
           const safeFen = validateAndFixFEN(liveGameState.current_fen);
 
@@ -250,16 +240,12 @@ export const useGameStateManager = (gameId?: string) => {
           return 'WAITING';
         }
 
-        console.log('Room status:', room.status);
-
         switch (room.status) {
           case 'live':
-            console.log('Room is live but no live game state found');
             return 'WAITING';
 
           case 'revealing':
           case 'reveal':
-            console.log('Room is in reveal phase');
             const blindState = await blindMovesService.getBlindGameState(
               gameId
             );
@@ -291,7 +277,6 @@ export const useGameStateManager = (gameId?: string) => {
             break;
 
           case 'blind':
-            console.log('Room is in blind phase - recovering state');
             await initializeGame();
 
             // Load blind game state to get start time
@@ -300,10 +285,6 @@ export const useGameStateManager = (gameId?: string) => {
               blindPhaseStartTimeRef.current = new Date(
                 bs.blindPhaseStartedAt
               ).getTime();
-              console.log(
-                'Blind phase start time recovered:',
-                bs.blindPhaseStartedAt
-              );
             } else {
               blindPhaseStartTimeRef.current = Date.now();
               console.warn('No blind phase start time found during recovery');
@@ -312,7 +293,6 @@ export const useGameStateManager = (gameId?: string) => {
             return 'BLIND';
 
           default:
-            console.log('Room is waiting');
             return 'WAITING';
         }
 
@@ -416,10 +396,6 @@ export const useGameStateManager = (gameId?: string) => {
       // If moves and player are provided (robot chaos mode), use them
       if (moves && player) {
         const color = player === 'P1' ? 'white' : 'black';
-        console.log('📤 submitBlindMoves:', {
-          color,
-          movesCount: moves.length,
-        });
 
         // Get player_id based on color
         const playerIdQuery = await supabase
@@ -449,10 +425,9 @@ export const useGameStateManager = (gameId?: string) => {
             is_submitted: i === moves.length - 1,
           });
 
-          if (error) console.error('📤 Insert error:', error);
+          if (error) console.error('Blind move insert error:', error);
         }
 
-        console.log('📤 All moves inserted for', color);
         return true;
       }
 
@@ -463,9 +438,6 @@ export const useGameStateManager = (gameId?: string) => {
 
       // If player has 0 moves, still mark as submitted (time expired or chose not to move)
       if (gameState.blind.myMoves.length === 0) {
-        console.log(
-          '⏰ Submitting with 0 moves (time expired or no moves made)'
-        );
         setGameState((prev) => ({
           ...prev,
           blind: {
@@ -509,10 +481,6 @@ export const useGameStateManager = (gameId?: string) => {
       return;
     }
 
-    console.log(
-      'Proceeding to reveal phase - calculating rewards with checkmate detection...'
-    );
-
     try {
       const freshBlindState = await blindMovesService.getBlindGameState(gameId);
       if (!freshBlindState) {
@@ -543,18 +511,9 @@ export const useGameStateManager = (gameId?: string) => {
         room?.game_mode
       );
 
-      console.log('Simulation results:', {
-        whiteGold,
-        blackGold,
-        checkmateOccurred,
-        checkmateWinner,
-      });
-
       // Handle checkmate scenario
       if (checkmateOccurred && checkmateWinner) {
-        console.log(
-          `CHECKMATE in blind phase! ${checkmateWinner.toUpperCase()} wins!`
-        );
+        console.log(`Checkmate detected - ${checkmateWinner} wins in blind phase`);
 
         const totalPot = entryFee * 2;
         const commission = Math.floor(totalPot * 0.05);
@@ -616,12 +575,6 @@ export const useGameStateManager = (gameId?: string) => {
         },
         timer: { ...prev.timer, isRunning: false },
       }));
-
-      console.log(
-        checkmateOccurred
-          ? 'Checkmate game prepared'
-          : 'Normal reveal phase ready'
-      );
     } catch (error) {
       console.error('Failed to proceed to reveal:', error);
     }
@@ -641,19 +594,7 @@ export const useGameStateManager = (gameId?: string) => {
         blindPhaseStartTimeRef.current = new Date(
           blindGameState.blindPhaseStartedAt
         ).getTime();
-        console.log(
-          'Blind phase start time set:',
-          blindGameState.blindPhaseStartedAt
-        );
       }
-
-      console.log('Blind game state updated:', {
-        whiteMoves: blindGameState.whiteMoves.length,
-        blackMoves: blindGameState.blackMoves.length,
-        whiteSubmitted: blindGameState.whiteSubmitted,
-        blackSubmitted: blindGameState.blackSubmitted,
-        bothSubmitted: blindGameState.bothSubmitted,
-      });
 
       const latestMoves =
         myColor === 'white'
@@ -689,7 +630,7 @@ export const useGameStateManager = (gameId?: string) => {
 
       // Check if both submitted and auto-transition
       if (blindGameState.bothSubmitted && gameState.phase === 'BLIND') {
-        console.log('Both players submitted, transitioning to reveal');
+        console.log('Phase transition: BLIND -> REVEAL');
         setTimeout(() => {
           proceedToReveal();
         }, 1000);
@@ -724,8 +665,6 @@ export const useGameStateManager = (gameId?: string) => {
   }, []);
 
   const transitionToPhase = useCallback((newPhase: GamePhase) => {
-    console.log('Transitioning to phase:', newPhase);
-
     setGameState((prev) => {
       const next = { ...prev, phase: newPhase };
 
@@ -851,8 +790,6 @@ export const useGameStateManager = (gameId?: string) => {
   useEffect(() => {
     if (!gameId) return;
 
-    console.log('Setting up game subscriptions for:', gameId);
-
     subscriptionsRef.current.forEach((cleanup) => cleanup());
     subscriptionsRef.current = [];
 
@@ -896,10 +833,6 @@ export const useGameStateManager = (gameId?: string) => {
                   blindPhaseStartTimeRef.current = new Date(
                     bs.blindPhaseStartedAt
                   ).getTime();
-                  console.log(
-                    'Blind phase initialized with start time:',
-                    bs.blindPhaseStartedAt
-                  );
                 } else {
                   // Fallback: use current time if not set
                   blindPhaseStartTimeRef.current = Date.now();
@@ -994,8 +927,6 @@ export const useGameStateManager = (gameId?: string) => {
     if (!gameId) return;
 
     const initWithRecovery = async () => {
-      console.log('Initializing game with state recovery');
-
       const recoveredPhase = await recoverGameState(gameId);
 
       if (recoveredPhase === 'WAITING') {

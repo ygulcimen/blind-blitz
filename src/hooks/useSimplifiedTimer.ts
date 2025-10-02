@@ -27,7 +27,6 @@ export const useSimplifiedTimer = (
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-      console.log('⏹️ Timer stopped');
     }
   }, []);
 
@@ -38,14 +37,6 @@ export const useSimplifiedTimer = (
       stopTimer();
       return;
     }
-
-    console.log('🔄 Syncing timer with server:', {
-      serverWhite: Math.floor(gameState.white_time_ms / 1000),
-      serverBlack: Math.floor(gameState.black_time_ms / 1000),
-      turn: gameState.current_turn,
-      ended: gameState.game_ended,
-      moveCount: gameState.move_count,
-    });
 
     // Detect if this is a move update or initial load
     const isMoveUpdate = gameState.move_count !== lastMoveCountRef.current;
@@ -115,15 +106,12 @@ export const useSimplifiedTimer = (
 
     // Don't start timer until clock is started (last_move_time is set)
     if (!gameState.last_move_time) {
-      console.log('⏸️ Timer paused - waiting for clock to start');
       stopTimer();
       return;
     }
 
     // Stop any existing timer first
     stopTimer();
-
-    console.log('▶️ Starting countdown timer for:', gameState.current_turn);
 
     // Start the countdown
     timerRef.current = window.setInterval(() => {

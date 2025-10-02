@@ -30,8 +30,6 @@ export const useLiveTimer = (
 
   // ONE-TIME interval setup - never restarts
   useEffect(() => {
-    console.log('⏰ Setting up timer interval (one-time)');
-
     intervalRef.current = window.setInterval(() => {
       const state = gameStateRef.current;
 
@@ -69,20 +67,6 @@ export const useLiveTimer = (
         whiteTime = Math.max(0, state.white_time_ms - elapsed);
       } else {
         blackTime = Math.max(0, state.black_time_ms - elapsed);
-      }
-
-      // DEBUG: Log every 2 seconds
-      if (Math.random() < 0.02) {
-        console.log('⏰ Timer tick:', {
-          current_turn: state.current_turn,
-          last_move_time: state.last_move_time,
-          turnStartTime: new Date(turnStartTime).toISOString(),
-          elapsed: `${(elapsed / 1000).toFixed(1)}s`,
-          server_white_ms: state.white_time_ms,
-          server_black_ms: state.black_time_ms,
-          display_white_ms: Math.round(whiteTime),
-          display_black_ms: Math.round(blackTime),
-        });
       }
 
       setDisplayTime({ white: whiteTime, black: blackTime });

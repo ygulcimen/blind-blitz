@@ -11,27 +11,18 @@ interface QuickMatchResult {
 
 class QuickMatchService {
   async findQuickMatch(playerGold: number): Promise<QuickMatchResult> {
-    console.log(
-      '🎯 BlindChess 5+0 QuickMatch starting for player with',
-      playerGold,
-      'gold'
-    );
-
     try {
       // Step 1: Look for existing 5+0 signature rooms to join
       const availableRooms = await lobbyService.getAvailableRoomsForQuickMatch(
         playerGold
       );
-      console.log('🎯 Found', availableRooms.length, 'BlindChess 5+0 rooms');
 
       if (availableRooms.length > 0) {
         // Prioritize rooms that match our preferences
         const room = this.selectBestRoom(availableRooms, playerGold);
-        console.log('🎯 Attempting to join BlindChess 5+0 room:', room.id);
 
         try {
           await lobbyService.joinRoom(room.id);
-          console.log('✅ Successfully joined BlindChess 5+0 room:', room.id);
           return {
             success: true,
             gameId: room.id,
@@ -39,20 +30,12 @@ class QuickMatchService {
             message: `Joined ${room.host}'s BlindChess 5+0 battle`,
           };
         } catch (joinError) {
-          console.log(
-            '❌ Failed to join room, will create new BlindChess 5+0 room:',
-            joinError
-          );
           // Continue to room creation below
         }
       }
 
       // Step 2: Create new BlindChess 5+0 signature room
       const entryFee = this.calculateOptimalEntryFee(playerGold);
-      console.log(
-        '🎯 Creating new BlindChess 5+0 room with entry fee:',
-        entryFee
-      );
 
       const roomConfig = {
         mode: 'classic' as const, // Default to classic for quick match
@@ -64,7 +47,6 @@ class QuickMatchService {
       };
 
       const roomId = await lobbyService.createRoom(roomConfig);
-      console.log('✅ Successfully created BlindChess 5+0 room:', roomId);
 
       return {
         success: true,
@@ -73,7 +55,7 @@ class QuickMatchService {
         message: 'Created new BlindChess 5+0 battle - waiting for opponent',
       };
     } catch (error) {
-      console.error('❌ BlindChess 5+0 QuickMatch failed:', error);
+      console.error('QuickMatch failed:', error);
       return {
         success: false,
         action: 'error',

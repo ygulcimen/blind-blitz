@@ -72,7 +72,6 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
       if (!gameId) return;
 
       try {
-        console.log('Fetching room players for gameId:', gameId);
         const { data: players, error } = await supabase
           .from('game_room_players')
           .select('player_id, player_username, player_rating')
@@ -83,7 +82,6 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
           return;
         }
 
-        console.log('Fetched room players:', players);
         setRoomPlayers(players || []);
       } catch (error) {
         console.error('Failed to fetch room players:', error);
@@ -207,7 +205,6 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
   const handleDrop = useCallback(
     (from: string, to: string, piece: string): boolean => {
       if (isProcessingMove) {
-        console.log('Move in progress, ignoring');
         setTimeout(() => setIsProcessingMove(false), 1000);
         return false;
       }
@@ -276,8 +273,6 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
       }
 
       // VALID MOVE - Process normally
-      console.log(`Making valid blind move: ${from} to ${to} (${mv.san})`);
-
       const fenParts = next.fen().split(' ');
       fenParts[1] = colourLetter;
       next.load(fenParts.join(' '));
@@ -296,16 +291,12 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
       gameState
         .saveBlindMove({ from, to, san: mv.san })
         .then((success: boolean) => {
-          if (success) {
-            console.log('Valid move saved to database:', mv.san);
-          } else {
-            console.error('Failed to save valid move - reverting');
-            // Could add revert logic here if needed
+          if (!success) {
+            console.error('Failed to save valid move');
           }
         })
         .catch((error: any) => {
           console.error('Network error saving valid move:', error);
-          // Could add revert logic here if needed
         });
 
       setTimeout(() => setIsProcessingMove(false), 150);
@@ -351,11 +342,6 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
   const handleSubmit = useCallback(async () => {
     // Prevent multiple rapid submissions
     if (myMoves.length === 0 || mySubmitted || isSubmitting) {
-      console.log('Submit blocked:', {
-        movesLength: myMoves.length,
-        mySubmitted,
-        isSubmitting,
-      });
       return;
     }
 
@@ -366,20 +352,13 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
     setIsSubmitting(true);
 
     try {
-      console.log(`Attempt ${currentAttempt}: Submitting moves...`);
-
       const success = await gameState.submitBlindMoves();
 
       // Only process if this is still the latest attempt
       if (currentAttempt === submissionAttemptRef.current) {
-        if (success) {
-          console.log('Moves submitted successfully');
-          // Note: Local state update will come via subscription
-        } else {
+        if (!success) {
           console.error('Failed to submit moves');
         }
-      } else {
-        console.log(`Skipping result for outdated attempt ${currentAttempt}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
