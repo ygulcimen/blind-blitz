@@ -79,7 +79,7 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
     }
   };
 
-  const mode = getModeConfig(roomData.mode);
+  const modeConfig = getModeConfig(roomData.mode);
   const prizePool = roomData.entry_fee * 2;
 
   return (
@@ -100,25 +100,25 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
             <>
               <PlayerCard
                 player={players[0]}
-                mode={mode}
+                mode={modeConfig}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} mode={mode} />
+              <VSDisplay prizePool={prizePool} mode={roomData.mode} />
               <WaitingSlot />
             </>
           ) : (
             <>
               <PlayerCard
                 player={players[0]}
-                mode={mode}
+                mode={modeConfig}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} mode={mode} />
+              <VSDisplay prizePool={prizePool} mode={roomData.mode} />
               <PlayerCard
                 player={players[1]}
-                mode={mode}
+                mode={modeConfig}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
