@@ -67,7 +67,7 @@ export interface GameState {
 }
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const BLIND_TIMER_DURATION = 30 * 1000; // 100 seconds (TODO: Change to production value)
+const BLIND_TIMER_DURATION = 30 * 1000; // 30 seconds
 const LIVE_TIMER_DURATION = 5 * 60 * 1000; // 5 minutes
 const LIVE_INCREMENT = 0; // No increment
 

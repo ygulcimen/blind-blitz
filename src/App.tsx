@@ -13,9 +13,10 @@ import GameScreen from './screens/GameScreen';
 import ProfilePage from './screens/ProfilePage';
 import SettingsPage from './screens/SettingsPage';
 import { LeaderboardPage } from './screens/LeaderboardPage';
-import TournamentsPage from './screens/TournamentsPage';
+import { RewardsPage } from './screens/RewardsPage';
 import AboutPage from './screens/AboutPage';
 import FAQPage from './screens/FAQPage';
+import HowToPlayPage from './screens/HowToPlayPage';
 import LoginPage from './screens/auth/LoginPage';
 import SignUpPage from './screens/auth/SignUpPage';
 import ForgotPasswordPage from './screens/auth/ForgotPasswordPage';
@@ -77,11 +78,13 @@ function App() {
                   }
                 />
                 <Route
-                  path="/tournaments"
+                  path="/rewards"
                   element={
-                    <AppLayout>
-                      <TournamentsPage />
-                    </AppLayout>
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <RewardsPage />
+                      </AppLayout>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
@@ -97,6 +100,14 @@ function App() {
                   element={
                     <AppLayout>
                       <FAQPage />
+                    </AppLayout>
+                  }
+                />
+                <Route
+                  path="/how-to-play"
+                  element={
+                    <AppLayout>
+                      <HowToPlayPage />
                     </AppLayout>
                   }
                 />

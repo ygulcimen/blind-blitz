@@ -8,8 +8,6 @@ interface PlayerData {
   email: string;
   gold_balance: number;
   rating: number;
-  level: number;
-  xp: number;
   games_played: number;
   wins: number;
   losses: number;

@@ -22,10 +22,10 @@ const chessPieces: ChessPiece[] = [
 const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Enhanced Background Orbs with Gold/Amber Tones */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-amber-400/10 via-yellow-400/8 to-white/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-l from-amber-300/8 via-orange-400/6 to-white/3 rounded-full blur-3xl"></div>
-      <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300/6 via-amber-200/4 to-white/2 rounded-full blur-2xl"></div>
+      {/* Enhanced Background Orbs with Purple/Blue Tones */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 via-blue-500/8 to-white/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-l from-blue-500/8 via-purple-400/6 to-white/3 rounded-full blur-3xl"></div>
+      <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-purple-400/6 via-blue-300/4 to-white/2 rounded-full blur-2xl"></div>
 
       {/* Subtle Chess Board Pattern */}
       <div
@@ -44,7 +44,7 @@ const AnimatedBackground: React.FC = () => {
       {chessPieces.map((piece, index) => (
         <motion.div
           key={index}
-          className="absolute text-6xl text-amber-200/20 select-none"
+          className="absolute text-6xl text-purple-200/20 select-none"
           initial={{
             x: piece.initialX,
             y: `${piece.initialY}vh`,
@@ -65,7 +65,7 @@ const AnimatedBackground: React.FC = () => {
             times: [0, 0.1, 0.5, 0.9, 1]
           }}
           style={{
-            filter: 'drop-shadow(0 0 10px rgba(251, 191, 36, 0.3))'
+            filter: 'drop-shadow(0 0 10px rgba(139, 92, 246, 0.3))'
           }}
         >
           {piece.icon}
@@ -74,7 +74,7 @@ const AnimatedBackground: React.FC = () => {
 
       {/* Subtle Sparkle Effects */}
       <motion.div
-        className="absolute top-20 left-20 w-2 h-2 bg-amber-300 rounded-full"
+        className="absolute top-20 left-20 w-2 h-2 bg-purple-300 rounded-full"
         animate={{
           scale: [0, 1, 0],
           opacity: [0, 1, 0]
@@ -86,7 +86,7 @@ const AnimatedBackground: React.FC = () => {
         }}
       />
       <motion.div
-        className="absolute bottom-32 right-32 w-1 h-1 bg-yellow-300 rounded-full"
+        className="absolute bottom-32 right-32 w-1 h-1 bg-blue-300 rounded-full"
         animate={{
           scale: [0, 1.5, 0],
           opacity: [0, 0.8, 0]
@@ -98,7 +98,7 @@ const AnimatedBackground: React.FC = () => {
         }}
       />
       <motion.div
-        className="absolute top-1/2 right-20 w-1.5 h-1.5 bg-amber-200 rounded-full"
+        className="absolute top-1/2 right-20 w-1.5 h-1.5 bg-purple-200 rounded-full"
         animate={{
           scale: [0, 1, 0],
           opacity: [0, 0.6, 0]
@@ -110,7 +110,7 @@ const AnimatedBackground: React.FC = () => {
         }}
       />
       <motion.div
-        className="absolute bottom-20 left-1/3 w-1 h-1 bg-yellow-400 rounded-full"
+        className="absolute bottom-20 left-1/3 w-1 h-1 bg-blue-400 rounded-full"
         animate={{
           scale: [0, 1.2, 0],
           opacity: [0, 0.9, 0]

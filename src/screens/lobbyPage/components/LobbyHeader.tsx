@@ -94,13 +94,9 @@ export const LobbyHeader: React.FC = () => {
               {playerData.username || 'Warrior'}
             </div>
             <div className="text-gray-400 text-xs">
-              Level {playerData.level || 1}
+              Rating: {playerData.rating || 1200}
             </div>
           </div>
-
-          {playerData.level && playerData.level >= 10 && (
-            <Crown className="w-4 h-4 text-yellow-400 fill-current" />
-          )}
         </div>
       </div>
     </div>

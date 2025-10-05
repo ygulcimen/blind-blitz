@@ -56,8 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         email,
         gold_balance: 1000,
         rating: 1200,
-        level: 1,
-        xp: 0,
         games_played: 0,
         wins: 0,
         losses: 0,

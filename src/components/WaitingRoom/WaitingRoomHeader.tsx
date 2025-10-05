@@ -31,6 +31,9 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
           subtitle: 'First 5 moves in darkness',
           icon: '👁️‍🗨️',
           gradient: 'from-purple-700 via-indigo-600 to-blue-700',
+          prizeBoxGradient: 'from-blue-900/80 to-indigo-900/80',
+          prizeBorder: 'border-blue-500/50',
+          dividerColor: 'via-blue-400/50',
         };
       case 'robochaos':
         return {
@@ -38,6 +41,9 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
           subtitle: 'AI trolls make your opening',
           icon: '🤖',
           gradient: 'from-red-600 via-orange-500 to-yellow-500',
+          prizeBoxGradient: 'from-purple-900/80 to-red-900/80',
+          prizeBorder: 'border-purple-500/50',
+          dividerColor: 'via-purple-400/50',
         };
       default:
         return {
@@ -45,6 +51,9 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
           subtitle: 'Unknown challenge awaits',
           icon: '❓',
           gradient: 'from-slate-500 to-slate-600',
+          prizeBoxGradient: 'from-gray-900/80 to-slate-900/80',
+          prizeBorder: 'border-gray-500/50',
+          dividerColor: 'via-gray-400/50',
         };
     }
   };
@@ -80,12 +89,12 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-yellow-900/80 to-amber-900/80 backdrop-blur-sm rounded-xl px-5 py-3 border-2 border-yellow-600/50 shadow-2xl">
+          <div className={`bg-gradient-to-r ${mode.prizeBoxGradient} backdrop-blur-sm rounded-xl px-5 py-3 border-2 ${mode.prizeBorder} shadow-2xl`}>
             <div className="flex items-center gap-5">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <span className="text-yellow-400 text-sm">💰</span>
-                  <span className="text-yellow-200 text-xs uppercase tracking-wider font-bold">
+                  <span className="text-sm">💰</span>
+                  <span className="text-gray-200 text-xs uppercase tracking-wider font-bold">
                     Entry Fee
                   </span>
                 </div>
@@ -93,14 +102,14 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
                   <span className="text-red-400 font-black text-sm">
                     {roomData.entry_fee}
                   </span>
-                  <span className="text-yellow-400 text-sm">🪙</span>
+                  <span className="text-sm">🪙</span>
                 </div>
               </div>
-              <div className="w-px h-6 bg-gradient-to-b from-transparent via-yellow-400/50 to-transparent" />
+              <div className={`w-px h-6 bg-gradient-to-b from-transparent ${mode.dividerColor} to-transparent`} />
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Trophy className="w-3 h-3 text-yellow-400" />
-                  <span className="text-yellow-200 text-xs uppercase tracking-wider font-bold">
+                  <span className="text-gray-200 text-xs uppercase tracking-wider font-bold">
                     Prize Pool
                   </span>
                 </div>
@@ -108,7 +117,7 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
                   <span className="text-green-400 font-black text-sm">
                     {prizePool}
                   </span>
-                  <span className="text-yellow-400 text-sm">🪙</span>
+                  <span className="text-sm">🪙</span>
                 </div>
               </div>
             </div>

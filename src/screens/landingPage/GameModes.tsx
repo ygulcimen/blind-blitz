@@ -65,14 +65,14 @@ const GameModes: React.FC = () => {
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-sm text-white">Weekend Blitz</div>
-                <div className="text-xs text-gray-400">Prize: 50K Gold</div>
+                <div className="text-xs text-gray-400">Prize: 🪙 50K</div>
               </div>
               <div className="text-green-400 text-xs">LIVE</div>
             </div>
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-sm text-white">Chaos Masters</div>
-                <div className="text-xs text-gray-400">Prize: 100K Gold</div>
+                <div className="text-xs text-gray-400">Prize: 🪙 100K</div>
               </div>
               <div className="text-yellow-400 text-xs">2h left</div>
             </div>
@@ -170,12 +170,12 @@ const GameModes: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-gray-400 text-sm">Entry Fee</div>
-                      <div className="text-white font-semibold">100 Gold</div>
+                      <div className="text-white font-semibold">100 🪙</div>
                     </div>
                     <div className="text-right">
                       <div className="text-gray-400 text-sm">Win Reward</div>
                       <div className="text-green-400 font-semibold">
-                        300 Gold
+                        300 🪙
                       </div>
                     </div>
                   </div>
@@ -254,12 +254,12 @@ const GameModes: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-gray-400 text-sm">Entry Fee</div>
-                      <div className="text-white font-semibold">200 Gold</div>
+                      <div className="text-white font-semibold">200 🪙</div>
                     </div>
                     <div className="text-right">
                       <div className="text-gray-400 text-sm">Win Reward</div>
                       <div className="text-yellow-400 font-semibold">
-                        Up to 2000 Gold
+                        Up to 2000 🪙
                       </div>
                     </div>
                   </div>

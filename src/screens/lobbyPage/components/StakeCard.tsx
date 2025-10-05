@@ -159,7 +159,7 @@ export const StakeCard: React.FC<StakeCardProps> = ({
         </div>
 
         {/* Content */}
-        <div className="relative z-10 h-full p-5 flex flex-col">
+        <div className="relative z-10 h-full p-6 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div

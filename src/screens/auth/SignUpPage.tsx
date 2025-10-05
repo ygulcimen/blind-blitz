@@ -196,14 +196,14 @@ const SignUpPage: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             <motion.div
-              className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-lg"
+              className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg"
               whileHover={{
-                boxShadow: "0 0 20px rgba(251, 191, 36, 0.4)"
+                boxShadow: "0 0 20px rgba(139, 92, 246, 0.4)"
               }}
             >
-              <span className="text-black font-black text-lg">BC</span>
+              <span className="text-white font-black text-lg">BC</span>
             </motion.div>
-            <span className="text-transparent bg-gradient-to-r from-white via-amber-100 to-amber-200 bg-clip-text font-bold text-xl">
+            <span className="text-transparent bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text font-bold text-xl">
               BLINDCHESS
             </span>
           </motion.button>
@@ -227,15 +227,15 @@ const SignUpPage: React.FC = () => {
 
         {/* Signup Form */}
         <motion.div
-          className="bg-gray-900/40 border border-amber-500/20 rounded-2xl p-8 backdrop-blur-xl shadow-2xl"
+          className="bg-gray-900/40 border border-purple-500/20 rounded-2xl p-8 backdrop-blur-xl shadow-2xl"
           style={{
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 191, 36, 0.1)"
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)"
           }}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <form onSubmit={handleSignUp} className="space-y-5">
+          <form onSubmit={handleSignUp} className="space-y-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -258,7 +258,7 @@ const SignUpPage: React.FC = () => {
                       ? 'border-red-500'
                       : username && !usernameError && !usernameChecking
                       ? 'border-emerald-500'
-                      : 'border-gray-600 focus:border-amber-400'
+                      : 'border-gray-600 focus:border-purple-400'
                   }`}
                   animate={{
                     boxShadow: usernameError
@@ -273,7 +273,7 @@ const SignUpPage: React.FC = () => {
                       ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
                       : username && !usernameError && !usernameChecking
                       ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
-                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                      : "0 0 0 3px rgba(139, 92, 246, 0.3)"
                   }}
                   placeholder="Choose a username"
                   required
@@ -288,7 +288,7 @@ const SignUpPage: React.FC = () => {
                       exit={{ opacity: 0, scale: 0 }}
                     >
                       <motion.div
-                        className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full"
+                        className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"
                         animate={{ rotate: 360 }}
                         transition={{
                           duration: 1,
@@ -347,7 +347,7 @@ const SignUpPage: React.FC = () => {
                       ? 'border-red-500'
                       : email && !emailError
                       ? 'border-emerald-500'
-                      : 'border-gray-600 focus:border-amber-400'
+                      : 'border-gray-600 focus:border-purple-400'
                   }`}
                   animate={{
                     boxShadow: emailError
@@ -362,7 +362,7 @@ const SignUpPage: React.FC = () => {
                       ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
                       : email && !emailError
                       ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
-                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                      : "0 0 0 3px rgba(139, 92, 246, 0.3)"
                   }}
                   placeholder="Enter your email"
                   required
@@ -417,7 +417,7 @@ const SignUpPage: React.FC = () => {
                       ? 'border-red-500'
                       : password && !passwordError
                       ? 'border-emerald-500'
-                      : 'border-gray-600 focus:border-amber-400'
+                      : 'border-gray-600 focus:border-purple-400'
                   }`}
                   animate={{
                     boxShadow: passwordError
@@ -432,7 +432,7 @@ const SignUpPage: React.FC = () => {
                       ? "0 0 0 3px rgba(239, 68, 68, 0.2)"
                       : password && !passwordError
                       ? "0 0 0 3px rgba(16, 185, 129, 0.2)"
-                      : "0 0 0 3px rgba(251, 191, 36, 0.3)"
+                      : "0 0 0 3px rgba(139, 92, 246, 0.3)"
                   }}
                   placeholder="Create a password"
                   required
@@ -441,7 +441,7 @@ const SignUpPage: React.FC = () => {
                 <motion.button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-300 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-300 transition-colors"
                   disabled={loading}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -598,10 +598,10 @@ const SignUpPage: React.FC = () => {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
               whileHover={{
                 scale: loading ? 1 : 1.02,
-                boxShadow: loading ? "" : "0 0 25px rgba(251, 191, 36, 0.4)"
+                boxShadow: loading ? "" : "0 0 25px rgba(139, 92, 246, 0.4)"
               }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               initial={{ opacity: 0, y: 10 }}
@@ -610,7 +610,7 @@ const SignUpPage: React.FC = () => {
             >
               {loading && (
                 <motion.div
-                  className="w-4 h-4 border-2 border-black border-t-transparent rounded-full"
+                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                   animate={{ rotate: 360 }}
                   transition={{
                     duration: 1,
@@ -640,19 +640,19 @@ const SignUpPage: React.FC = () => {
 
           {/* Welcome Bonus */}
           <motion.div
-            className="mt-6 bg-gradient-to-r from-amber-500/15 to-yellow-500/10 border border-amber-400/40 rounded-lg p-4 text-center relative overflow-hidden"
+            className="mt-6 bg-gradient-to-r from-purple-500/15 to-blue-500/10 border border-purple-400/40 rounded-lg p-4 text-center relative overflow-hidden"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
             style={{
-              boxShadow: "0 0 20px rgba(251, 191, 36, 0.1)"
+              boxShadow: "0 0 20px rgba(139, 92, 246, 0.1)"
             }}
             whileHover={{
-              boxShadow: "0 0 25px rgba(251, 191, 36, 0.2)"
+              boxShadow: "0 0 25px rgba(139, 92, 246, 0.2)"
             }}
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-purple-400/5 to-transparent"
               animate={{
                 opacity: [0.5, 1, 0.5],
               }}
@@ -663,7 +663,7 @@ const SignUpPage: React.FC = () => {
               }}
             />
             <motion.div
-              className="text-amber-400 text-3xl mb-2 relative z-10"
+              className="text-purple-400 text-3xl mb-2 relative z-10"
               animate={{
                 y: [0, -2, 0],
                 rotate: [0, 5, -5, 0]
@@ -685,17 +685,17 @@ const SignUpPage: React.FC = () => {
               Champion's Welcome Bonus
             </motion.div>
             <motion.div
-              className="text-amber-200 text-sm relative z-10"
+              className="text-purple-200 text-sm relative z-10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.3 }}
             >
-              Start with <span className="font-bold text-amber-300">1000 Gold</span> and claim victory! 🏆
+              Start with <span className="font-bold text-purple-300">1000 Gold</span> and claim victory! 🏆
             </motion.div>
 
             {/* Sparkle effects */}
             <motion.div
-              className="absolute top-2 right-3 text-amber-300 text-xs"
+              className="absolute top-2 right-3 text-purple-300 text-xs"
               animate={{
                 scale: [0, 1, 0],
                 opacity: [0, 1, 0]
@@ -709,7 +709,7 @@ const SignUpPage: React.FC = () => {
               ✨
             </motion.div>
             <motion.div
-              className="absolute bottom-2 left-4 text-yellow-300 text-xs"
+              className="absolute bottom-2 left-4 text-blue-300 text-xs"
               animate={{
                 scale: [0, 1, 0],
                 opacity: [0, 1, 0]
@@ -746,19 +746,19 @@ const SignUpPage: React.FC = () => {
             Already a champion?{' '}
             <motion.button
               onClick={() => navigate('/login')}
-              className="text-amber-300 hover:text-amber-200 font-medium transition-colors relative"
+              className="text-purple-300 hover:text-purple-200 font-medium transition-colors relative"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <motion.span
                 className="relative"
                 whileHover={{
-                  textShadow: "0 0 8px rgba(251, 191, 36, 0.6)"
+                  textShadow: "0 0 8px rgba(139, 92, 246, 0.6)"
                 }}
               >
                 Return to Arena
                 <motion.div
-                  className="absolute bottom-0 left-0 right-0 h-px bg-amber-300"
+                  className="absolute bottom-0 left-0 right-0 h-px bg-purple-300"
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}

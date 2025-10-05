@@ -104,7 +104,7 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} />
+              <VSDisplay prizePool={prizePool} mode={mode} />
               <WaitingSlot />
             </>
           ) : (
@@ -115,7 +115,7 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} />
+              <VSDisplay prizePool={prizePool} mode={mode} />
               <PlayerCard
                 player={players[1]}
                 mode={mode}

@@ -209,6 +209,7 @@ class CleanBlindMovesService {
         return false;
       }
 
+      console.log('✅ Moves submitted successfully. Trigger will handle phase completion.');
       return true;
     } catch (error) {
       console.error('Error submitting moves:', error);

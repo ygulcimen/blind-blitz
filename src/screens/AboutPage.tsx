@@ -11,9 +11,9 @@ const AboutPage: React.FC = () => {
     },
     {
       icon: '🪙',
-      title: 'Gold Economy System',
+      title: '🪙 Economy System',
       description:
-        'Every move costs gold. Manage your resources carefully while pursuing victory. Win games to earn gold and climb the rankings.',
+        'Every move has a cost. Manage your resources carefully while pursuing victory. Win games to earn rewards and climb the rankings.',
     },
     {
       icon: '🤖',

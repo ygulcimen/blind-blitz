@@ -72,14 +72,6 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <button
-                  onClick={() => handleNavigation('/tournaments')}
-                  className="text-gray-400 hover:text-white transition-colors text-sm block"
-                >
-                  Tournaments
-                </button>
-              </li>
-              <li>
-                <button
                   onClick={() => handleNavigation('/leaderboard')}
                   className="text-gray-400 hover:text-white transition-colors text-sm block"
                 >
@@ -95,10 +87,18 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <button
-                  onClick={() => handleNavigation('/about')}
+                  onClick={() => handleNavigation('/how-to-play')}
                   className="text-gray-400 hover:text-white transition-colors text-sm block"
                 >
                   How to Play
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNavigation('/about')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm block"
+                >
+                  About Us
                 </button>
               </li>
               <li>

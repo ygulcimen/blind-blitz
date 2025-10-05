@@ -52,14 +52,10 @@ const HeroSection: React.FC = () => {
   const userData = playerData
     ? {
         gold: playerData.gold_balance,
-        xp: playerData.xp,
-        level: playerData.level,
         username: playerData.username,
       }
     : {
         gold: 0,
-        xp: 0,
-        level: 1,
         username: 'Guest',
       };
 
@@ -184,18 +180,6 @@ const HeroSection: React.FC = () => {
                   <span className="text-white font-bold text-lg tracking-wide">
                     {userData.gold.toLocaleString()}
                   </span>
-                  <span className="text-gray-400 text-sm">Gold</span>
-                </div>
-                <div className="w-px h-4 bg-white/20"></div>
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-400">⚡</span>
-                  <span className="text-white font-bold text-lg tracking-wide">
-                    {userData.xp.toLocaleString()}
-                  </span>
-                  <span className="text-gray-400 text-sm">XP</span>
-                  <span className="text-blue-400 font-bold text-sm">
-                    Lv.{userData.level}
-                  </span>
                 </div>
               </div>
             ) : (
@@ -233,100 +217,15 @@ const HeroSection: React.FC = () => {
 
       {/* Main Hero Content */}
       <div className="relative flex-1 flex items-center justify-center">
-        {/* Animated Background Elements */}
-
-        {/* Giant King Silhouette - Left */}
-        <div className="absolute left-8 top-1/2 transform -translate-y-1/2 opacity-5">
+        {/* Subtle Background - Only One Small Chess Piece */}
+        <div className="absolute left-12 top-1/2 transform -translate-y-1/2 opacity-3">
           <div
-            className="text-white text-[14rem] animate-pulse"
+            className="text-white text-[8rem] animate-pulse"
             style={{ animationDuration: '8s' }}
           >
             ♔
           </div>
         </div>
-
-        {/* Giant Queen Silhouette - Moved to Left for Better Balance */}
-        <div className="absolute left-32 top-1/3 transform -translate-y-1/2 opacity-4">
-          <div
-            className="text-white text-[10rem] animate-pulse"
-            style={{ animationDuration: '6s', animationDelay: '2s' }}
-          >
-            ♕
-          </div>
-        </div>
-
-        {/* Floating Chess Pieces */}
-        <div className="absolute bottom-32 right-1/4 opacity-10">
-          <div
-            className="text-4xl text-white animate-bounce"
-            style={{ animationDuration: '4s' }}
-          >
-            ♗
-          </div>
-        </div>
-
-        <div className="absolute top-1/4 right-16 opacity-10">
-          <div
-            className="text-3xl text-white"
-            style={{ animation: 'float 6s ease-in-out infinite' }}
-          >
-            ♜
-          </div>
-        </div>
-
-        {/* Prominent Trolling AI Robot - Top Right, More Visible */}
-        <div className="absolute top-32 right-20 opacity-60 hover:opacity-80 transition-opacity duration-500 cursor-pointer z-20">
-          <div className="relative">
-            <div
-              className="text-8xl animate-bounce"
-              style={{ animationDuration: '2.5s' }}
-            >
-              🤖
-            </div>
-            <div className="absolute top-16 right-16 bg-gray-900/95 backdrop-blur-sm border border-red-500/40 text-white text-sm px-4 py-3 rounded-xl whitespace-nowrap max-w-xs shadow-2xl">
-              <div className="font-bold text-red-400 mb-1 text-sm tracking-wide">
-                RoboChaos AI:
-              </div>
-              <div className="text-gray-200 font-medium">{robotMessage}</div>
-              <div className="absolute -bottom-2 right-4 w-4 h-4 bg-gray-900/95 border-r border-b border-red-500/40 transform rotate-45"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Gold Elements - Repositioned Away from Robot */}
-        <div className="absolute top-60 left-1/3 opacity-12">
-          <div
-            className="text-3xl animate-spin"
-            style={{ animationDuration: '8s' }}
-          >
-            🪙
-          </div>
-        </div>
-
-        <div className="absolute bottom-48 left-24 opacity-10">
-          <div
-            className="text-2xl animate-spin"
-            style={{ animationDuration: '6s', animationDelay: '2s' }}
-          >
-            💰
-          </div>
-        </div>
-
-        {/* Magical Sparkles */}
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute opacity-15"
-            style={{
-              left: `${20 + i * 20}%`,
-              top: `${25 + (i % 2) * 35}%`,
-              animation: `twinkle ${3 + i}s ease-in-out infinite`,
-              animationDelay: `${i * 1.2}s`,
-            }}
-          >
-            <div className="text-xl">✨</div>
-          </div>
-        ))}
 
         {/* Central Content */}
         <div className="relative z-10 text-center max-w-6xl mx-auto px-6">
@@ -363,16 +262,39 @@ const HeroSection: React.FC = () => {
             Strategic blind chess meets real stakes
           </p>
 
-          {/* Enhanced CTA Button - Smaller */}
-          <button
-            onClick={handleStartPlaying}
-            className="group bg-white text-black font-black px-8 py-4 rounded-xl text-lg hover:bg-gray-100 transition-all duration-300 mb-10 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase"
-          >
-            <span className="relative z-10">
-              {isLoggedIn ? 'Enter Battle Arena' : 'Start Your Journey'}
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </button>
+          {/* Dual CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <button
+              onClick={handleStartPlaying}
+              className="group bg-white text-black font-black px-8 py-4 rounded-xl text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
+            >
+              <span className="relative z-10">
+                {isLoggedIn ? 'Enter Battle Arena' : 'Start Your Journey'}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+
+            <button
+              onClick={() => navigate('/how-to-play')}
+              className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-8 py-4 rounded-xl text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-3 w-full sm:w-auto justify-center"
+            >
+              <span className="text-2xl">📖</span>
+              <span>How to Play</span>
+              <svg
+                className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
 
           {/* Gaming-Style Trust Indicators */}
           <div className="flex items-center justify-center gap-4 text-sm">

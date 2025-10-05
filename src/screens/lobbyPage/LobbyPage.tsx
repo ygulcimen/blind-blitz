@@ -222,7 +222,7 @@ const LobbyPage: React.FC = () => {
               <Swords className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">BlindChess Arena</h1>
+              <h1 className="font-bold text-2xl">BlindChess Arena</h1>
               <p className="text-gray-400 text-xs">Gold-Based Battles</p>
             </div>
           </div>
@@ -307,7 +307,7 @@ const LobbyPage: React.FC = () => {
           <button
             onClick={handleQuickJoin}
             disabled={searchingStake !== null}
-            className="mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 text-sm font-bold text-black shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Zap className="w-4 h-4" /> Quick Join
           </button>

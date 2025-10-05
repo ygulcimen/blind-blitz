@@ -241,8 +241,9 @@ const TournamentsPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-gray-400 text-sm mb-1">Entry Fee</div>
-                  <div className="text-white font-semibold text-lg">
-                    {tournament.entryFee.toLocaleString()} Gold
+                  <div className="text-white font-semibold text-lg flex items-center gap-1">
+                    <span>🪙</span>
+                    <span>{tournament.entryFee.toLocaleString()}</span>
                   </div>
                 </div>
                 <div>
