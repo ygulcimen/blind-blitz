@@ -1,12 +1,10 @@
 // App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
 import { ViolationProvider } from './components/shared/ViolationSystem';
 import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
 import { ModalProvider } from './context/ModalContext'; // ✅ NEW
 import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
-import { botPlayerService } from './services/botPlayerService';
 
 // Import all screens
 import BlindChessLanding from './screens/LandingPage';
@@ -27,21 +25,6 @@ import { ProtectedRoute } from './screens/auth/ProtectedRoute';
 import { AuthRedirect } from './screens/auth/AuthRedirect';
 
 function App() {
-  // Initialize bot service
-  useEffect(() => {
-    // Only enable bots in production/testing (optional flag)
-    const enableBots = true; // Set to false to disable bots
-
-    if (enableBots) {
-      console.log('🤖 Starting Bot Player Service...');
-      botPlayerService.initialize();
-    }
-
-    return () => {
-      botPlayerService.stop();
-    };
-  }, []);
-
   return (
     <ErrorBoundary>
       <AuthProvider>
