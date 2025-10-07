@@ -12,7 +12,7 @@ const LandingPage: React.FC = () => {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mb-4 mx-auto animate-pulse">
-            <span className="text-black font-black text-2xl">BC</span>
+            <span className="text-black font-black text-2xl">BB</span>
           </div>
           <div className="text-white text-xl font-bold">Loading...</div>
         </div>

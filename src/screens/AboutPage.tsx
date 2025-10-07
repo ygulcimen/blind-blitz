@@ -25,7 +25,7 @@ const AboutPage: React.FC = () => {
       icon: '🏆',
       title: 'Competitive Tournaments',
       description:
-        "Join tournaments with massive prize pools. Compete against the world's best BlindChess players for glory and gold.",
+        "Join tournaments with massive prize pools. Compete against the world's best BlindBlitz players for glory and gold.",
     },
   ];
 
@@ -34,7 +34,7 @@ const AboutPage: React.FC = () => {
       name: 'Alex Chen',
       role: 'Founder & Game Designer',
       description:
-        'Former chess master turned game designer. Created the BlindChess concept after losing too many traditional games.',
+        'Former chess master turned game designer. Created the BlindBlitz concept after losing too many traditional games.',
       emoji: '👨‍💻',
     },
     {
@@ -70,7 +70,7 @@ const AboutPage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl lg:text-5xl font-black text-white mb-6">
-            About BlindChess
+            About BlindBlitz
           </h1>
 
           <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -86,7 +86,7 @@ const AboutPage: React.FC = () => {
           <h2 className="text-3xl font-bold text-white mb-6">Our Mission</h2>
           <p className="text-lg text-gray-400 max-w-4xl mx-auto leading-relaxed">
             Chess has been the same for centuries. We believe it's time for
-            evolution. BlindChess adds layers of strategy, economic thinking,
+            evolution. BlindBlitz adds layers of strategy, economic thinking,
             and psychological warfare that traditional chess cannot provide.
             We're not replacing chess – we're advancing it for the modern world
             where every decision has economic consequences.
@@ -101,7 +101,7 @@ const AboutPage: React.FC = () => {
             </h2>
             <div className="space-y-6 text-gray-400 leading-relaxed">
               <p>
-                The idea for BlindChess came from a simple frustration:
+                The idea for BlindBlitz came from a simple frustration:
                 traditional chess felt too predictable. Opening theory dominated
                 games, and the economic stakes were purely psychological.
               </p>
@@ -112,7 +112,7 @@ const AboutPage: React.FC = () => {
                 opponent's strategy? What if every move had a real cost?"
               </p>
               <p>
-                That simple question evolved into BlindChess – a game where
+                That simple question evolved into BlindBlitz – a game where
                 intuition matters more than memorization, where resource
                 management is as important as tactics, and where every game
                 tells a unique story.
@@ -153,7 +153,7 @@ const AboutPage: React.FC = () => {
               What Makes Us Different
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              BlindChess isn't just another chess variant. It's a completely new
+              BlindBlitz isn't just another chess variant. It's a completely new
               way to think about strategy, risk, and competition.
             </p>
           </div>
@@ -183,7 +183,7 @@ const AboutPage: React.FC = () => {
               Meet the Team
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              The minds behind BlindChess are passionate about innovation,
+              The minds behind BlindBlitz are passionate about innovation,
               strategy, and creating the future of competitive gaming.
             </p>
           </div>
@@ -214,7 +214,7 @@ const AboutPage: React.FC = () => {
           <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-12 inline-block">
             <div className="text-6xl mb-6">🚀</div>
             <h3 className="text-3xl font-bold text-white mb-4">
-              Ready to Experience BlindChess?
+              Ready to Experience BlindBlitz?
             </h3>
             <p className="text-gray-400 mb-8 max-w-md">
               Join thousands of players who have discovered the future of

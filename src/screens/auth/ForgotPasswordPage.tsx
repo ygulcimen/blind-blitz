@@ -87,10 +87,10 @@ const ForgotPasswordPage: React.FC = () => {
                   boxShadow: "0 0 20px rgba(251, 191, 36, 0.4)"
                 }}
               >
-                <span className="text-black font-black text-lg">BC</span>
+                <span className="text-black font-black text-lg">BB</span>
               </motion.div>
               <span className="text-transparent bg-gradient-to-r from-white via-amber-100 to-amber-200 bg-clip-text font-bold text-xl">
-                BLINDCHESS
+                BLINDBLITZ
               </span>
             </motion.button>
           </motion.div>

@@ -21,12 +21,12 @@ const Footer: React.FC = () => {
               className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-black font-black text-sm">BC</span>
+                <span className="text-black font-black text-sm">BB</span>
               </div>
               <div>
-                <div className="text-xl font-bold text-white">BLINDCHESS</div>
+                <div className="text-xl font-bold text-white">BLINDBLITZ</div>
                 <div className="text-sm text-gray-400">
-                  Chess with real stakes
+                  Lightning-fast blind chess
                 </div>
               </div>
             </button>
@@ -156,7 +156,7 @@ const Footer: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-gray-500 text-sm">
-              © 2024 BlindChess. All rights reserved.
+              © 2025 BlindBlitz. All rights reserved.
             </div>
 
             <div className="flex items-center gap-6 text-sm">

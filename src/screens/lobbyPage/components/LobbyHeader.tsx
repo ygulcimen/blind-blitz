@@ -1,31 +1,17 @@
 // src/screens/LobbyPage/components/LobbyHeader.tsx - Pure Matchmaking Header
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../../../hooks/useCurrentUser';
-import { ArrowLeft, Crown, Star, Coins, Zap } from 'lucide-react';
+import { Star, Coins, Zap } from 'lucide-react';
 
 export const LobbyHeader: React.FC = () => {
-  const navigate = useNavigate();
   const { playerData } = useCurrentUser();
-
-  const handleBack = () => {
-    navigate('/');
-  };
 
   if (!playerData) return null;
 
   return (
     <div className="flex items-center justify-between mb-8">
-      {/* Left: Back Button & Title */}
+      {/* Left: Title */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={handleBack}
-          className="group flex items-center gap-2 px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-600/50 rounded-xl transition-all duration-200 backdrop-blur-sm"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-semibold text-sm text-white">Back</span>
-        </button>
-
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-600 rounded-xl flex items-center justify-center shadow-xl">
@@ -37,7 +23,7 @@ export const LobbyHeader: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black text-white tracking-tight">
-              BLINDCHESS ARENA
+              BLINDBLITZ ARENA
             </h1>
             <p className="text-emerald-400 text-sm font-semibold">
               5+0 Signature Battles

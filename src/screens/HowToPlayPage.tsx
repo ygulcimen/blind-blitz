@@ -195,7 +195,7 @@ const HowToPlayPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Master the art of BlindChess and dominate the battlefield
+              Master the art of BlindBlitz and dominate the battlefield
             </p>
           </motion.div>
 

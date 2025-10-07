@@ -84,26 +84,6 @@ const ModernNavigation: React.FC = () => {
             ),
           },
           {
-            id: 'tournaments',
-            label: 'Tournaments',
-            path: '/tournaments',
-            icon: (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                />
-              </svg>
-            ),
-          },
-          {
             id: 'leaderboard',
             label: 'Leaderboard',
             path: '/leaderboard',
@@ -258,7 +238,7 @@ const ModernNavigation: React.FC = () => {
               className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity w-full"
             >
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-black font-black text-sm">BC</span>
+                <span className="text-black font-black text-sm">BB</span>
               </div>
               <div
                 className={`text-white font-bold text-lg transition-all duration-300 ${
@@ -267,7 +247,7 @@ const ModernNavigation: React.FC = () => {
                     : 'opacity-0 -translate-x-4'
                 }`}
               >
-                BLINDCHESS
+                BLINDBLITZ
               </div>
             </button>
           </div>

@@ -217,13 +217,23 @@ const HeroSection: React.FC = () => {
 
       {/* Main Hero Content */}
       <div className="relative flex-1 flex items-center justify-center">
-        {/* Subtle Background - Only One Small Chess Piece */}
+        {/* Left: Classic Mode - Chess King */}
         <div className="absolute left-12 top-1/2 transform -translate-y-1/2 opacity-3">
           <div
             className="text-white text-[8rem] animate-pulse"
             style={{ animationDuration: '8s' }}
           >
             ♔
+          </div>
+        </div>
+
+        {/* Right: RoboChaos Mode - Robot */}
+        <div className="absolute right-12 top-1/2 transform -translate-y-1/2 opacity-3">
+          <div
+            className="text-[8rem] animate-bounce"
+            style={{ animationDuration: '6s' }}
+          >
+            🤖
           </div>
         </div>
 
@@ -259,7 +269,7 @@ const HeroSection: React.FC = () => {
 
           {/* Short Stylish Subtitle */}
           <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-12 italic font-light leading-relaxed">
-            Strategic blind chess meets real stakes
+            Lightning-fast blind chess with real stakes
           </p>
 
           {/* Dual CTA Buttons */}

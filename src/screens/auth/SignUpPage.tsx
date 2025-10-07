@@ -201,10 +201,10 @@ const SignUpPage: React.FC = () => {
                 boxShadow: "0 0 20px rgba(139, 92, 246, 0.4)"
               }}
             >
-              <span className="text-white font-black text-lg">BC</span>
+              <span className="text-white font-black text-lg">BB</span>
             </motion.div>
             <span className="text-transparent bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text font-bold text-xl">
-              BLINDCHESS
+              BLINDBLITZ
             </span>
           </motion.button>
           <motion.h1

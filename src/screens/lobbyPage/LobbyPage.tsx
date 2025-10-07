@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { matchmakingService } from '../../services/matchmakingService';
-import { ArrowLeft, Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
+import { Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import components
@@ -209,21 +209,13 @@ const LobbyPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800 relative z-10 backdrop-blur-md bg-black/50">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/games')}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 hover:bg-gray-800 rounded-lg text-sm transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
-          </button>
-
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
               <Swords className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-2xl">BlindChess Arena</h1>
-              <p className="text-gray-400 text-xs">Gold-Based Battles</p>
+              <h1 className="font-bold text-2xl">BlindBlitz Arena</h1>
+              <p className="text-gray-400 text-xs">Lightning-Fast Battles</p>
             </div>
           </div>
         </div>

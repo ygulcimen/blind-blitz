@@ -7,7 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 
 // Import all screens
-import BlindChessLanding from './screens/LandingPage';
+import BlindBlitzLanding from './screens/LandingPage';
 import LobbyPage from './screens/lobbyPage/LobbyPage';
 import GameScreen from './screens/GameScreen';
 import ProfilePage from './screens/ProfilePage';
@@ -37,7 +37,7 @@ function App() {
                   path="/"
                   element={
                     <AppLayout hideNavigation={false} hideFooter={false}>
-                      <BlindChessLanding />
+                      <BlindBlitzLanding />
                     </AppLayout>
                   }
                 />
