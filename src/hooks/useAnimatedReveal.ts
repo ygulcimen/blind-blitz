@@ -283,9 +283,9 @@ export const useAnimatedReveal = ({
       if (totalMoves > 0) {
         playNextMove();
       } else {
-        setTimeout(() => onRevealComplete(), 1000);
+        setTimeout(() => onRevealComplete(), 300); // Reduced from 1000ms
       }
-    }, 800);
+    }, 300); // Reduced from 800ms for faster start
 
     return () => clearTimeout(startTimer);
   }, [totalMoves, onRevealComplete, playerDataLoaded]); // Add playerDataLoaded dependency
@@ -300,7 +300,7 @@ export const useAnimatedReveal = ({
         () => {
           playNextMove();
         },
-        gameMode === 'robot_chaos' ? 1000 : 2000
+        gameMode === 'robot_chaos' ? 400 : 600 // Reduced from 1000/2000ms for faster playback
       );
 
       return () => clearTimeout(timer);
@@ -311,7 +311,7 @@ export const useAnimatedReveal = ({
     ) {
       const endTimer = setTimeout(() => {
         onRevealComplete();
-      }, 1500);
+      }, 500); // Reduced from 1500ms for faster transition to live phase
 
       return () => clearTimeout(endTimer);
     }
