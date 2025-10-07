@@ -628,43 +628,33 @@ export const useGameStateManager = (gameId?: string) => {
         },
       }));
 
-      // Check if both submitted and auto-transition - INSTANT for production
+      // Check if both submitted and auto-transition
       if (blindGameState.bothSubmitted && gameState.phase === 'BLIND') {
-        console.log('⚡ Phase transition: BLIND -> REVEAL (immediate)');
-        // Remove delay for faster transition in production
-        proceedToReveal();
+        console.log('Phase transition: BLIND -> REVEAL');
+        setTimeout(() => {
+          proceedToReveal();
+        }, 1000);
       }
     },
     [gameState.blind.myColor, gameState.phase, proceedToReveal]
   );
 
   const handleLiveGameUpdate = useCallback((liveGameState: LiveGameState) => {
-    console.log('🔄 Live game update received:', {
-      fen: liveGameState.current_fen,
-      turn: liveGameState.current_turn,
-      moveCount: liveGameState.move_count,
-    });
-
-    // Force state update with new Chess instance
-    setGameState((prev) => {
-      const newChess = new Chess(liveGameState.current_fen);
-
-      return {
-        ...prev,
-        live: {
-          ...prev.live,
-          game: newChess,
-          fen: liveGameState.current_fen,
-          gameEnded: liveGameState.game_ended,
-          gameResult: liveGameState.game_result,
-        },
-        timer: {
-          ...prev.timer,
-          whiteTime: liveGameState.white_time_ms,
-          blackTime: liveGameState.black_time_ms,
-        },
-      };
-    });
+    setGameState((prev) => ({
+      ...prev,
+      live: {
+        ...prev.live,
+        game: new Chess(liveGameState.current_fen),
+        fen: liveGameState.current_fen,
+        gameEnded: liveGameState.game_ended,
+        gameResult: liveGameState.game_result,
+      },
+      timer: {
+        ...prev.timer,
+        whiteTime: liveGameState.white_time_ms,
+        blackTime: liveGameState.black_time_ms,
+      },
+    }));
 
     if (liveGameState.game_ended) {
       setGameState((prev) => ({
@@ -995,12 +985,12 @@ export const useGameStateManager = (gameId?: string) => {
     };
   }, [gameState.timer.isRunning, gameState.phase, submitBlindMoves]);
 
-  // Auto-transition from REVEAL to ANIMATED_REVEAL - Reduced delay for production
+  // Auto-transition from REVEAL to ANIMATED_REVEAL
   useEffect(() => {
     if (gameState.phase === 'REVEAL') {
       const timer = setTimeout(() => {
         startAnimatedReveal();
-      }, 500); // Reduced from 2000ms to 500ms for faster UX
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [gameState.phase, startAnimatedReveal]);
