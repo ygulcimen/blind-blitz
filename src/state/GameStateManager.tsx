@@ -645,8 +645,20 @@ export const useGameStateManager = (gameId?: string) => {
       moveCount: liveGameState.move_count,
     });
 
-    // Force state update with new Chess instance
+    // Only update if FEN actually changed (prevents unnecessary Chess instance recreation)
     setGameState((prev) => {
+      // Skip update if FEN hasn't changed and game hasn't ended
+      if (
+        prev.live.fen === liveGameState.current_fen &&
+        prev.live.gameEnded === liveGameState.game_ended &&
+        prev.timer.whiteTime === liveGameState.white_time_ms &&
+        prev.timer.blackTime === liveGameState.black_time_ms
+      ) {
+        console.log('⏭️ Skipping update - no changes detected');
+        return prev;
+      }
+
+      console.log('✅ Applying live game update - state changed');
       const newChess = new Chess(liveGameState.current_fen);
 
       return {
@@ -662,16 +674,10 @@ export const useGameStateManager = (gameId?: string) => {
           ...prev.timer,
           whiteTime: liveGameState.white_time_ms,
           blackTime: liveGameState.black_time_ms,
+          isRunning: !liveGameState.game_ended,
         },
       };
     });
-
-    if (liveGameState.game_ended) {
-      setGameState((prev) => ({
-        ...prev,
-        timer: { ...prev.timer, isRunning: false },
-      }));
-    }
   }, []);
 
   const transitionToPhase = useCallback((newPhase: GamePhase) => {
