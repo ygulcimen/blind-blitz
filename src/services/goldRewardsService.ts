@@ -135,7 +135,7 @@ export const goldRewardsService = {
   // ✅ Wait for rewards to be saved before proceeding
   async waitForRewardsToBeCalculated(
     gameId: string,
-    maxAttempts = 10
+    maxAttempts = 3 // Reduced from 10 to 3 for faster transition
   ): Promise<BlindPhaseResults | null> {
     console.log('⏳ Waiting for rewards to be calculated...');
 
@@ -144,16 +144,14 @@ export const goldRewardsService = {
 
       const results = await this.getBlindPhaseResults(gameId);
 
-      if (
-        results &&
-        (results.white_total_gold !== 0 || results.black_total_gold !== 0)
-      ) {
+      // If we got results with player IDs, rewards ARE calculated (even if 0)
+      if (results && results.white_player_id && results.black_player_id) {
         console.log('✅ Rewards found!', results);
         return results;
       }
 
-      // Wait 500ms before trying again
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Wait 300ms before trying again (reduced from 500ms)
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
     console.warn('⚠️ Timeout waiting for rewards, using fallback');

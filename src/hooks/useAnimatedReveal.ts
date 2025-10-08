@@ -300,7 +300,7 @@ export const useAnimatedReveal = ({
         () => {
           playNextMove();
         },
-        gameMode === 'robot_chaos' ? 400 : 600 // Reduced from 1000/2000ms for faster playback
+        gameMode === 'robot_chaos' ? 800 : 1200 // Comfortable viewing speed for reveal animation
       );
 
       return () => clearTimeout(timer);
