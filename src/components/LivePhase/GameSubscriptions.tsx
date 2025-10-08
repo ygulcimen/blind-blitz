@@ -89,23 +89,35 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
 
           const optimisticPending = !!pendingOptimisticIdRef.current;
           const serverIsNewer = (newGameState.move_count ?? 0) > (prev.move_count ?? 0);
-          const acceptFen = serverIsNewer && !optimisticPending;
+
+          // CRITICAL FIX: Always accept FEN from opponent's moves
+          // Only skip if we have optimistic update AND server move count hasn't changed
+          const isOurOptimisticMove = optimisticPending && !serverIsNewer;
+          const acceptFen = !isOurOptimisticMove;
 
           const updatedState = {
             ...prev,
             white_time_ms: newGameState.white_time_ms,
             black_time_ms: newGameState.black_time_ms,
             current_turn: newGameState.current_turn,
-            last_move_time: newGameState.last_move_time, // CRITICAL: Update timestamp!
+            last_move_time: newGameState.last_move_time,
             game_ended: newGameState.game_ended,
             game_result: newGameState.game_result ?? prev.game_result,
             move_count: acceptFen ? newGameState.move_count : prev.move_count,
             current_fen: acceptFen ? newGameState.current_fen : prev.current_fen,
           };
 
+          // Update chess instance when FEN changes
+          if (acceptFen && newGameState.current_fen !== prev.current_fen) {
+            console.log('♟️ Updating chess instance with new FEN from server');
+            setChessGame(new Chess(newGameState.current_fen));
+          }
+
           console.log('🔄 UPDATED GAME STATE:', {
             game_ended: updatedState.game_ended,
-            game_result: updatedState.game_result
+            game_result: updatedState.game_result,
+            acceptedFen: acceptFen,
+            fenChanged: newGameState.current_fen !== prev.current_fen
           });
 
           return updatedState;
