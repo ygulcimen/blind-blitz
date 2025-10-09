@@ -417,6 +417,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     );
   }
 
+  // Mobile panel state
+  const [activeMobilePanel, setActiveMobilePanel] = useState<'game' | 'stats' | 'moves'>('game');
+
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex overflow-hidden relative">
       {/* Logic Components */}
@@ -454,11 +457,10 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         />
       </div>
 
-
-      {/* THREE-COLUMN LAYOUT */}
-      <div className="flex flex-row w-full h-full">
-        {/* LEFT PANEL: Rewards, Timeline, Stats */}
-        <div className="w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-r border-white/10 p-4 flex flex-col gap-4 h-full overflow-y-auto">
+      {/* RESPONSIVE LAYOUT - Desktop 3-column, Mobile single-column with tabs */}
+      <div className="flex flex-col lg:flex-row w-full h-full">
+        {/* LEFT PANEL: Rewards, Timeline, Stats - DESKTOP ONLY */}
+        <div className="hidden lg:flex w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-r border-white/10 p-4 flex-col gap-4 h-full overflow-y-auto">
           <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-4 h-full">
             <RewardsBox gameId={gameId!} myColor={myColor} gameMode={gameMode} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg hover:shadow-xl transition-all duration-300" />
@@ -467,9 +469,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </div>
         </div>
 
-        {/* CENTER PANEL: Chess Board with Player Bars */}
-        <div className="flex-1 flex flex-col justify-center p-6 overflow-visible relative">
-          {/* Opponent Player Bar */}
+        {/* CENTER PANEL: Chess Board with Player Bars - ALWAYS VISIBLE */}
+        <div className="flex-1 flex flex-col justify-center p-2 sm:p-4 lg:p-6 pb-[200px] lg:pb-6 overflow-visible relative">
+          {/* Opponent Player Bar - Compact on mobile */}
           <PlayerBar
             player={{
               name: players[myColor === 'white' ? 'black' : 'white'].name,
@@ -479,12 +481,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
             isActive={liveGameState?.current_turn !== myColor}
             color={myColor === 'white' ? 'black' : 'white'}
             position="top"
-            className="mb-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            className="mb-2 sm:mb-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
           />
 
-          {/* Chess Board - HERO ELEMENT */}
+          {/* Chess Board - HERO ELEMENT - Responsive padding */}
           <div className="flex justify-center items-center relative z-10">
-            <div className="bg-white/8 border border-white/15 rounded-lg p-4 shadow-xl relative z-10">
+            <div className="bg-white/8 border border-white/15 rounded-lg p-1 sm:p-2 lg:p-4 shadow-xl relative z-10 w-full max-w-[95vw] sm:max-w-[600px] lg:max-w-none">
               <LiveGameBoard
                 liveGameState={liveGameState}
                 chessGame={chessGame}
@@ -496,7 +498,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
             </div>
           </div>
 
-          {/* My Player Bar */}
+          {/* My Player Bar - Compact on mobile */}
           <PlayerBar
             player={{
               name: players[myColor].name,
@@ -506,12 +508,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
             isActive={liveGameState?.current_turn === myColor}
             color={myColor}
             position="bottom"
-            className="mt-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            className="mt-2 sm:mt-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
           />
         </div>
 
-        {/* RIGHT PANEL: Move Log, Action Buttons */}
-        <div className="w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-l border-white/10 p-4 flex flex-col gap-4 h-full overflow-y-auto">
+        {/* RIGHT PANEL: Move Log, Action Buttons - DESKTOP ONLY */}
+        <div className="hidden lg:flex w-80 flex-shrink-0 bg-black/40 backdrop-blur-xl border-l border-white/10 p-4 flex-col gap-4 h-full overflow-y-auto">
           <div className="absolute inset-0 bg-gradient-to-b from-gray-500/5 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-4 h-full">
             <MoveLog
@@ -532,6 +534,79 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
               className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
             />
           </div>
+        </div>
+      </div>
+
+      {/* MOBILE BOTTOM NAVIGATION - Shows Stats/Moves/Actions */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 z-50">
+        {/* Mobile Tab Navigation */}
+        <div className="flex border-b border-white/10">
+          <button
+            onClick={() => setActiveMobilePanel('game')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeMobilePanel === 'game'
+                ? 'text-white bg-white/10 border-b-2 border-blue-500'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            🎮 Game
+          </button>
+          <button
+            onClick={() => setActiveMobilePanel('stats')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeMobilePanel === 'stats'
+                ? 'text-white bg-white/10 border-b-2 border-blue-500'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            📊 Stats
+          </button>
+          <button
+            onClick={() => setActiveMobilePanel('moves')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeMobilePanel === 'moves'
+                ? 'text-white bg-white/10 border-b-2 border-blue-500'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            📜 Moves
+          </button>
+        </div>
+
+        {/* Mobile Panel Content */}
+        <div className="max-h-[40vh] overflow-y-auto p-4">
+          {activeMobilePanel === 'game' && (
+            <div className="space-y-2">
+              <ActionButtons
+                onResign={() => setShowResignConfirm(true)}
+                onOfferDraw={() => setShowDrawOfferConfirm(true)}
+                onLeaveGame={handleLeaveTable}
+                onRematch={() => {
+                  setGameResult(null);
+                  setShowGameEndModal(false);
+                }}
+                gameEnded={liveGameState?.game_ended || false}
+                disabled={isProcessingMove}
+                className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+              />
+            </div>
+          )}
+
+          {activeMobilePanel === 'stats' && (
+            <div className="space-y-3">
+              <RewardsBox gameId={gameId!} myColor={myColor} gameMode={gameMode} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg" />
+              <PhaseTimeline className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg" />
+              <GameStats liveMoves={liveMoves} className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg" />
+            </div>
+          )}
+
+          {activeMobilePanel === 'moves' && (
+            <MoveLog
+              liveMoves={liveMoves}
+              blindMoves={blindMoves}
+              className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg max-h-[35vh]"
+            />
+          )}
         </div>
       </div>
 
