@@ -181,12 +181,12 @@ export const simulateBlindMovesWithRewards = (
   const availablePot = totalPot - commission;
   const blindPhasePool = Math.floor(availablePot * 0.4); // 40% for blind phase
 
-  // Scale all rewards proportionally
-  const baseReward = Math.floor(blindPhasePool / 50); // Base unit
-  const VALID_REWARD = baseReward * 5;
-  const INVALID_PENALTY = baseReward * 5;
-  const OPPONENT_BONUS = baseReward * 10;
-  const CAPTURE_REWARD = baseReward * 15;
+  // Scale all rewards proportionally with guaranteed minimum
+  const baseReward = Math.max(1, Math.floor(blindPhasePool / 50)); // Minimum 1 gold per base unit
+  const VALID_REWARD = Math.max(1, baseReward * 5);
+  const INVALID_PENALTY = Math.max(1, baseReward * 5);
+  const OPPONENT_BONUS = Math.max(2, baseReward * 10);
+  const CAPTURE_REWARD = Math.max(3, baseReward * 15);
 
   let whiteGold = 0;
   let blackGold = 0;

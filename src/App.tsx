@@ -1,28 +1,54 @@
 // App.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { ViolationProvider } from './components/shared/ViolationSystem';
 import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
-import { ModalProvider } from './context/ModalContext'; // ✅ NEW
+import { ModalProvider } from './context/ModalContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
+import { trackPageView } from './lib/analytics';
 
-// Import all screens
+// Wrap Router with Sentry for better error tracking
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
+
+// Analytics tracker component
+const AnalyticsTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
+  return null;
+};
+
+// Critical screens - load immediately
 import BlindBlitzLanding from './screens/LandingPage';
 import LobbyPage from './screens/lobbyPage/LobbyPage';
 import GameScreen from './screens/GameScreen';
-import ProfilePage from './screens/ProfilePage';
-import SettingsPage from './screens/SettingsPage';
-import { LeaderboardPage } from './screens/LeaderboardPage';
-import { RewardsPage } from './screens/RewardsPage';
-import AboutPage from './screens/AboutPage';
-import FAQPage from './screens/FAQPage';
-import HowToPlayPage from './screens/HowToPlayPage';
-import LoginPage from './screens/auth/LoginPage';
-import SignUpPage from './screens/auth/SignUpPage';
-import ForgotPasswordPage from './screens/auth/ForgotPasswordPage';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './screens/auth/ProtectedRoute';
 import { AuthRedirect } from './screens/auth/AuthRedirect';
+
+// Non-critical screens - lazy load (saves ~300-400kb initial bundle)
+const ProfilePage = lazy(() => import('./screens/ProfilePage'));
+const SettingsPage = lazy(() => import('./screens/SettingsPage'));
+const LeaderboardPage = lazy(() => import('./screens/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const RewardsPage = lazy(() => import('./screens/RewardsPage').then(m => ({ default: m.RewardsPage })));
+const AboutPage = lazy(() => import('./screens/AboutPage'));
+const FAQPage = lazy(() => import('./screens/FAQPage'));
+const HowToPlayPage = lazy(() => import('./screens/HowToPlayPage'));
+const LoginPage = lazy(() => import('./screens/auth/LoginPage'));
+const SignUpPage = lazy(() => import('./screens/auth/SignUpPage'));
+const ForgotPasswordPage = lazy(() => import('./screens/auth/ForgotPasswordPage'));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  </div>
+);
 
 function App() {
   return (
@@ -32,7 +58,9 @@ function App() {
           <ViolationProvider>
             <ModalProvider>
               <Router>
-                <Routes>
+                <AnalyticsTracker />
+                <Suspense fallback={<PageLoader />}>
+                  <SentryRoutes>
                 <Route
                   path="/"
                   element={
@@ -159,7 +187,8 @@ function App() {
                     </AppLayout>
                   }
                 />
-              </Routes>
+              </SentryRoutes>
+                </Suspense>
               </Router>
             </ModalProvider>
           </ViolationProvider>

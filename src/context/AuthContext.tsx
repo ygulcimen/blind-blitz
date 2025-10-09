@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { setUserContext, clearUserContext } from '../lib/sentry';
+import { analytics, setUserProperties } from '../lib/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +24,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      // Set Sentry user context
+      if (currentUser) {
+        setUserContext(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.username
+        );
+      }
+
       setLoading(false);
     });
 
@@ -30,7 +43,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      // Update Sentry user context
+      if (currentUser) {
+        setUserContext(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.username
+        );
+      } else {
+        clearUserContext();
+      }
+
       setLoading(false);
     });
 
@@ -60,17 +86,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         wins: 0,
         losses: 0,
       });
+
+      // Track signup
+      analytics.userSignUp('email');
+      setUserProperties(data.user.id, { username, signup_date: new Date().toISOString() });
     }
 
     return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password });
+    const result = await supabase.auth.signInWithPassword({ email, password });
+
+    // Track login
+    if (result.data.user) {
+      analytics.userLogin('email');
+    }
+
+    return result;
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    clearUserContext(); // Clear Sentry user data on logout
+    analytics.userLogout(); // Track logout
   };
 
   const resetPassword = async (email: string) => {
