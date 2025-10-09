@@ -4,8 +4,8 @@ import * as Sentry from '@sentry/react';
 import { analytics } from '../lib/analytics';
 
 export const DevTools: React.FC = () => {
-  // Only show in development
-  if (import.meta.env.PROD) return null;
+  // Only show in PRODUCTION (where Sentry/Analytics work)
+  if (!import.meta.env.PROD) return null;
 
   const testSentry = () => {
     console.log('🐛 Testing Sentry...');
