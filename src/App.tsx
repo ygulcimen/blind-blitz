@@ -8,6 +8,7 @@ import { ModalProvider } from './context/ModalContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import { trackPageView } from './lib/analytics';
+import { DevTools } from './components/DevTools';
 
 // Wrap Router with Sentry for better error tracking
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
@@ -194,6 +195,9 @@ function App() {
           </ViolationProvider>
         </PlayerEconomyProvider>
       </AuthProvider>
+
+      {/* Dev Tools - Shows in production only */}
+      <DevTools />
     </ErrorBoundary>
   );
 }
