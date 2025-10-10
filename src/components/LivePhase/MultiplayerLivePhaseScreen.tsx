@@ -469,9 +469,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </div>
         </div>
 
-        {/* CENTER PANEL: Chess Board with Player Bars - ALWAYS VISIBLE */}
-        <div className="flex-1 flex flex-col justify-center p-2 sm:p-4 lg:p-6 pb-[200px] lg:pb-6 overflow-visible relative">
-          {/* Opponent Player Bar - Compact on mobile */}
+        {/* CENTER PANEL: Chess Board with Player Bars */}
+        <div className="flex-1 flex flex-col justify-center p-2 sm:p-4 lg:p-6 pb-24 lg:pb-6 overflow-visible relative">
+          {/* Opponent Player Bar */}
           <PlayerBar
             player={{
               name: players[myColor === 'white' ? 'black' : 'white'].name,
@@ -484,21 +484,19 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
             className="mb-2 sm:mb-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
           />
 
-          {/* Chess Board - HERO ELEMENT - Responsive padding */}
-          <div className="flex justify-center items-center relative z-10">
-            <div className="bg-white/8 border border-white/15 rounded-lg p-1 sm:p-2 lg:p-4 shadow-xl relative z-10 w-full max-w-[95vw] sm:max-w-[600px] lg:max-w-none">
-              <LiveGameBoard
-                liveGameState={liveGameState}
-                chessGame={chessGame}
-                myColor={myColor}
-                liveMoves={liveMoves}
-                onPieceDrop={handleDrop}
-                large={true}
-              />
-            </div>
+          {/* Chess Board - HERO ELEMENT - Same as BlindPhase/AnimatedReveal */}
+          <div className="flex-1 flex justify-center items-center relative z-10">
+            <LiveGameBoard
+              liveGameState={liveGameState}
+              chessGame={chessGame}
+              myColor={myColor}
+              liveMoves={liveMoves}
+              onPieceDrop={handleDrop}
+              large={true}
+            />
           </div>
 
-          {/* My Player Bar - Compact on mobile */}
+          {/* My Player Bar */}
           <PlayerBar
             player={{
               name: players[myColor].name,
@@ -537,13 +535,13 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         </div>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION - Shows Stats/Moves/Actions */}
+      {/* MOBILE BOTTOM NAVIGATION - Compact tabs */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 z-50">
-        {/* Mobile Tab Navigation */}
+        {/* Mobile Tab Navigation - Smaller */}
         <div className="flex border-b border-white/10">
           <button
             onClick={() => setActiveMobilePanel('game')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-2 text-xs font-medium transition-colors ${
               activeMobilePanel === 'game'
                 ? 'text-white bg-white/10 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -553,7 +551,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </button>
           <button
             onClick={() => setActiveMobilePanel('stats')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-2 text-xs font-medium transition-colors ${
               activeMobilePanel === 'stats'
                 ? 'text-white bg-white/10 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -563,7 +561,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </button>
           <button
             onClick={() => setActiveMobilePanel('moves')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-2 text-xs font-medium transition-colors ${
               activeMobilePanel === 'moves'
                 ? 'text-white bg-white/10 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -573,8 +571,8 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </button>
         </div>
 
-        {/* Mobile Panel Content */}
-        <div className="max-h-[40vh] overflow-y-auto p-4">
+        {/* Mobile Panel Content - Smaller max height */}
+        <div className="max-h-[30vh] overflow-y-auto p-3">
           {activeMobilePanel === 'game' && (
             <div className="space-y-2">
               <ActionButtons
