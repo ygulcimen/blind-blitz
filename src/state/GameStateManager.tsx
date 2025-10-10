@@ -242,7 +242,9 @@ export const useGameStateManager = (gameId?: string) => {
 
         switch (room.status) {
           case 'live':
-            return 'WAITING';
+            // Live game exists but no game_live_state yet - wait for it to be created
+            console.log('Room status is live but no game state yet - staying on current phase');
+            return gameState.phase; // Don't change phase, wait for game state to be created
 
           case 'revealing':
           case 'reveal':
