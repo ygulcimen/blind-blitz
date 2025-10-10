@@ -18,14 +18,14 @@ const GameModes: React.FC = () => {
   };
 
   return (
-    <section className="relative py-24 overflow-hidden">
+    <section className="relative py-12 sm:py-16 md:py-24 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-black"></div>
 
-      {/* Floating UI Elements */}
+      {/* Floating UI Elements - Hidden on mobile */}
 
       {/* Left Side - Mode Comparison Chart */}
-      <div className="absolute left-8 top-1/4 w-80 opacity-15 hover:opacity-25 transition-opacity duration-500">
+      <div className="hidden xl:block absolute left-8 top-1/4 w-80 opacity-15 hover:opacity-25 transition-opacity duration-500">
         <div className="bg-gray-900/40 border border-gray-700/40 rounded-2xl p-6 backdrop-blur-sm">
           <div className="text-white font-medium mb-4">Mode Statistics</div>
           <div className="space-y-4">
@@ -58,7 +58,7 @@ const GameModes: React.FC = () => {
       </div>
 
       {/* Right Side - Live Tournaments */}
-      <div className="absolute right-8 top-1/3 w-72 opacity-15 hover:opacity-25 transition-opacity duration-500">
+      <div className="hidden xl:block absolute right-8 top-1/3 w-72 opacity-15 hover:opacity-25 transition-opacity duration-500">
         <div className="bg-gray-900/40 border border-gray-700/40 rounded-2xl p-6 backdrop-blur-sm">
           <div className="text-white font-medium mb-4">Live Tournaments</div>
           <div className="space-y-3">
@@ -80,35 +80,35 @@ const GameModes: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6">
-        {/* Section Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
-            <span className="text-gray-400 text-sm">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
+        {/* Section Header - Mobile Responsive */}
+        <div className="text-center mb-10 sm:mb-12 md:mb-16">
+          <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
+            <span className="text-gray-400 text-xs sm:text-sm">
               Choose your battlefield
             </span>
           </div>
 
-          <h2 className="text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-6 leading-tight">
             Master Different
             <br />
             <span className="text-gray-400">Game Modes</span>
           </h2>
 
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-2xl mx-auto px-4">
             Each mode tests different skills. Classical rewards strategic
             thinking, while RoboChaos demands rapid adaptation to unpredictable
             chaos.
           </p>
         </div>
 
-        {/* Mode Selector */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-1 backdrop-blur-sm">
+        {/* Mode Selector - Mobile Responsive */}
+        <div className="flex justify-center mb-8 sm:mb-12">
+          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-1 backdrop-blur-sm w-full sm:w-auto max-w-md">
             <button
               onClick={() => setSelectedMode('classical')}
-              className={`px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300 ${
+              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium text-xs sm:text-sm transition-all duration-300 w-1/2 sm:w-auto ${
                 selectedMode === 'classical'
                   ? 'bg-white text-black'
                   : 'text-gray-400 hover:text-white'
@@ -118,7 +118,7 @@ const GameModes: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedMode('robochaos')}
-              className={`px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300 ${
+              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium text-xs sm:text-sm transition-all duration-300 w-1/2 sm:w-auto ${
                 selectedMode === 'robochaos'
                   ? 'bg-white text-black'
                   : 'text-gray-400 hover:text-white'
@@ -129,52 +129,52 @@ const GameModes: React.FC = () => {
           </div>
         </div>
 
-        {/* Mode Details */}
+        {/* Mode Details - Mobile Responsive */}
         <div className="max-w-4xl mx-auto">
           {selectedMode === 'classical' && (
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-center">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                     Classical Blind Chess
                   </h3>
-                  <p className="text-gray-400 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                     Pure strategic warfare. Both players commit 5 moves blindly,
                     then the board reveals for standard chess combat. Rewards
                     planning, prediction, and classical chess mastery.
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       Strategic blind phase planning
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       Standard chess after reveal
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       Bonus gold for accurate predictions
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4">
+                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-gray-400 text-sm">Entry Fee</div>
-                      <div className="text-white font-semibold">100 🪙</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">Entry Fee</div>
+                      <div className="text-white text-sm sm:text-base font-semibold">100 🪙</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-400 text-sm">Win Reward</div>
-                      <div className="text-green-400 font-semibold">
+                      <div className="text-gray-400 text-xs sm:text-sm">Win Reward</div>
+                      <div className="text-green-400 text-sm sm:text-base font-semibold">
                         300 🪙
                       </div>
                     </div>
@@ -184,14 +184,14 @@ const GameModes: React.FC = () => {
                 {/* Quick Play Button */}
                 <button
                   onClick={() => handlePlayMode('classical')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold py-2.5 sm:py-3 rounded-lg transition-colors"
                 >
                   Play Classical Now
                 </button>
               </div>
 
-              <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6">
-                <div className="grid grid-cols-8 gap-1 mb-4">
+              <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-4 sm:p-6">
+                <div className="grid grid-cols-8 gap-0.5 sm:gap-1 mb-3 sm:mb-4">
                   {Array.from({ length: 64 }, (_, i) => (
                     <div
                       key={i}
@@ -204,10 +204,10 @@ const GameModes: React.FC = () => {
                   ))}
                 </div>
                 <div className="text-center">
-                  <div className="text-blue-400 font-semibold mb-1">
+                  <div className="text-blue-400 text-sm sm:text-base font-semibold mb-1">
                     Strategic Depth
                   </div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 text-xs sm:text-sm">
                     Classic chess mastery meets blind intuition
                   </div>
                 </div>
@@ -216,49 +216,49 @@ const GameModes: React.FC = () => {
           )}
 
           {selectedMode === 'robochaos' && (
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-center">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                     RoboChaos Mode
                   </h3>
-                  <p className="text-gray-400 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                     Embrace the madness. Our AI makes chaotic opening moves for
                     both sides, destroying traditional strategy. Adapt quickly
                     or face defeat in this high-stakes chaos arena.
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       AI-generated chaotic openings
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       Rapid adaptation required
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span className="text-gray-300">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-gray-300">
                       Massive multiplier rewards
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4">
+                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-gray-400 text-sm">Entry Fee</div>
-                      <div className="text-white font-semibold">200 🪙</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">Entry Fee</div>
+                      <div className="text-white text-sm sm:text-base font-semibold">200 🪙</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-400 text-sm">Win Reward</div>
-                      <div className="text-yellow-400 font-semibold">
+                      <div className="text-gray-400 text-xs sm:text-sm">Win Reward</div>
+                      <div className="text-yellow-400 text-sm sm:text-base font-semibold">
                         Up to 2000 🪙
                       </div>
                     </div>
@@ -268,18 +268,18 @@ const GameModes: React.FC = () => {
                 {/* Quick Play Button */}
                 <button
                   onClick={() => handlePlayMode('robochaos')}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-semibold py-2.5 sm:py-3 rounded-lg transition-colors"
                 >
                   Play RoboChaos Now
                 </button>
               </div>
 
-              <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6 relative overflow-hidden">
+              <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-4 sm:p-6 relative overflow-hidden">
                 {/* Chaos particles */}
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute w-2 h-2 bg-purple-400/60 rounded-full animate-ping"
+                    className="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400/60 rounded-full animate-ping"
                     style={{
                       left: `${20 + i * 30}%`,
                       top: `${10 + i * 20}%`,
@@ -288,7 +288,7 @@ const GameModes: React.FC = () => {
                   />
                 ))}
 
-                <div className="grid grid-cols-8 gap-1 mb-4 relative z-10">
+                <div className="grid grid-cols-8 gap-0.5 sm:gap-1 mb-3 sm:mb-4 relative z-10">
                   {Array.from({ length: 64 }, (_, i) => (
                     <div
                       key={i}
@@ -301,10 +301,10 @@ const GameModes: React.FC = () => {
                   ))}
                 </div>
                 <div className="text-center relative z-10">
-                  <div className="text-purple-400 font-semibold mb-1">
+                  <div className="text-purple-400 text-sm sm:text-base font-semibold mb-1">
                     Controlled Chaos
                   </div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 text-xs sm:text-sm">
                     AI madness meets human adaptation
                   </div>
                 </div>
@@ -313,11 +313,11 @@ const GameModes: React.FC = () => {
           )}
         </div>
 
-        {/* CTA */}
-        <div className="text-center mt-16">
+        {/* CTA - Mobile Responsive */}
+        <div className="text-center mt-10 sm:mt-12 md:mt-16">
           <button
             onClick={handleChooseMode}
-            className="bg-white text-black font-semibold px-8 py-4 rounded-lg text-lg hover:bg-gray-100 transition-colors hover:scale-105 transform transition-transform duration-200"
+            className="bg-white text-black font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg hover:bg-gray-100 transition-colors hover:scale-105 transform transition-transform duration-200"
           >
             Choose Your Mode
           </button>

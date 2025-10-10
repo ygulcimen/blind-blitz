@@ -121,36 +121,38 @@ const HeroSection: React.FC = () => {
       {/* Background */}
       <div className="absolute inset-0 bg-black"></div>
 
-      {/* Simplified Live Status Bar */}
+      {/* Simplified Live Status Bar - Mobile Responsive */}
       <div className="relative z-20 border-b border-white/10 bg-black/60 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
             {/* Left - Live Status + Rotating Quotes + Live Games */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-bold text-sm tracking-wide">
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 flex-1 min-w-0">
+              {/* Live Status - Always Visible */}
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-bold text-xs sm:text-sm tracking-wide">
                   LIVE
                 </span>
-                <span className="text-white font-bold text-lg">
+                <span className="text-white font-bold text-sm sm:text-lg">
                   {liveCount.toLocaleString()}
                 </span>
-                <span className="text-gray-400 text-sm font-medium">
-                  players online
+                <span className="text-gray-400 text-xs sm:text-sm font-medium hidden xs:inline">
+                  players
                 </span>
               </div>
 
-              <div className="w-px h-5 bg-white/20"></div>
+              {/* Divider - Hidden on mobile */}
+              <div className="w-px h-4 sm:h-5 bg-white/20 hidden sm:block"></div>
 
-              {/* Back to Original Rotating Quotes */}
-              <div className="relative h-6 overflow-hidden">
+              {/* Rotating Quotes - Hidden on mobile */}
+              <div className="relative h-6 overflow-hidden hidden md:block flex-1 min-w-0">
                 <div
                   className="flex flex-col transition-transform duration-700 ease-in-out"
                   style={{ transform: `translateY(-${currentQuote * 24}px)` }}
                 >
                   {strategicQuotes.map((quote, index) => (
                     <div key={index} className="h-6 flex items-center">
-                      <span className="text-gray-300 text-sm font-medium tracking-wide italic">
+                      <span className="text-gray-300 text-sm font-medium tracking-wide italic truncate">
                         {quote}
                       </span>
                     </div>
@@ -158,38 +160,39 @@ const HeroSection: React.FC = () => {
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-white/20"></div>
+              {/* Divider - Hidden on mobile */}
+              <div className="w-px h-5 bg-white/20 hidden md:block"></div>
 
-              {/* Live Games Counter to Fill the Gap */}
-              <div className="flex items-center gap-2">
-                <span className="text-blue-400">🎮</span>
-                <span className="text-white font-bold text-sm">
+              {/* Live Games Counter - Hidden on small mobile, shown on larger */}
+              <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <span className="text-blue-400 text-sm sm:text-base">🎮</span>
+                <span className="text-white font-bold text-xs sm:text-sm">
                   {Math.floor(liveCount * 0.12)}
                 </span>
-                <span className="text-gray-400 text-sm font-medium">
-                  active games
+                <span className="text-gray-400 text-xs sm:text-sm font-medium hidden lg:inline">
+                  games
                 </span>
               </div>
             </div>
 
             {/* Right - Auth Buttons or User Stats */}
             {isLoggedIn ? (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-400">🪙</span>
-                  <span className="text-white font-bold text-lg tracking-wide">
+              <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-yellow-400 text-sm sm:text-base">🪙</span>
+                  <span className="text-white font-bold text-sm sm:text-lg tracking-wide">
                     {userData.gold.toLocaleString()}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                 <button
                   onClick={() => navigate('/login')}
-                  className="group text-gray-400 hover:text-white text-sm font-bold transition-all duration-300 px-4 py-2 rounded-lg hover:bg-white/10 border border-transparent hover:border-white/20 hover:scale-105 transform flex items-center gap-2 tracking-wide"
+                  className="group text-gray-400 hover:text-white text-xs sm:text-sm font-bold transition-all duration-300 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 border border-transparent hover:border-white/20 hover:scale-105 transform flex items-center gap-1 sm:gap-2 tracking-wide"
                 >
                   <svg
-                    className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12"
+                    className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:rotate-12"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -201,11 +204,11 @@ const HeroSection: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  LOGIN
+                  <span className="hidden xs:inline">LOGIN</span>
                 </button>
                 <button
                   onClick={() => navigate('/signup')}
-                  className="bg-white text-black px-4 py-2 rounded-lg text-sm font-black hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform tracking-wider uppercase"
+                  className="bg-white text-black px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-black hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform tracking-wider uppercase"
                 >
                   Sign Up
                 </button>
@@ -216,21 +219,21 @@ const HeroSection: React.FC = () => {
       </div>
 
       {/* Main Hero Content */}
-      <div className="relative flex-1 flex items-center justify-center">
-        {/* Left: Classic Mode - Chess King */}
-        <div className="absolute left-12 top-1/2 transform -translate-y-1/2 opacity-3">
+      <div className="relative flex-1 flex items-center justify-center px-4">
+        {/* Left: Classic Mode - Chess King - Hidden on mobile, smaller on tablet */}
+        <div className="absolute left-4 sm:left-8 lg:left-12 top-1/2 transform -translate-y-1/2 opacity-20 sm:opacity-30 hidden xs:block">
           <div
-            className="text-white text-[8rem] animate-pulse"
+            className="text-white text-[4rem] sm:text-[6rem] lg:text-[8rem] animate-pulse"
             style={{ animationDuration: '8s' }}
           >
             ♔
           </div>
         </div>
 
-        {/* Right: RoboChaos Mode - Robot */}
-        <div className="absolute right-12 top-1/2 transform -translate-y-1/2 opacity-3">
+        {/* Right: RoboChaos Mode - Robot - Hidden on mobile, smaller on tablet */}
+        <div className="absolute right-4 sm:right-8 lg:right-12 top-1/2 transform -translate-y-1/2 opacity-20 sm:opacity-30 hidden xs:block">
           <div
-            className="text-[8rem] animate-bounce"
+            className="text-[4rem] sm:text-[6rem] lg:text-[8rem] animate-bounce"
             style={{ animationDuration: '6s' }}
           >
             🤖
@@ -238,10 +241,9 @@ const HeroSection: React.FC = () => {
         </div>
 
         {/* Central Content */}
-        <div className="relative z-10 text-center max-w-6xl mx-auto px-6">
-          {/* Gaming-Style Main Headline - Clean Without Badge */}
-          {/* Typewriter Effect - Robot Typing */}
-          <h1 className="text-4xl lg:text-6xl font-black text-white mb-6 leading-tight tracking-tight">
+        <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6">
+          {/* Gaming-Style Main Headline - Responsive sizes */}
+          <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 sm:mb-6 leading-tight tracking-tight">
             <div
               className="inline-block font-black"
               style={{
@@ -257,7 +259,7 @@ const HeroSection: React.FC = () => {
               />
             </div>
             <br />
-            <div className="text-gray-400 font-light tracking-wide mt-2">
+            <div className="text-gray-400 font-light tracking-wide mt-2 text-xl xs:text-2xl sm:text-3xl lg:text-4xl">
               <TypewriterText
                 text="Repeat This"
                 speed={100}
@@ -267,16 +269,16 @@ const HeroSection: React.FC = () => {
             </div>
           </h1>
 
-          {/* Short Stylish Subtitle */}
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-12 italic font-light leading-relaxed">
+          {/* Short Stylish Subtitle - Responsive */}
+          <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-12 italic font-light leading-relaxed px-4">
             Lightning-fast blind chess with real stakes
           </p>
 
-          {/* Dual CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          {/* Dual CTA Buttons - Better mobile sizing */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-10">
             <button
               onClick={handleStartPlaying}
-              className="group bg-white text-black font-black px-8 py-4 rounded-xl text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
+              className="group bg-white text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
             >
               <span className="relative z-10">
                 {isLoggedIn ? 'Enter Battle Arena' : 'Start Your Journey'}
@@ -286,12 +288,13 @@ const HeroSection: React.FC = () => {
 
             <button
               onClick={() => navigate('/how-to-play')}
-              className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-8 py-4 rounded-xl text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-3 w-full sm:w-auto justify-center"
+              className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
             >
-              <span className="text-2xl">📖</span>
-              <span>How to Play</span>
+              <span className="text-xl sm:text-2xl">📖</span>
+              <span className="hidden xs:inline">How to Play</span>
+              <span className="xs:hidden">Guide</span>
               <svg
-                className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -306,23 +309,23 @@ const HeroSection: React.FC = () => {
             </button>
           </div>
 
-          {/* Gaming-Style Trust Indicators */}
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <div className="flex gap-1">
+          {/* Gaming-Style Trust Indicators - Responsive */}
+          <div className="flex items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+            <div className="flex gap-0.5 sm:gap-1">
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center"
+                  className="w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center"
                 >
-                  <span className="text-white text-xs font-bold">★</span>
+                  <span className="text-white text-[10px] sm:text-xs font-bold">★</span>
                 </div>
               ))}
             </div>
-            <span className="text-white font-black text-lg tracking-wide">
+            <span className="text-white font-black text-base sm:text-lg tracking-wide">
               4.9
             </span>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-400 font-medium">438 reviews on</span>
+            <span className="text-gray-400 hidden xs:inline">•</span>
+            <span className="text-gray-400 font-medium hidden sm:inline">438 reviews on</span>
             <span className="text-white font-bold tracking-wide">
               ChessClub
             </span>
@@ -330,23 +333,23 @@ const HeroSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Partner Logos with Gaming Style */}
-      <div className="relative z-10 py-6 border-t border-white/10 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-center gap-16 opacity-40">
-            <div className="text-gray-400 font-bold tracking-wider hover:text-white transition-colors cursor-pointer">
+      {/* Enhanced Partner Logos with Gaming Style - Responsive */}
+      <div className="relative z-10 py-4 sm:py-6 border-t border-white/10 bg-black/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-center gap-4 sm:gap-8 lg:gap-16 opacity-40 flex-wrap">
+            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
               CHESS.COM
             </div>
-            <div className="text-gray-400 font-bold tracking-wider hover:text-white transition-colors cursor-pointer">
+            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
               LICHESS
             </div>
-            <div className="text-gray-400 font-bold tracking-wider hover:text-white transition-colors cursor-pointer">
+            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
               FIDE
             </div>
-            <div className="text-gray-400 font-bold tracking-wider hover:text-white transition-colors cursor-pointer">
+            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer hidden xs:block">
               CHESSCLUB
             </div>
-            <div className="text-gray-400 font-bold tracking-wider hover:text-white transition-colors cursor-pointer">
+            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer hidden sm:block">
               CHESS24
             </div>
           </div>

@@ -206,35 +206,35 @@ const LobbyPage: React.FC = () => {
         </motion.div>
       ))}
 
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800 relative z-10 backdrop-blur-md bg-black/50">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-              <Swords className="w-4 h-4 text-white" />
+      {/* Header - Mobile Responsive */}
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-800 relative z-10 backdrop-blur-md bg-black/50">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Swords className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div>
-              <h1 className="font-bold text-2xl">BlindBlitz Arena</h1>
-              <p className="text-gray-400 text-xs">Lightning-Fast Battles</p>
+            <div className="min-w-0">
+              <h1 className="font-bold text-lg sm:text-xl lg:text-2xl truncate">BlindBlitz Arena</h1>
+              <p className="text-gray-400 text-[10px] sm:text-xs hidden xs:block">Lightning-Fast Battles</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 bg-gray-900/80 rounded-lg px-3 py-1.5 text-sm">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 bg-gray-900/80 rounded-lg px-2 sm:px-3 py-1.5 text-xs sm:text-sm">
             <div className="flex items-center gap-1">
-              <Coins className="w-4 h-4 text-yellow-400" />
+              <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
               <span className="font-bold">
                 {playerData.gold_balance?.toLocaleString() || '0'}
               </span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 hidden xs:flex">
               <Star className="w-3 h-3 text-blue-400" />
               <span>{playerData.rating || 1200}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-3 py-1.5 text-sm shadow-md">
+          <div className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-3 py-1.5 text-sm shadow-md">
             <div className="w-5 h-5 bg-blue-500 rounded text-xs font-bold flex items-center justify-center">
               {playerData.username?.[0]?.toUpperCase() || 'U'}
             </div>
@@ -243,16 +243,16 @@ const LobbyPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6 max-w-7xl mx-auto flex flex-col gap-10 relative z-10">
+      {/* Main Content - Mobile Responsive */}
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 lg:gap-10 relative z-10">
         <ModeToggle
           selectedMode={selectedMode}
           onModeChange={setSelectedMode}
         />
 
-        {/* Stake Cards */}
+        {/* Stake Cards - Better mobile grid */}
         <motion.div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -280,18 +280,18 @@ const LobbyPage: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Bottom decorative section */}
+        {/* Bottom decorative section - Mobile responsive */}
         <motion.div
-          className="flex flex-col items-center gap-4 text-center text-gray-300"
+          className="flex flex-col items-center gap-3 sm:gap-4 text-center text-gray-300 px-4"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <Crown className="w-8 h-8 text-yellow-400 animate-bounce" />
-          <div className="text-2xl font-bold text-white tracking-wide drop-shadow-lg">
+          <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 animate-bounce" />
+          <div className="text-xl sm:text-2xl font-bold text-white tracking-wide drop-shadow-lg">
             Welcome to the Arena
           </div>
-          <p className="max-w-xl text-sm text-gray-400">
+          <p className="max-w-xl text-xs sm:text-sm text-gray-400 leading-relaxed">
             Choose your battlefield tier. Each arena represents a different gold
             entry level — rise through the ranks and prove your skill.
             Matchmaking is fast, fair, and blind.
@@ -299,24 +299,24 @@ const LobbyPage: React.FC = () => {
           <button
             onClick={handleQuickJoin}
             disabled={searchingStake !== null}
-            className="mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-2 sm:mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Zap className="w-4 h-4" /> Quick Join
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Quick Join
           </button>
         </motion.div>
       </div>
 
-      {/* Search Modal */}
+      {/* Search Modal - Mobile Responsive */}
       <AnimatePresence>
         {searchingStake && (
           <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-gray-900/95 rounded-2xl p-8 text-center border border-gray-700 shadow-2xl max-w-md w-full"
+              className="bg-gray-900/95 rounded-2xl p-6 sm:p-8 text-center border border-gray-700 shadow-2xl max-w-md w-full relative"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -324,23 +324,23 @@ const LobbyPage: React.FC = () => {
               {/* Close button */}
               <button
                 onClick={cancelSearch}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-white transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Loading animation */}
-              <div className="relative mb-6">
-                <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
+              <div className="relative mb-4 sm:mb-6">
+                <div className="animate-spin w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Swords className="w-6 h-6 text-blue-400" />
+                  <Swords className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                 Finding Match...
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6">
                 Searching for opponents in the{' '}
                 <span className="text-yellow-400 font-semibold">
                   {
@@ -352,18 +352,18 @@ const LobbyPage: React.FC = () => {
               </p>
 
               {/* Timer */}
-              <div className="mb-6">
-                <div className="text-3xl font-bold text-blue-400 mb-1">
+              <div className="mb-4 sm:mb-6">
+                <div className="text-2xl sm:text-3xl font-bold text-blue-400 mb-1">
                   {Math.floor(searchTime / 60)}:
                   {(searchTime % 60).toString().padStart(2, '0')}
                 </div>
-                <div className="text-sm text-gray-500">Search time</div>
+                <div className="text-xs sm:text-sm text-gray-500">Search time</div>
               </div>
 
               {/* Game mode indicator */}
-              <div className="mb-6 flex items-center justify-center gap-2 text-sm">
+              <div className="mb-4 sm:mb-6 flex items-center justify-center gap-2 text-xs sm:text-sm">
                 <div
-                  className={`px-3 py-1 rounded-lg ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg ${
                     selectedMode === 'classic'
                       ? 'bg-blue-500/20 text-blue-400'
                       : 'bg-purple-500/20 text-purple-400'
@@ -378,13 +378,13 @@ const LobbyPage: React.FC = () => {
               {/* Cancel button */}
               <button
                 onClick={cancelSearch}
-                className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold transition-colors"
+                className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm sm:text-base font-semibold transition-colors"
               >
                 Cancel Search
               </button>
 
               {/* Tips */}
-              <div className="mt-4 text-xs text-gray-500">
+              <div className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-500">
                 💡 Tip: Higher stake arenas typically have faster matching
               </div>
             </motion.div>

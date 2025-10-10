@@ -83,16 +83,17 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
   const prizePool = roomData.entry_fee * 2;
 
   return (
-    <div className="flex-1 flex items-center justify-center p-6">
+    <div className="flex-1 flex items-center justify-center p-3 sm:p-4 md:p-6">
       <div className="max-w-5xl w-full">
-        <div className="flex items-center justify-center gap-10 mb-6">
+        {/* Mobile: Vertical Stack, Desktop: Horizontal */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 mb-4 sm:mb-6">
           {players.length === 0 ? (
             <div className="text-center">
-              <div className="text-6xl mb-4">👤</div>
-              <div className="text-xl font-bold mb-2">
+              <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">👤</div>
+              <div className="text-lg sm:text-xl font-bold mb-2">
                 Waiting for players...
               </div>
-              <div className="text-gray-400">
+              <div className="text-sm sm:text-base text-gray-400">
                 Share this room to invite opponents!
               </div>
             </div>
@@ -126,18 +127,18 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
           )}
         </div>
 
-        {/* Status */}
-        <div className="text-center">
-          <div className="bg-gradient-to-r from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-xl px-6 py-3 border border-slate-600/50 inline-flex items-center gap-3 shadow-xl">
-            <Users className="w-4 h-4 text-cyan-400" />
-            <span className="text-slate-300 font-bold text-sm">
+        {/* Status - Mobile Responsive */}
+        <div className="text-center px-2">
+          <div className="bg-gradient-to-r from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-xl px-3 sm:px-6 py-2 sm:py-3 border border-slate-600/50 inline-flex items-center gap-2 sm:gap-3 shadow-xl flex-wrap justify-center">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
+            <span className="text-slate-300 font-bold text-xs sm:text-sm">
               Players: {players.length}/2 | Ready:{' '}
               {players.filter((p) => p.ready).length}/2
             </span>
             {allPlayersReady && paymentPhase === 'waiting' && (
-              <div className="flex items-center gap-2 ml-3 px-3 py-1 bg-yellow-900/50 rounded-lg border border-yellow-500/50">
-                <CreditCard className="w-4 h-4 text-yellow-400" />
-                <span className="text-yellow-400 font-black text-xs animate-pulse">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 bg-yellow-900/50 rounded-lg border border-yellow-500/50">
+                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" />
+                <span className="text-yellow-400 font-black text-[10px] sm:text-xs animate-pulse">
                   💰 PROCESSING PAYMENTS...
                 </span>
               </div>
