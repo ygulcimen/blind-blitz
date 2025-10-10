@@ -7,6 +7,8 @@ import { LoadingBlindPhase } from './components/LoadingBlindPhase';
 import { BlindPhasePlayerPanel } from './components/BlindPhasePlayerPanel';
 import { BlindPhaseBoard } from './components/BlindPhaseBoard';
 import { BlindPhaseControls } from './components/BlindPhaseControls';
+import { BlindPhaseHeader } from './components/BlindPhaseHeader';
+import { BlindActionButtons } from './components/BlindActionButtons';
 
 interface MultiplayerBlindPhaseScreenProps {
   gameState: any;
@@ -57,7 +59,7 @@ const MultiplayerBlindPhaseScreen: React.FC<
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex overflow-hidden relative">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col lg:flex-row overflow-hidden relative">
       {/* Epic animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/[0.07] rounded-full blur-3xl animate-pulse" />
@@ -77,16 +79,18 @@ const MultiplayerBlindPhaseScreen: React.FC<
         />
       </div>
 
-      {/* Left: Player Panel */}
-      <BlindPhasePlayerPanel
-        myPlayerData={myPlayerData}
-        myMoves={myMoves}
-        mySubmitted={mySubmitted}
-        maxMoves={MAX_MOVES}
-        remainingMoves={remainingMoves}
-      />
+      {/* Left: Player Panel - Hidden on mobile */}
+      <div className="hidden lg:block">
+        <BlindPhasePlayerPanel
+          myPlayerData={myPlayerData}
+          myMoves={myMoves}
+          mySubmitted={mySubmitted}
+          maxMoves={MAX_MOVES}
+          remainingMoves={remainingMoves}
+        />
+      </div>
 
-      {/* Center: Board Only */}
+      {/* Center: Board - Main focus on mobile */}
       <BlindPhaseBoard
         game={game}
         isWhite={isWhite}
@@ -95,21 +99,50 @@ const MultiplayerBlindPhaseScreen: React.FC<
         onPieceDrop={handleDrop}
       />
 
-      {/* Right: Controls */}
-      <BlindPhaseControls
-        timer={gameState.gameState.timer}
-        myMoves={myMoves}
-        mySubmitted={mySubmitted}
-        isSubmitting={isSubmitting}
-        isComplete={isComplete}
-        isSubmitDisabled={isSubmitDisabled}
-        maxMoves={MAX_MOVES}
-        moveSummary={moveSummary}
-        onUndo={handleUndo}
-        onReset={handleReset}
-        onSubmit={handleSubmit}
-        onLobbyReturn={handleLobbyReturn}
-      />
+      {/* Right: Controls - Hidden on mobile */}
+      <div className="hidden lg:block">
+        <BlindPhaseControls
+          timer={gameState.gameState.timer}
+          myMoves={myMoves}
+          mySubmitted={mySubmitted}
+          isSubmitting={isSubmitting}
+          isComplete={isComplete}
+          isSubmitDisabled={isSubmitDisabled}
+          maxMoves={MAX_MOVES}
+          moveSummary={moveSummary}
+          onUndo={handleUndo}
+          onReset={handleReset}
+          onSubmit={handleSubmit}
+          onLobbyReturn={handleLobbyReturn}
+        />
+      </div>
+
+      {/* Mobile Bottom Panel - Timer, Progress & Actions */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 z-50">
+        <div className="p-3">
+          {/* Compact Timer & Progress */}
+          <div className="flex items-center justify-between mb-3">
+            <BlindPhaseHeader timer={gameState.gameState.timer} />
+            <div className="text-xs">
+              <span className="text-white font-bold">{moveSummary.totalMoves}/{MAX_MOVES}</span>
+              <span className="text-gray-400 ml-1">moves</span>
+            </div>
+          </div>
+
+          {/* Action Buttons Row */}
+          <BlindActionButtons
+            myMoves={myMoves}
+            mySubmitted={mySubmitted}
+            isSubmitting={isSubmitting}
+            isComplete={isComplete}
+            isSubmitDisabled={isSubmitDisabled}
+            maxMoves={MAX_MOVES}
+            onUndo={handleUndo}
+            onReset={handleReset}
+            onSubmit={handleSubmit}
+          />
+        </div>
+      </div>
     </div>
   );
 };

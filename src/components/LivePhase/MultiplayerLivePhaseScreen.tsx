@@ -391,7 +391,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
   if (loading || !liveGameState || !chessGame || !myColor) {
     return (
-      <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+      <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
         {/* Always render GameInitializer even during loading */}
         <GameInitializer
           gameId={gameId}
@@ -402,11 +402,11 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         />
 
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">⚔️</div>
-          <div className="text-2xl font-bold mb-2">
+          <div className="text-4xl sm:text-5xl lg:text-6xl mb-4 animate-spin">⚔️</div>
+          <div className="text-lg sm:text-xl lg:text-2xl font-bold mb-2">
             Preparing Live Battle...
           </div>
-          <div className="text-gray-400">
+          <div className="text-sm sm:text-base text-gray-400">
             {loading && 'Initializing multiplayer chess'}
             {!loading && !liveGameState && 'Loading game state...'}
             {!loading && !chessGame && 'Setting up chess board...'}
