@@ -55,8 +55,9 @@ class LiveMovesService {
    * Initialize live game after blind phase ends
    */
   private heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
-  private readonly HEARTBEAT_INTERVAL = 120000; // 2 minutes instead of 30 seconds
-  private readonly ABANDONMENT_THRESHOLD = 300000; // 5 minutes instead of 90 seconds
+  private readonly HEARTBEAT_INTERVAL = 120000; // 2 minutes
+  private readonly ABANDONMENT_THRESHOLD = 600000; // 10 minutes (increased from 5 to reduce false positives)
+
   startHeartbeatMonitoring(gameId: string): void {
     this.stopHeartbeatMonitoring(gameId);
 
@@ -93,12 +94,12 @@ class LiveMovesService {
 
       // Remove any console.log here to reduce spam
     } catch (error) {
-      // Silent fail to reduce console spam
+      // Silent fail to reduce spam
     }
   }
 
   /**
-   * Check for player abandonment
+   * Check for player abandonment - IMPROVED: Only marks abandoned if player has explicitly left
    */
   private async checkForAbandonment(gameId: string): Promise<void> {
     try {
@@ -107,22 +108,30 @@ class LiveMovesService {
 
       const threshold = new Date(Date.now() - this.ABANDONMENT_THRESHOLD);
 
-      const { data: presenceData } = await supabase
+      // Get ALL presence records for this game (not just recent ones)
+      const { data: allPresenceData } = await supabase
         .from('player_presence')
         .select('*')
-        .eq('game_id', gameId)
-        .gte('last_ping', threshold.toISOString());
+        .eq('game_id', gameId);
 
-      const activePlayers = presenceData || [];
       const playerIds = [gameState.white_player_id, gameState.black_player_id];
 
-      const abandonedPlayer = playerIds.find(
-        (playerId) => !activePlayers.some((p) => p.player_id === playerId)
-      );
+      // Check each player individually
+      for (const playerId of playerIds) {
+        const presence = allPresenceData?.find((p) => p.player_id === playerId);
 
-      if (abandonedPlayer) {
-        await this.handlePlayerAbandonment(gameId, abandonedPlayer);
-        this.stopHeartbeatMonitoring(gameId);
+        // Only mark as abandoned if:
+        // 1. Player has a presence record AND
+        // 2. Their last ping is very old (>10 minutes) AND
+        // 3. They're explicitly marked as offline
+        if (presence &&
+            new Date(presence.last_ping) < threshold &&
+            presence.is_online === false) {
+          console.log(`🚨 Player ${playerId} detected as abandoned - last ping: ${presence.last_ping}`);
+          await this.handlePlayerAbandonment(gameId, playerId);
+          this.stopHeartbeatMonitoring(gameId);
+          break;
+        }
       }
     } catch (error) {
       console.error('Error checking for abandonment:', error);
