@@ -291,8 +291,7 @@ const HeroSection: React.FC = () => {
               className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
             >
               <span className="text-xl sm:text-2xl">📖</span>
-              <span className="hidden xs:inline">How to Play</span>
-              <span className="xs:hidden">Guide</span>
+              <span>How to Play</span>
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1"
                 fill="none"
