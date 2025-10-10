@@ -128,139 +128,139 @@ const ProfilePage: React.FC = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <div className="relative z-10 pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 pt-4 sm:pt-8 pb-12 sm:pb-16 px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {/* Header - Mobile Responsive */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-6 sm:mb-12"
           >
-            <h1 className="text-4xl sm:text-5xl font-black mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-3 sm:mb-4">
               <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
                 Player Profile
               </span>
             </h1>
-            <p className="text-xl text-gray-400">
+            <p className="text-base sm:text-lg md:text-xl text-gray-400 px-4">
               Your BlindChess journey and achievements
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Column - Profile Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8">
+            {/* Left Column - Profile Card - Mobile Responsive */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
               className="lg:col-span-4"
             >
-              <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl rounded-3xl p-8 border border-purple-500/20 shadow-2xl">
+              <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-purple-500/20 shadow-2xl">
                 {/* Avatar & Name */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-6 sm:mb-8">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
                     className="inline-block"
                   >
-                    <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-6xl shadow-2xl shadow-purple-500/50">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-4 sm:mb-6 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-5xl sm:text-6xl shadow-2xl shadow-purple-500/50">
                       ♔
                     </div>
                   </motion.div>
 
-                  <h2 className="text-3xl font-black text-white mb-4 tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4 tracking-tight">
                     {stats.username}
                   </h2>
 
                   {/* Rating Badge */}
-                  <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-2xl mb-6">
-                    <span className="text-sm text-yellow-400 font-semibold">Rating</span>
-                    <span className="text-3xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                  <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
+                    <span className="text-xs sm:text-sm text-yellow-400 font-semibold">Rating</span>
+                    <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                       {stats.rating}
                     </span>
                   </div>
 
                   {/* Gold Balance */}
-                  <div className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-600/20 to-yellow-600/20 border border-amber-500/30 rounded-xl">
-                    <span className="text-xl">💰</span>
-                    <span className="text-amber-400 font-bold text-lg">{stats.gold_balance}</span>
-                    <span className="text-amber-400/70 text-sm">Gold</span>
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-amber-600/20 to-yellow-600/20 border border-amber-500/30 rounded-lg sm:rounded-xl">
+                    <span className="text-base sm:text-xl">💰</span>
+                    <span className="text-amber-400 font-bold text-base sm:text-lg">{stats.gold_balance}</span>
+                    <span className="text-amber-400/70 text-xs sm:text-sm">Gold</span>
                   </div>
                 </div>
 
-                {/* Quick Stats */}
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    <span className="text-gray-400 flex items-center gap-2">
-                      <span className="text-xl">📅</span>
+                {/* Quick Stats - Mobile Responsive */}
+                <div className="space-y-2 sm:space-y-4 mb-6 sm:mb-8">
+                  <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
+                    <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-base sm:text-xl">📅</span>
                       Member since
                     </span>
-                    <span className="text-white font-semibold">{getMemberSince(stats.created_at)}</span>
+                    <span className="text-white text-xs sm:text-base font-semibold">{getMemberSince(stats.created_at)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    <span className="text-gray-400 flex items-center gap-2">
-                      <span className="text-xl">🎮</span>
+                  <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
+                    <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-base sm:text-xl">🎮</span>
                       Games played
                     </span>
-                    <span className="text-white font-semibold">{stats.games_played}</span>
+                    <span className="text-white text-xs sm:text-base font-semibold">{stats.games_played}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    <span className="text-gray-400 flex items-center gap-2">
-                      <span className="text-xl">🏆</span>
+                  <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
+                    <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-base sm:text-xl">🏆</span>
                       Victories
                     </span>
-                    <span className="text-green-400 font-semibold">{stats.wins}</span>
+                    <span className="text-green-400 text-xs sm:text-base font-semibold">{stats.wins}</span>
                   </div>
                 </div>
 
-                {/* Play Button */}
+                {/* Play Button - Mobile Responsive */}
                 <Link
                   to="/games"
                   className="block w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500
-                             text-white font-bold py-4 px-6 rounded-2xl
+                             text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl
                              transition-all duration-300 transform hover:scale-105 active:scale-95
-                             shadow-lg hover:shadow-purple-500/50 text-center text-lg"
+                             shadow-lg hover:shadow-purple-500/50 text-center text-base sm:text-lg"
                 >
                   🚀 Play Now
                 </Link>
               </div>
             </motion.div>
 
-            {/* Right Column - Stats & Games */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* Stats Grid */}
+            {/* Right Column - Stats & Games - Mobile Responsive */}
+            <div className="lg:col-span-8 space-y-4 sm:space-y-8">
+              {/* Stats Grid - Mobile Responsive */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/30 rounded-2xl p-6 text-center hover:border-green-500/50 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-black text-green-400 mb-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="group bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-green-500/50 transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-green-400 mb-1 sm:mb-2">
                       {stats.wins}
                     </div>
-                    <div className="text-green-300/80 text-sm font-semibold">Games Won</div>
+                    <div className="text-green-300/80 text-xs sm:text-sm font-semibold">Games Won</div>
                   </div>
 
-                  <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/30 rounded-2xl p-6 text-center hover:border-blue-500/50 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-black text-blue-400 mb-2">
+                  <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-blue-500/50 transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-blue-400 mb-1 sm:mb-2">
                       {winRate}%
                     </div>
-                    <div className="text-blue-300/80 text-sm font-semibold">Win Rate</div>
+                    <div className="text-blue-300/80 text-xs sm:text-sm font-semibold">Win Rate</div>
                   </div>
 
-                  <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/30 rounded-2xl p-6 text-center hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-black text-purple-400 mb-2">
+                  <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-purple-400 mb-1 sm:mb-2">
                       {stats.losses}
                     </div>
-                    <div className="text-purple-300/80 text-sm font-semibold">Defeats</div>
+                    <div className="text-purple-300/80 text-xs sm:text-sm font-semibold">Defeats</div>
                   </div>
 
-                  <div className="group bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-500/30 rounded-2xl p-6 text-center hover:border-yellow-500/50 transition-all duration-300 hover:scale-105">
-                    <div className="text-4xl font-black text-yellow-400 mb-2">
+                  <div className="group bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-yellow-500/50 transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-yellow-400 mb-1 sm:mb-2">
                       {stats.draws || 0}
                     </div>
-                    <div className="text-yellow-300/80 text-sm font-semibold">Draws</div>
+                    <div className="text-yellow-300/80 text-xs sm:text-sm font-semibold">Draws</div>
                   </div>
                 </div>
               </motion.div>
