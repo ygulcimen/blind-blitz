@@ -470,22 +470,24 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         </div>
 
         {/* CENTER PANEL: Chess Board with Player Bars */}
-        <div className="flex-1 flex flex-col justify-center p-2 sm:p-4 lg:p-6 pb-24 lg:pb-6 overflow-visible relative">
-          {/* Opponent Player Bar */}
-          <PlayerBar
-            player={{
-              name: players[myColor === 'white' ? 'black' : 'white'].name,
-              rating: players[myColor === 'white' ? 'black' : 'white'].rating,
-            }}
-            timeRemaining={formatTime(displayTimes[myColor === 'white' ? 'black' : 'white'])}
-            isActive={liveGameState?.current_turn !== myColor}
-            color={myColor === 'white' ? 'black' : 'white'}
-            position="top"
-            className="mb-2 sm:mb-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
-          />
+        <div className="flex-1 flex flex-col p-2 sm:p-4 lg:p-6 pb-24 lg:pb-6 overflow-visible relative">
+          {/* Opponent Player Bar - Fixed position above board */}
+          <div className="px-2 sm:px-4 lg:px-0">
+            <PlayerBar
+              player={{
+                name: players[myColor === 'white' ? 'black' : 'white'].name,
+                rating: players[myColor === 'white' ? 'black' : 'white'].rating,
+              }}
+              timeRemaining={formatTime(displayTimes[myColor === 'white' ? 'black' : 'white'])}
+              isActive={liveGameState?.current_turn !== myColor}
+              color={myColor === 'white' ? 'black' : 'white'}
+              position="top"
+              className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            />
+          </div>
 
-          {/* Chess Board - HERO ELEMENT - Same as BlindPhase/AnimatedReveal */}
-          <div className="flex-1 flex justify-center items-center relative z-10">
+          {/* Chess Board - HERO ELEMENT - Takes all available space */}
+          <div className="flex-1 flex justify-center items-center relative z-10 py-2 sm:py-3">
             <LiveGameBoard
               liveGameState={liveGameState}
               chessGame={chessGame}
@@ -496,18 +498,20 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
             />
           </div>
 
-          {/* My Player Bar */}
-          <PlayerBar
-            player={{
-              name: players[myColor].name,
-              rating: players[myColor].rating,
-            }}
-            timeRemaining={formatTime(displayTimes[myColor])}
-            isActive={liveGameState?.current_turn === myColor}
-            color={myColor}
-            position="bottom"
-            className="mt-2 sm:mt-4 bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
-          />
+          {/* My Player Bar - Fixed position below board */}
+          <div className="px-2 sm:px-4 lg:px-0">
+            <PlayerBar
+              player={{
+                name: players[myColor].name,
+                rating: players[myColor].rating,
+              }}
+              timeRemaining={formatTime(displayTimes[myColor])}
+              isActive={liveGameState?.current_turn === myColor}
+              color={myColor}
+              position="bottom"
+              className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+            />
+          </div>
         </div>
 
         {/* RIGHT PANEL: Move Log, Action Buttons - DESKTOP ONLY */}
