@@ -104,6 +104,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   const [showGameEndModal, setShowGameEndModal] = useState(false);
   const [isProcessingMove, setIsProcessingMove] = useState(false);
 
+  // Mobile panel state - MUST be declared before any early returns to avoid hook count mismatch
+  const [activeMobilePanel, setActiveMobilePanel] = useState<'game' | 'stats' | 'moves'>('game');
+
   // Move processing refs
   const pendingOptimisticIdRef = useRef<string | null>(null);
   const prevFenRef = useRef<string | null>(null);
@@ -416,9 +419,6 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
       </div>
     );
   }
-
-  // Mobile panel state
-  const [activeMobilePanel, setActiveMobilePanel] = useState<'game' | 'stats' | 'moves'>('game');
 
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex overflow-hidden relative">
