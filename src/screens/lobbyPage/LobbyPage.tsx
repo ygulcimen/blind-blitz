@@ -244,25 +244,159 @@ const LobbyPage: React.FC = () => {
       </div>
 
       {/* Main Content - Mobile Responsive */}
-      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 lg:gap-10 relative z-10">
+      <div className="p-2 sm:p-3 md:p-4 max-w-7xl mx-auto flex flex-col gap-2 sm:gap-3 md:gap-4 relative z-10">
         <ModeToggle
           selectedMode={selectedMode}
           onModeChange={setSelectedMode}
         />
 
+        {/* Hero Welcome Section - Now at TOP with Advanced UX */}
+        <motion.div
+          className="relative flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 overflow-hidden rounded-lg sm:rounded-xl p-3 sm:p-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Animated gradient background */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-emerald-900/40 via-purple-900/30 to-blue-900/40"
+            animate={{
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            style={{ backgroundSize: '200% 200%' }}
+          />
+
+          {/* Animated border glow */}
+          <motion.div
+            className="absolute inset-0 rounded-lg sm:rounded-xl"
+            style={{
+              background: 'linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #10b981)',
+              backgroundSize: '300% 100%',
+              padding: '1px',
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude',
+            }}
+            animate={{
+              backgroundPosition: ['0% 50%', '300% 50%'],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+
+          {/* Shimmer effect overlay */}
+          <motion.div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+            }}
+            animate={{
+              x: ['-100%', '200%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              repeatDelay: 1,
+            }}
+          />
+
+          {/* Content */}
+          <div className="flex items-center gap-2 sm:gap-3 text-center sm:text-left flex-1 relative z-10">
+            <motion.div
+              animate={{
+                rotate: [0, -10, 10, -10, 0],
+                scale: [1, 1.1, 1, 1.1, 1],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400 flex-shrink-0 hidden sm:block drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+            </motion.div>
+            <div className="flex-1">
+              <motion.div
+                className="text-base sm:text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-blue-300 to-purple-300 tracking-wide mb-0.5 sm:mb-1"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Welcome to the Arena
+              </motion.div>
+              <motion.p
+                className="text-[11px] sm:text-xs text-gray-300 leading-snug"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                Choose your battlefield tier — rise through the ranks and prove your skill.
+              </motion.p>
+            </div>
+          </div>
+
+          <motion.button
+            onClick={handleQuickJoin}
+            disabled={searchingStake !== null}
+            className="relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-blue-500 via-purple-600 to-blue-500 bg-[length:200%_100%] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden"
+            whileHover={{
+              scale: 1.05,
+              boxShadow: '0 0 30px rgba(139,92,246,0.7)',
+            }}
+            whileTap={{ scale: 0.95 }}
+            animate={{
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }}
+            transition={{
+              backgroundPosition: {
+                duration: 3,
+                repeat: Infinity,
+                ease: 'linear',
+              },
+            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+          >
+            {/* Button glow effect */}
+            <motion.div
+              className="absolute inset-0 bg-white/20 rounded-lg"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0, 0.3],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
+            <span className="relative z-10">Quick Join</span>
+          </motion.button>
+        </motion.div>
+
         {/* Stake Cards - Better mobile grid */}
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
         >
           {stakeOptions.map((option, i) => (
             <motion.div
               key={`${option.tier}-${option.minStake}`}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
             >
               <StakeCard
                 minStake={option.minStake}
@@ -278,31 +412,6 @@ const LobbyPage: React.FC = () => {
               />
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Bottom decorative section - Mobile responsive */}
-        <motion.div
-          className="flex flex-col items-center gap-3 sm:gap-4 text-center text-gray-300 px-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 animate-bounce" />
-          <div className="text-xl sm:text-2xl font-bold text-white tracking-wide drop-shadow-lg">
-            Welcome to the Arena
-          </div>
-          <p className="max-w-xl text-xs sm:text-sm text-gray-400 leading-relaxed">
-            Choose your battlefield tier. Each arena represents a different gold
-            entry level — rise through the ranks and prove your skill.
-            Matchmaking is fast, fair, and blind.
-          </p>
-          <button
-            onClick={handleQuickJoin}
-            disabled={searchingStake !== null}
-            className="mt-2 sm:mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Quick Join
-          </button>
         </motion.div>
       </div>
 

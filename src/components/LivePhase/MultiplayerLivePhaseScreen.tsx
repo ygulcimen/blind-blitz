@@ -470,9 +470,9 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         </div>
 
         {/* CENTER PANEL: Chess Board with Player Bars */}
-        <div className="flex-1 flex flex-col px-1 py-1 sm:px-2 sm:py-2 lg:p-6 pb-24 lg:pb-6 overflow-visible relative">
+        <div className="flex-1 flex flex-col justify-center px-1 py-1 sm:px-2 sm:py-2 lg:p-6 pb-24 lg:pb-6 overflow-visible relative">
           {/* Opponent Player Bar - Right next to board */}
-          <div className="px-1 sm:px-2 lg:px-0 mb-1 sm:mb-2">
+          <div className="px-1 sm:px-2 lg:px-0 mb-1 sm:mb-2 lg:mb-2">
             <PlayerBar
               player={{
                 name: players[myColor === 'white' ? 'black' : 'white'].name,
@@ -487,7 +487,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </div>
 
           {/* Chess Board - HERO ELEMENT - Minimal padding */}
-          <div className="flex-1 flex justify-center items-center relative z-10">
+          <div className="flex justify-center items-center relative z-10 shrink-0">
             <LiveGameBoard
               liveGameState={liveGameState}
               chessGame={chessGame}
@@ -499,7 +499,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           </div>
 
           {/* My Player Bar - Right next to board */}
-          <div className="px-1 sm:px-2 lg:px-0 mt-1 sm:mt-2">
+          <div className="px-1 sm:px-2 lg:px-0 mt-1 sm:mt-2 lg:mt-2">
             <PlayerBar
               player={{
                 name: players[myColor].name,
