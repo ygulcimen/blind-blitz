@@ -22,6 +22,7 @@ interface StakeCardProps {
   canAfford: boolean;
   isSearching?: boolean;
   onQuickMatch: () => void;
+  gameMode?: 'classic' | 'robochaos';
 }
 
 const TIER_CONFIG = {
@@ -114,25 +115,52 @@ export const StakeCard: React.FC<StakeCardProps> = ({
   canAfford,
   isSearching = false,
   onQuickMatch,
+  gameMode = 'classic',
 }) => {
   const config = TIER_CONFIG[tier];
   const { Icon, label, colors } = config;
+
+  // Mode-specific styling
+  const isRoboChaos = gameMode === 'robochaos';
+  const borderGlowClass = isRoboChaos
+    ? `shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] border-2`
+    : 'shadow-md hover:shadow-lg border';
+
+  const hoverTransform = isRoboChaos
+    ? 'hover:-translate-y-2 hover:scale-105 hover:rotate-1'
+    : 'hover:-translate-y-1 hover:scale-[1.02]';
 
   return (
     <div className="group relative">
       <button
         onClick={() => canAfford && !isSearching && onQuickMatch()}
         disabled={!canAfford || isSearching}
-        className={`relative w-full h-64 rounded-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative w-full h-64 rounded-2xl overflow-hidden transition-all ${isRoboChaos ? 'duration-200' : 'duration-300'} ${borderGlowClass} ${
           canAfford && !isSearching
-            ? 'hover:-translate-y-1 hover:scale-[1.02] cursor-pointer'
+            ? `${hoverTransform} cursor-pointer`
             : 'cursor-not-allowed'
         }`}
       >
-        {/* Background gradient */}
+        {/* Background gradient - MODE SPECIFIC */}
         <div
-          className={`absolute inset-0 bg-gradient-to-br ${colors.bg} ${colors.border} border backdrop-blur-sm`}
+          className={`absolute inset-0 ${
+            isRoboChaos
+              ? `bg-gradient-to-br from-purple-950/70 via-pink-950/60 to-red-950/70 ${colors.border}`
+              : `bg-gradient-to-br ${colors.bg} ${colors.border}`
+          } backdrop-blur-sm`}
         />
+
+        {/* RoboChaos mode: Intense animated overlay */}
+        {isRoboChaos && canAfford && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-red-500/20 group-hover:from-purple-500/30 group-hover:via-pink-500/30 group-hover:to-red-500/30 transition-all duration-200" />
+
+            {/* Animated scanlines effect */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white to-transparent animate-[scan_2s_linear_infinite] h-20 blur-sm" />
+            </div>
+          </>
+        )}
 
         {/* Searching overlay */}
         {isSearching && (
@@ -146,10 +174,21 @@ export const StakeCard: React.FC<StakeCardProps> = ({
           </div>
         )}
 
-        {/* Shimmer effect */}
+        {/* Shimmer effect - MODE SPECIFIC */}
         {canAfford && !isSearching && (
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-            <div className="absolute left-0 top-0 h-full w-1/3 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className={`absolute left-0 top-0 h-full transition-transform bg-gradient-to-r ${
+              isRoboChaos
+                ? 'w-1/2 -translate-x-full group-hover:translate-x-[200%] duration-300 from-transparent via-pink-500/30 to-transparent'
+                : 'w-1/3 -translate-x-full group-hover:translate-x-[300%] duration-1000 from-transparent via-white/10 to-transparent'
+            }`} />
+          </div>
+        )}
+
+        {/* RoboChaos: Glitch flash effect */}
+        {isRoboChaos && canAfford && (
+          <div className="absolute inset-0 pointer-events-none animate-[glitch_3s_ease-in-out_infinite]">
+            <div className="absolute inset-0 bg-red-500/20 mix-blend-screen" style={{ clipPath: 'inset(40% 0 40% 0)' }} />
           </div>
         )}
 
@@ -179,20 +218,32 @@ export const StakeCard: React.FC<StakeCardProps> = ({
 
           {/* Main content */}
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            {/* Icon */}
+            {/* Icon - MODE SPECIFIC */}
             <div
-              className={`w-12 h-12 rounded-xl bg-black/30 border ${colors.border} ${colors.glow} flex items-center justify-center mb-3`}
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-3 transition-all ${
+                isRoboChaos
+                  ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50 border-pink-500/50 shadow-[0_0_10px_rgba(236,72,153,0.5)] group-hover:shadow-[0_0_20px_rgba(236,72,153,0.7)] group-hover:scale-110'
+                  : `bg-black/30 ${colors.border} ${colors.glow}`
+              }`}
             >
-              <Icon className={`w-6 h-6 ${colors.accent}`} />
+              <Icon className={`w-6 h-6 ${isRoboChaos ? 'text-pink-300 drop-shadow-[0_0_5px_rgba(236,72,153,0.8)]' : colors.accent} transition-transform group-hover:scale-110`} />
             </div>
 
-            {/* Title */}
-            <h3 className={`text-lg font-bold ${colors.text} mb-2`}>{label}</h3>
+            {/* Title - MODE SPECIFIC */}
+            <h3 className={`text-lg font-bold mb-2 ${
+              isRoboChaos
+                ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-red-300'
+                : colors.text
+            }`}>{label}</h3>
 
-            {/* Gold range */}
+            {/* Gold range - MODE SPECIFIC */}
             <div className="flex items-center gap-1 mb-1">
-              <Coins className={`w-4 h-4 ${colors.accent}`} />
-              <span className={`text-sm font-bold ${colors.accent}`}>
+              <Coins className={`w-4 h-4 ${isRoboChaos ? 'text-pink-400 drop-shadow-[0_0_3px_rgba(236,72,153,0.6)]' : colors.accent}`} />
+              <span className={`text-sm font-bold ${
+                isRoboChaos
+                  ? 'text-pink-300 drop-shadow-[0_0_3px_rgba(236,72,153,0.6)]'
+                  : colors.accent
+              }`}>
                 {displayRange}
               </span>
               <span className="text-xs text-gray-400">🪙</span>
@@ -209,7 +260,11 @@ export const StakeCard: React.FC<StakeCardProps> = ({
             <div className="flex items-center">
               {canAfford ? (
                 <div
-                  className={`w-8 h-8 rounded-lg bg-gradient-to-r ${colors.button} ${colors.glow} flex items-center justify-center hover:scale-110 transition-transform`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center hover:scale-110 transition-all ${
+                    isRoboChaos
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 shadow-[0_0_10px_rgba(236,72,153,0.5)] hover:shadow-[0_0_15px_rgba(236,72,153,0.8)]'
+                      : `bg-gradient-to-r ${colors.button} ${colors.glow}`
+                  }`}
                 >
                   <Play className="w-3 h-3 text-white" fill="white" />
                 </div>

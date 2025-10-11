@@ -153,3 +153,25 @@
 .animate-scale-in {
   animation: scale-in 0.3s ease-out;
 }
+
+/* RoboChaos mode animations */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+@keyframes glitch {
+  0%, 100% {
+    opacity: 0;
+  }
+  10%, 30%, 50%, 70%, 90% {
+    opacity: 0;
+  }
+  15%, 35%, 55%, 75%, 95% {
+    opacity: 0.3;
+  }
+}

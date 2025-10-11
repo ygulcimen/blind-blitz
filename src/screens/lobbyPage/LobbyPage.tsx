@@ -250,35 +250,44 @@ const LobbyPage: React.FC = () => {
           onModeChange={setSelectedMode}
         />
 
-        {/* Hero Welcome Section - Now at TOP with Advanced UX */}
+        {/* Hero Welcome Section - Now at TOP with Advanced UX + Mode-based theming */}
         <motion.div
           className="relative flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 overflow-hidden rounded-lg sm:rounded-xl p-3 sm:p-4"
+          key={selectedMode}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Animated gradient background */}
+          {/* Animated gradient background - MODE SPECIFIC */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-emerald-900/40 via-purple-900/30 to-blue-900/40"
+            className={`absolute inset-0 ${
+              selectedMode === 'classic'
+                ? 'bg-gradient-to-r from-blue-900/40 via-cyan-900/30 to-emerald-900/40'
+                : 'bg-gradient-to-r from-purple-900/40 via-pink-900/30 to-red-900/40'
+            }`}
             animate={{
               backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
             }}
             transition={{
-              duration: 8,
+              duration: selectedMode === 'classic' ? 8 : 4,
               repeat: Infinity,
               ease: 'linear',
             }}
             style={{ backgroundSize: '200% 200%' }}
           />
 
-          {/* Animated border glow */}
+          {/* Animated border glow - MODE SPECIFIC */}
           <motion.div
             className="absolute inset-0 rounded-lg sm:rounded-xl"
             style={{
-              background: 'linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #10b981)',
+              background:
+                selectedMode === 'classic'
+                  ? 'linear-gradient(90deg, #3b82f6, #06b6d4, #10b981, #3b82f6)'
+                  : 'linear-gradient(90deg, #a855f7, #ec4899, #ef4444, #a855f7)',
               backgroundSize: '300% 100%',
               padding: '1px',
-              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMask:
+                'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
               WebkitMaskComposite: 'xor',
               maskComposite: 'exclude',
             }}
@@ -286,7 +295,7 @@ const LobbyPage: React.FC = () => {
               backgroundPosition: ['0% 50%', '300% 50%'],
             }}
             transition={{
-              duration: 4,
+              duration: selectedMode === 'classic' ? 4 : 2,
               repeat: Infinity,
               ease: 'linear',
             }}
@@ -296,42 +305,76 @@ const LobbyPage: React.FC = () => {
           <motion.div
             className="absolute inset-0 opacity-30"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+              background:
+                'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
             }}
             animate={{
               x: ['-100%', '200%'],
             }}
             transition={{
-              duration: 3,
+              duration: selectedMode === 'classic' ? 3 : 1.5,
               repeat: Infinity,
               ease: 'easeInOut',
-              repeatDelay: 1,
+              repeatDelay: selectedMode === 'classic' ? 1 : 0.3,
             }}
           />
+
+          {/* RoboChaos Glitch Effect */}
+          {selectedMode === 'robochaos' && (
+            <motion.div
+              className="absolute inset-0 bg-red-500/10"
+              animate={{
+                opacity: [0, 0.3, 0, 0.2, 0],
+              }}
+              transition={{
+                duration: 0.3,
+                repeat: Infinity,
+                repeatDelay: 2,
+              }}
+            />
+          )}
 
           {/* Content */}
           <div className="flex items-center gap-2 sm:gap-3 text-center sm:text-left flex-1 relative z-10">
             <motion.div
               animate={{
-                rotate: [0, -10, 10, -10, 0],
-                scale: [1, 1.1, 1, 1.1, 1],
+                rotate:
+                  selectedMode === 'classic'
+                    ? [0, -10, 10, -10, 0]
+                    : [0, -15, 15, -10, 10, 0],
+                scale:
+                  selectedMode === 'classic'
+                    ? [1, 1.1, 1, 1.1, 1]
+                    : [1, 1.15, 0.95, 1.1, 1],
               }}
               transition={{
-                duration: 3,
+                duration: selectedMode === 'classic' ? 3 : 2,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: selectedMode === 'classic' ? 'easeInOut' : 'easeInOut',
               }}
             >
-              <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400 flex-shrink-0 hidden sm:block drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+              <Crown
+                className={`w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 hidden sm:block ${
+                  selectedMode === 'classic'
+                    ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]'
+                    : 'text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]'
+                }`}
+              />
             </motion.div>
             <div className="flex-1">
               <motion.div
-                className="text-base sm:text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-blue-300 to-purple-300 tracking-wide mb-0.5 sm:mb-1"
+                className={`text-base sm:text-lg md:text-xl font-bold text-transparent bg-clip-text tracking-wide mb-0.5 sm:mb-1 ${
+                  selectedMode === 'classic'
+                    ? 'bg-gradient-to-r from-blue-300 via-cyan-300 to-emerald-300'
+                    : 'bg-gradient-to-r from-purple-300 via-pink-300 to-red-300'
+                }`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                Welcome to the Arena
+                {selectedMode === 'classic'
+                  ? 'Welcome to the Arena'
+                  : 'Enter the Chaos!'}
               </motion.div>
               <motion.p
                 className="text-[11px] sm:text-xs text-gray-300 leading-snug"
@@ -339,7 +382,9 @@ const LobbyPage: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                Choose your battlefield tier — rise through the ranks and prove your skill.
+                {selectedMode === 'classic'
+                  ? 'Choose your battlefield tier — rise through the ranks and prove your skill.'
+                  : 'Survive the robotic madness! Fast-paced chaos awaits brave warriors.'}
               </motion.p>
             </div>
           </div>
@@ -347,10 +392,17 @@ const LobbyPage: React.FC = () => {
           <motion.button
             onClick={handleQuickJoin}
             disabled={searchingStake !== null}
-            className="relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-blue-500 via-purple-600 to-blue-500 bg-[length:200%_100%] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden"
+            className={`relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-[length:200%_100%] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden ${
+              selectedMode === 'classic'
+                ? 'bg-gradient-to-r from-blue-500 via-cyan-600 to-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                : 'bg-gradient-to-r from-purple-500 via-pink-600 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.6)]'
+            }`}
             whileHover={{
               scale: 1.05,
-              boxShadow: '0 0 30px rgba(139,92,246,0.7)',
+              boxShadow:
+                selectedMode === 'classic'
+                  ? '0 0 30px rgba(6,182,212,0.7)'
+                  : '0 0 35px rgba(236,72,153,0.9)',
             }}
             whileTap={{ scale: 0.95 }}
             animate={{
@@ -358,7 +410,7 @@ const LobbyPage: React.FC = () => {
             }}
             transition={{
               backgroundPosition: {
-                duration: 3,
+                duration: selectedMode === 'classic' ? 3 : 2,
                 repeat: Infinity,
                 ease: 'linear',
               },
@@ -374,7 +426,7 @@ const LobbyPage: React.FC = () => {
                 opacity: [0.3, 0, 0.3],
               }}
               transition={{
-                duration: 2,
+                duration: selectedMode === 'classic' ? 2 : 1,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
@@ -409,6 +461,7 @@ const LobbyPage: React.FC = () => {
                 onQuickMatch={() =>
                   handleQuickMatch(option.minStake, option.maxStake)
                 }
+                gameMode={selectedMode}
               />
             </motion.div>
           ))}
