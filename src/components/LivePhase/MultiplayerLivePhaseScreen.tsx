@@ -16,6 +16,7 @@ import {
 } from '../../services/liveMovesService';
 import { blindMovesService } from '../../services/blindMovesService';
 import type { GameResult } from '../../types/GameTypes';
+import { getCapturedPieces } from '../../utils/capturedPieces';
 
 // Custom hooks
 import { useLiveTimer } from '../../hooks/useLiveTimer';
@@ -383,6 +384,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     [myColor, myPlayerData, opponentData, defaultPlayerData]
   );
 
+  // Calculate captured pieces from current FEN
+  const capturedPiecesData = useMemo(() => {
+    if (!liveGameState) return null;
+    return getCapturedPieces(liveGameState.current_fen);
+  }, [liveGameState?.current_fen]);
+
   // ═══════════════════════════════════════════════════════════════
   // 🎬 RENDER
   // ═══════════════════════════════════════════════════════════════
@@ -483,6 +490,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
               color={myColor === 'white' ? 'black' : 'white'}
               position="top"
               className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+              capturedPieces={capturedPiecesData?.[myColor === 'white' ? 'black' : 'white'] || []}
+              materialAdvantage={
+                capturedPiecesData?.materialAdvantage.color === (myColor === 'white' ? 'black' : 'white')
+                  ? capturedPiecesData.materialAdvantage.value
+                  : 0
+              }
             />
           </div>
 
@@ -510,6 +523,12 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
               color={myColor}
               position="bottom"
               className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
+              capturedPieces={capturedPiecesData?.[myColor] || []}
+              materialAdvantage={
+                capturedPiecesData?.materialAdvantage.color === myColor
+                  ? capturedPiecesData.materialAdvantage.value
+                  : 0
+              }
             />
           </div>
         </div>

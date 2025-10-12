@@ -70,9 +70,8 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
             const gameScreenMode: GameMode =
               roomData?.mode === 'robochaos' ? 'robot_chaos' : 'classic';
 
-            setTimeout(() => {
-              onGameStart(gameScreenMode);
-            }, 500);
+            // Immediately transition to prevent payment screen flash
+            onGameStart(gameScreenMode);
             return;
           }
         }

@@ -204,7 +204,7 @@ class LiveMovesService {
             black_time_ms: timeMs,
             time_control_minutes: minutes,
             time_increment_seconds: increment,
-            last_move_time: null, // Clock starts when first player enters
+            last_move_time: new Date().toISOString(), // Start clock immediately
             updated_at: new Date().toISOString(),
           },
           {

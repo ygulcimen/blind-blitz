@@ -243,16 +243,16 @@ const LobbyPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content - Mobile Responsive */}
-      <div className="p-2 sm:p-3 md:p-4 max-w-7xl mx-auto flex flex-col gap-2 sm:gap-3 md:gap-4 relative z-10">
+      {/* Main Content - Mobile Responsive with optimized spacing */}
+      <div className="p-2 sm:p-3 md:p-4 max-w-7xl mx-auto flex flex-col gap-1.5 sm:gap-2 md:gap-3 relative z-10 pb-4">
         <ModeToggle
           selectedMode={selectedMode}
           onModeChange={setSelectedMode}
         />
 
-        {/* Hero Welcome Section - Now at TOP with Advanced UX + Mode-based theming */}
+        {/* Hero Welcome Section - Compact version for better Chrome compatibility */}
         <motion.div
-          className="relative flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 overflow-hidden rounded-lg sm:rounded-xl p-3 sm:p-4"
+          className="relative flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 overflow-hidden rounded-lg sm:rounded-xl p-2.5 sm:p-3"
           key={selectedMode}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -334,8 +334,8 @@ const LobbyPage: React.FC = () => {
             />
           )}
 
-          {/* Content */}
-          <div className="flex items-center gap-2 sm:gap-3 text-center sm:text-left flex-1 relative z-10">
+          {/* Content - More compact */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-center sm:text-left flex-1 relative z-10">
             <motion.div
               animate={{
                 rotate:
@@ -354,7 +354,7 @@ const LobbyPage: React.FC = () => {
               }}
             >
               <Crown
-                className={`w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 hidden sm:block ${
+                className={`w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 hidden sm:block ${
                   selectedMode === 'classic'
                     ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]'
                     : 'text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]'
@@ -363,7 +363,7 @@ const LobbyPage: React.FC = () => {
             </motion.div>
             <div className="flex-1">
               <motion.div
-                className={`text-base sm:text-lg md:text-xl font-bold text-transparent bg-clip-text tracking-wide mb-0.5 sm:mb-1 ${
+                className={`text-sm sm:text-base md:text-lg font-bold text-transparent bg-clip-text tracking-wide mb-0.5 ${
                   selectedMode === 'classic'
                     ? 'bg-gradient-to-r from-blue-300 via-cyan-300 to-emerald-300'
                     : 'bg-gradient-to-r from-purple-300 via-pink-300 to-red-300'
@@ -377,14 +377,14 @@ const LobbyPage: React.FC = () => {
                   : 'Enter the Chaos!'}
               </motion.div>
               <motion.p
-                className="text-[11px] sm:text-xs text-gray-300 leading-snug"
+                className="text-[10px] sm:text-xs text-gray-300 leading-tight hidden sm:block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 {selectedMode === 'classic'
-                  ? 'Choose your battlefield tier — rise through the ranks and prove your skill.'
-                  : 'Survive the robotic madness! Fast-paced chaos awaits brave warriors.'}
+                  ? 'Choose your battlefield tier and prove your skill.'
+                  : 'Survive the robotic madness! Chaos awaits.'}
               </motion.p>
             </div>
           </div>
@@ -392,7 +392,7 @@ const LobbyPage: React.FC = () => {
           <motion.button
             onClick={handleQuickJoin}
             disabled={searchingStake !== null}
-            className={`relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-[length:200%_100%] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden ${
+            className={`relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-[length:200%_100%] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden ${
               selectedMode === 'classic'
                 ? 'bg-gradient-to-r from-blue-500 via-cyan-600 to-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
                 : 'bg-gradient-to-r from-purple-500 via-pink-600 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.6)]'
@@ -436,9 +436,9 @@ const LobbyPage: React.FC = () => {
           </motion.button>
         </motion.div>
 
-        {/* Stake Cards - Better mobile grid */}
+        {/* Stake Cards - Optimized spacing for Chrome */}
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 md:gap-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}

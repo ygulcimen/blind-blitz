@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '../../ui/card';
+import { CapturedPieces } from './CapturedPieces';
 
 interface PlayerBarProps {
   player: {
@@ -12,13 +13,18 @@ interface PlayerBarProps {
   color: 'white' | 'black';
   position: 'top' | 'bottom';
   className?: string;
+  capturedPieces?: { piece: string; count: number }[];
+  materialAdvantage?: number;
 }
 
 export const PlayerBar: React.FC<PlayerBarProps> = ({
   player,
   timeRemaining,
   isActive,
+  color,
   className = '',
+  capturedPieces = [],
+  materialAdvantage = 0,
 }) => {
   const isMyTurn = isActive;
 
@@ -41,11 +47,17 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
           <span className="font-semibold text-white truncate text-xs sm:text-sm lg:text-base">{player.name}</span>
           <span className="text-gray-400 text-[9px] sm:text-xs lg:text-sm">({player.rating})</span>
         </div>
-        {isMyTurn && (
-          <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {isMyTurn && (
             <span className="text-[9px] sm:text-[10px] lg:text-xs text-blue-400 font-medium">Your Turn</span>
-          </div>
-        )}
+          )}
+          {/* Captured Pieces */}
+          <CapturedPieces
+            pieces={capturedPieces}
+            color={color}
+            materialAdvantage={materialAdvantage}
+          />
+        </div>
       </div>
 
       {/* Timer */}
