@@ -752,13 +752,20 @@ export const useGameStateManager = (gameId?: string) => {
     transitionToPhase('ANIMATED_REVEAL');
   }, [transitionToPhase]);
 
-  const completeAnimatedReveal = useCallback(() => {
+  const completeAnimatedReveal = useCallback(async () => {
     setGameState((prev) => ({
       ...prev,
       reveal: { ...prev.reveal, isComplete: true },
     }));
+
+    // Start the live game clock when animated reveal completes
+    if (gameId) {
+      console.log('⏰ Starting live game clock after animated reveal');
+      await liveMovesService.startGameClock(gameId);
+    }
+
     transitionToPhase('LIVE');
-  }, [transitionToPhase]);
+  }, [transitionToPhase, gameId]);
 
   const makeLiveMove = useCallback(
     async (from: string, to: string): Promise<boolean> => {

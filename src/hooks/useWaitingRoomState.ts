@@ -219,7 +219,14 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
           schema: 'public',
           table: 'game_rooms',
         },
-        () => {
+        (payload) => {
+          const newRoom = payload.new as RoomData;
+          // If game has started (status changed to 'blind'), clear payment phase
+          if (newRoom?.status === 'blind') {
+            console.log('🎮 Game started, clearing payment phase');
+            setPaymentPhase('waiting');
+            setPaymentError(null);
+          }
           loadRoomData();
         }
       )

@@ -204,7 +204,7 @@ class LiveMovesService {
             black_time_ms: timeMs,
             time_control_minutes: minutes,
             time_increment_seconds: increment,
-            last_move_time: new Date().toISOString(), // Start clock immediately
+            last_move_time: null, // Don't start clock until animated reveal completes
             updated_at: new Date().toISOString(),
           },
           {
