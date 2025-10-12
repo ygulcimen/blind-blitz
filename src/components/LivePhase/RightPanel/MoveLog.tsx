@@ -24,6 +24,14 @@ export const MoveLog: React.FC<MoveLogProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('📜 MOVE LOG: liveMoves updated', {
+      count: liveMoves.length,
+      moves: liveMoves.map(m => ({ id: m.id, san: m.move_san, number: m.move_number }))
+    });
+  }, [liveMoves]);
+
   // Auto-scroll to bottom when new moves are added
   useEffect(() => {
     if (scrollRef.current) {
