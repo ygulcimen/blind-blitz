@@ -4,19 +4,8 @@ import { Users, CreditCard } from 'lucide-react';
 import { PlayerCard } from './PlayerCard';
 import { VSDisplay } from './VSDisplay';
 import { WaitingSlot } from './WaitingSlot';
-import { ArenaHeader } from './ArenaHeader';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import type { PaymentPhase } from '../../hooks/useWaitingRoomState';
-
-// Helper to determine tier from entry fee
-const getTierFromEntryFee = (entryFee: number): 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king' => {
-  if (entryFee <= 100) return 'pawn';
-  if (entryFee <= 300) return 'knight';
-  if (entryFee <= 500) return 'bishop';
-  if (entryFee <= 700) return 'rook';
-  if (entryFee <= 900) return 'queen';
-  return 'king';
-};
 
 interface RealPlayer {
   id: string;
@@ -92,13 +81,10 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
 
   const modeConfig = getModeConfig(roomData.mode);
   const prizePool = roomData.entry_fee * 2;
-  const tier = getTierFromEntryFee(roomData.entry_fee);
 
   return (
     <div className="flex-1 flex items-center justify-center p-3 sm:p-4 md:p-6">
       <div className="max-w-5xl w-full">
-        {/* Arena Header - Shows Tier & Mode */}
-        <ArenaHeader tier={tier} mode={roomData.mode} entryFee={roomData.entry_fee} />
         {/* Mobile: Vertical Stack, Desktop: Horizontal */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 mb-4 sm:mb-6">
           {players.length === 0 ? (
