@@ -96,16 +96,19 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     );
   }
 
+  // Don't show payment screens if game has already started
+  const gameStarted = roomData.status === 'blind' || roomData.status === 'live';
+
   // Payment processing states
-  if (paymentPhase === 'processing_payment') {
+  if (!gameStarted && paymentPhase === 'processing_payment') {
     return <PaymentProcessingScreen entryFee={roomData.entry_fee} />;
   }
 
-  if (paymentPhase === 'payment_failed') {
+  if (!gameStarted && paymentPhase === 'payment_failed') {
     return <PaymentFailedScreen error={paymentError} />;
   }
 
-  if (paymentPhase === 'game_starting' && countdown > 0) {
+  if (!gameStarted && paymentPhase === 'game_starting' && countdown > 0) {
     return <GameStartingScreen mode={roomData.mode} countdown={countdown} />;
   }
 

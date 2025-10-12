@@ -934,8 +934,16 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
+          console.log('📡 REALTIME: Received game_live_moves INSERT', {
+            gameId,
+            move: payload.new,
+          });
+
           if (callbacks.onNewMove) {
+            console.log('📡 REALTIME: Calling onNewMove callback');
             callbacks.onNewMove(payload.new as LiveMove);
+          } else {
+            console.log('⚠️ REALTIME: No onNewMove callback registered');
           }
         }
       )

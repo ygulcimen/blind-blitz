@@ -89,26 +89,37 @@ export const useLiveTimer = (
     };
   }, []); // Empty deps - runs once on mount, never restarts
 
-  // Sync display time when gameState changes (e.g., after a move)
+  // Sync display time when turn changes (opponent made a move)
+  // Skip sync when we're the one who just moved (causes timer jump)
   useEffect(() => {
     if (gameState && gameState.last_move_time) {
-      // Immediately update display to reflect new server state
-      const now = Date.now();
-      const turnStartTime = new Date(gameState.last_move_time).getTime();
-      const elapsed = now - turnStartTime;
+      // Only sync the NON-active player's time (the one who just moved)
+      // The active player's time will tick naturally
+      setDisplayTime(prev => {
+        const now = Date.now();
+        const turnStartTime = new Date(gameState.last_move_time).getTime();
+        const elapsed = now - turnStartTime;
 
-      let whiteTime = gameState.white_time_ms;
-      let blackTime = gameState.black_time_ms;
+        let whiteTime = prev.white;
+        let blackTime = prev.black;
 
-      if (gameState.current_turn === 'white') {
-        whiteTime = Math.max(0, gameState.white_time_ms - elapsed);
-      } else {
-        blackTime = Math.max(0, gameState.black_time_ms - elapsed);
-      }
+        // Update the player who just finished their move (not the current turn)
+        if (gameState.current_turn === 'white') {
+          // Black just moved, update black's time from server
+          blackTime = gameState.black_time_ms;
+          // White's time ticks from server time
+          whiteTime = Math.max(0, gameState.white_time_ms - elapsed);
+        } else {
+          // White just moved, update white's time from server
+          whiteTime = gameState.white_time_ms;
+          // Black's time ticks from server time
+          blackTime = Math.max(0, gameState.black_time_ms - elapsed);
+        }
 
-      setDisplayTime({ white: whiteTime, black: blackTime });
+        return { white: whiteTime, black: blackTime };
+      });
     }
-  }, [gameState?.white_time_ms, gameState?.black_time_ms, gameState?.last_move_time, gameState?.current_turn]);
+  }, [gameState?.last_move_time, gameState?.current_turn]);
 
   return displayTime;
 };
