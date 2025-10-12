@@ -24,14 +24,6 @@ export const MoveLog: React.FC<MoveLogProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('📜 MOVE LOG: liveMoves updated', {
-      count: liveMoves.length,
-      moves: liveMoves.map(m => ({ id: m.id, san: m.move_san, number: m.move_number }))
-    });
-  }, [liveMoves]);
-
   // Auto-scroll to bottom when new moves are added
   useEffect(() => {
     if (scrollRef.current) {
@@ -40,6 +32,7 @@ export const MoveLog: React.FC<MoveLogProps> = ({
   }, [liveMoves.length]);
 
   // Combine blind moves and live moves into a unified format
+  // Force recalculation by using liveMoves.length as key dependency
   const allMoves = React.useMemo(() => {
     const moves: Array<{
       moveNumber: number;
@@ -129,7 +122,7 @@ export const MoveLog: React.FC<MoveLogProps> = ({
     });
 
     return moves.sort((a, b) => a.moveNumber - b.moveNumber);
-  }, [liveMoves, blindMoves]);
+  }, [liveMoves, liveMoves.length, blindMoves]);
 
   return (
     <Card className={`${className}`}>

@@ -125,30 +125,20 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
       },
 
       onNewMove: (move) => {
-        console.log('📥 NEW MOVE RECEIVED:', {
-          moveId: move.id,
-          playerId: move.player_id,
-          san: move.move_san,
-          moveNumber: move.move_number
-        });
-
         const isMine = move.player_id === currentUser?.id;
         const hasOptimistic = !!pendingOptimisticIdRef.current;
 
         if (isMine && hasOptimistic) {
           setLiveMoves(prev => {
             const filtered = prev.filter(m => m.id !== pendingOptimisticIdRef.current);
-            console.log('✅ Replacing optimistic move with server move');
             return [...filtered, move].sort((a, b) => a.move_number - b.move_number);
           });
           pendingOptimisticIdRef.current = null;
         } else {
           setLiveMoves(prev => {
             if (prev.some(m => m.id === move.id)) {
-              console.log('⏭️ Move already exists, skipping');
               return prev;
             }
-            console.log('➕ Adding new move to list');
             return [...prev, move].sort((a, b) => a.move_number - b.move_number);
           });
         }
