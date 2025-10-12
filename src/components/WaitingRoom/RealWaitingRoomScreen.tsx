@@ -112,14 +112,29 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     return <GameStartingScreen mode={roomData.mode} countdown={countdown} />;
   }
 
+  // Determine background theming based on mode
+  const isRoboChaos = roomData.mode === 'robochaos';
+  const bgGradient = isRoboChaos
+    ? 'from-purple-900/30 via-pink-900/20 to-red-900/30'
+    : 'from-purple-900/20 via-indigo-900/10 to-blue-900/20';
+  const orb1 = isRoboChaos
+    ? 'from-pink-500/20 to-purple-500/20'
+    : 'from-red-500/10 to-orange-500/10';
+  const orb2 = isRoboChaos
+    ? 'from-purple-500/20 to-red-500/20'
+    : 'from-blue-500/10 to-purple-500/10';
+
   // Main waiting room UI
   return (
     <div className="h-screen bg-gradient-to-br from-black via-slate-900 to-black text-white overflow-hidden">
-      {/* Background */}
+      {/* Background - THEMED */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-indigo-900/10 to-blue-900/20" />
-        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient}`} />
+        <div className={`absolute top-1/4 left-1/4 w-80 h-80 bg-gradient-to-br ${orb1} rounded-full blur-3xl animate-pulse`} />
+        <div className={`absolute bottom-1/4 right-1/4 w-64 h-64 bg-gradient-to-br ${orb2} rounded-full blur-3xl animate-pulse delay-1000`} />
+        {isRoboChaos && (
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDIzNiwgNzIsIDE1MywgMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
+        )}
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
