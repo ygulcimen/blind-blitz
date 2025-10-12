@@ -66,6 +66,12 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
     };
   }, [gameId]);
 
+  // Store currentUser in ref to avoid stale closures
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   // Main real-time subscriptions
   useEffect(() => {
     if (!gameId || !myColor) return;
@@ -125,7 +131,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
       },
 
       onNewMove: (move) => {
-        const isMine = move.player_id === currentUser?.id;
+        const isMine = move.player_id === currentUserRef.current?.id;
         const hasOptimistic = !!pendingOptimisticIdRef.current;
 
         if (isMine && hasOptimistic) {
