@@ -44,7 +44,7 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = ({
       {pieces.map(({ piece, count }) => (
         <div key={piece} className="flex items-center opacity-60">
           <span className="text-gray-400">
-            {PIECE_SYMBOLS[opponentColor][piece]}
+            {PIECE_SYMBOLS[opponentColor][piece as keyof typeof PIECE_SYMBOLS.white]}
           </span>
           {count > 1 && (
             <span className="text-[9px] sm:text-[10px] text-gray-500 ml-0.5">

@@ -50,7 +50,7 @@ export function getCapturedPieces(fen: string): CapturedPieces {
 
     // White captured black pieces
     for (const [piece, startCount] of Object.entries(STARTING_PIECES.black)) {
-      const captured = startCount - currentPieces.black[piece];
+      const captured = startCount - currentPieces.black[piece as keyof typeof currentPieces.black];
       if (captured > 0 && piece !== 'k') {
         // Don't show captured kings
         capturedByWhite[piece] = captured;
@@ -59,7 +59,7 @@ export function getCapturedPieces(fen: string): CapturedPieces {
 
     // Black captured white pieces
     for (const [piece, startCount] of Object.entries(STARTING_PIECES.white)) {
-      const captured = startCount - currentPieces.white[piece];
+      const captured = startCount - currentPieces.white[piece as keyof typeof currentPieces.white];
       if (captured > 0 && piece !== 'k') {
         // Don't show captured kings
         capturedByBlack[piece] = captured;
