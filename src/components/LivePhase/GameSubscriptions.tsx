@@ -131,21 +131,38 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
       },
 
       onNewMove: (move) => {
+        console.log('📝 NEW MOVE RECEIVED:', {
+          moveId: move.id,
+          moveNumber: move.move_number,
+          san: move.move_san,
+          playerId: move.player_id,
+          currentUserId: currentUserRef.current?.id,
+        });
+
         const isMine = move.player_id === currentUserRef.current?.id;
         const hasOptimistic = !!pendingOptimisticIdRef.current;
 
+        console.log('🔍 Move ownership check:', { isMine, hasOptimistic });
+
         if (isMine && hasOptimistic) {
+          console.log('✅ Replacing optimistic move with server move');
           setLiveMoves(prev => {
             const filtered = prev.filter(m => m.id !== pendingOptimisticIdRef.current);
-            return [...filtered, move].sort((a, b) => a.move_number - b.move_number);
+            const newMoves = [...filtered, move].sort((a, b) => a.move_number - b.move_number);
+            console.log('📊 Updated moves after replace:', newMoves.length);
+            return newMoves;
           });
           pendingOptimisticIdRef.current = null;
         } else {
+          console.log('📥 Adding opponent move to list');
           setLiveMoves(prev => {
             if (prev.some(m => m.id === move.id)) {
+              console.log('⚠️ Move already exists, skipping');
               return prev;
             }
-            return [...prev, move].sort((a, b) => a.move_number - b.move_number);
+            const newMoves = [...prev, move].sort((a, b) => a.move_number - b.move_number);
+            console.log('📊 Updated moves after add:', newMoves.length);
+            return newMoves;
           });
         }
 

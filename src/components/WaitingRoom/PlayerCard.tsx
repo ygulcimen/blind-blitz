@@ -53,7 +53,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       }`}
     >
       <div
-        className={`relative backdrop-blur-sm border-2 rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[280px] sm:w-60 md:w-72 transition-all duration-300 shadow-2xl ${
+        className={`relative backdrop-blur-sm border-2 rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[280px] sm:w-60 md:w-72 min-h-[300px] sm:min-h-0 transition-all duration-300 shadow-2xl ${
           player.ready
             ? `${isRoboChaos ? 'border-pink-500/60' : tierConfig.borderClass} shadow-lg`
             : 'border-slate-600/30 hover:border-slate-500/50'
