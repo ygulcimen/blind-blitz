@@ -112,17 +112,65 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     return <GameStartingScreen mode={roomData.mode} countdown={countdown} />;
   }
 
-  // Determine background theming based on mode
+  // Determine background theming based on tier and mode
   const isRoboChaos = roomData.mode === 'robochaos';
+
+  // Import tier config
+  const getTierFromEntryFee = (entryFee: number) => {
+    if (entryFee >= 10 && entryFee <= 24) return 'pawn';
+    if (entryFee >= 25 && entryFee <= 49) return 'knight';
+    if (entryFee >= 50 && entryFee <= 99) return 'bishop';
+    if (entryFee >= 100 && entryFee <= 249) return 'rook';
+    if (entryFee >= 250 && entryFee <= 499) return 'queen';
+    if (entryFee >= 500) return 'king';
+    return 'pawn';
+  };
+
+  const tierBgConfig = {
+    pawn: {
+      bgGradient: 'from-emerald-900/20 via-black to-green-900/20',
+      orb1: 'from-emerald-500/15 to-green-500/15',
+      orb2: 'from-green-500/15 to-emerald-500/15',
+    },
+    knight: {
+      bgGradient: 'from-blue-900/20 via-black to-cyan-900/20',
+      orb1: 'from-blue-500/15 to-cyan-500/15',
+      orb2: 'from-cyan-500/15 to-blue-500/15',
+    },
+    bishop: {
+      bgGradient: 'from-purple-900/20 via-black to-indigo-900/20',
+      orb1: 'from-purple-500/15 to-indigo-500/15',
+      orb2: 'from-indigo-500/15 to-purple-500/15',
+    },
+    rook: {
+      bgGradient: 'from-orange-900/20 via-black to-amber-900/20',
+      orb1: 'from-orange-500/15 to-amber-500/15',
+      orb2: 'from-amber-500/15 to-orange-500/15',
+    },
+    queen: {
+      bgGradient: 'from-pink-900/20 via-black to-rose-900/20',
+      orb1: 'from-pink-500/15 to-rose-500/15',
+      orb2: 'from-rose-500/15 to-pink-500/15',
+    },
+    king: {
+      bgGradient: 'from-yellow-900/20 via-black to-orange-900/20',
+      orb1: 'from-yellow-500/20 to-orange-500/20',
+      orb2: 'from-orange-500/20 to-yellow-500/20',
+    },
+  };
+
+  const tier = getTierFromEntryFee(roomData.entry_fee);
+  const tierBg = tierBgConfig[tier];
+
   const bgGradient = isRoboChaos
     ? 'from-purple-900/30 via-pink-900/20 to-red-900/30'
-    : 'from-purple-900/20 via-indigo-900/10 to-blue-900/20';
+    : tierBg.bgGradient;
   const orb1 = isRoboChaos
     ? 'from-pink-500/20 to-purple-500/20'
-    : 'from-red-500/10 to-orange-500/10';
+    : tierBg.orb1;
   const orb2 = isRoboChaos
     ? 'from-purple-500/20 to-red-500/20'
-    : 'from-blue-500/10 to-purple-500/10';
+    : tierBg.orb2;
 
   // Main waiting room UI
   return (
