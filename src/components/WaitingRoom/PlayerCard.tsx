@@ -53,7 +53,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       }`}
     >
       <div
-        className={`relative backdrop-blur-sm border-2 rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[280px] sm:w-60 md:w-72 min-h-[300px] sm:min-h-0 transition-all duration-300 shadow-2xl ${
+        className={`relative backdrop-blur-sm border-2 rounded-2xl p-3 sm:p-5 md:p-6 w-full max-w-[240px] sm:w-60 md:w-72 transition-all duration-300 shadow-2xl ${
           player.ready
             ? `${isRoboChaos ? 'border-pink-500/60' : tierConfig.borderClass} shadow-lg`
             : 'border-slate-600/30 hover:border-slate-500/50'
@@ -68,7 +68,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1.5 rounded-xl text-xs font-black shadow-lg ${
+            className={`absolute -top-2.5 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-black shadow-lg ${
               isRoboChaos
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                 : `bg-gradient-to-r ${tierConfig.gradient} text-white`
@@ -78,45 +78,45 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           </motion.div>
         )}
 
-        <div className="text-center mb-4 sm:mb-5">
+        <div className="text-center mb-3 sm:mb-5">
           {/* Avatar */}
-          <div className="relative inline-block mb-2 sm:mb-3">
+          <div className="relative inline-block mb-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-xl ${
+              className={`w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl ${
                 isRoboChaos
                   ? 'bg-gradient-to-br from-purple-500/40 to-pink-500/40 border-2 border-pink-400/50'
                   : `bg-gradient-to-br ${tierConfig.gradient} opacity-90`
               }`}
             >
-              <span className="text-white font-black text-xl sm:text-2xl md:text-3xl drop-shadow-lg">
+              <span className="text-white font-black text-lg sm:text-2xl md:text-3xl drop-shadow-lg">
                 {player.username[0].toUpperCase()}
               </span>
             </motion.div>
             {/* Host Crown */}
             {player.isHost && (
-              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
-                <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-current" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-md sm:rounded-lg flex items-center justify-center shadow-lg">
+                <Crown className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-white fill-current" />
               </div>
             )}
           </div>
 
           {/* Username */}
-          <h3 className="text-base sm:text-lg md:text-xl font-black mb-1.5 sm:mb-2 tracking-wide truncate px-2">
+          <h3 className="text-sm sm:text-lg md:text-xl font-black mb-1 sm:mb-2 tracking-wide truncate px-1">
             {player.username}
             {isCurrentPlayer && (
-              <span className={`font-normal text-base ml-1 ${
+              <span className={`font-normal text-xs sm:text-base ml-1 ${
                 isRoboChaos ? 'text-pink-400' : tierConfig.textClass
               }`}> (You)</span>
             )}
           </h3>
 
           {/* Rating */}
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-            <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current ${
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1.5 sm:mb-3">
+            <Star className={`w-3 h-3 sm:w-4 sm:h-4 fill-current ${
               isRoboChaos ? 'text-pink-400' : tierConfig.textClass
             }`} />
-            <span className={`font-black text-sm sm:text-base md:text-lg ${
+            <span className={`font-black text-xs sm:text-base md:text-lg ${
               isRoboChaos ? 'text-pink-300' : tierConfig.textClass
             }`}>
               {player.rating}
@@ -125,7 +125,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
           {/* Role Badge */}
           <div
-            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold ${
+            className={`inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-bold ${
               player.isHost
                 ? isRoboChaos
                   ? 'bg-pink-900/40 text-pink-300 border border-pink-500/30'
@@ -156,7 +156,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             whileTap={{ scale: gameStarting ? 1 : 0.98 }}
             onClick={onReady}
             disabled={gameStarting}
-            className={`relative w-full py-2.5 sm:py-3 rounded-xl font-black text-sm sm:text-base transition-all duration-300 shadow-lg overflow-hidden ${
+            className={`relative w-full py-2 sm:py-3 rounded-xl font-black text-xs sm:text-base transition-all duration-300 shadow-lg overflow-hidden ${
               gameStarting
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : player.ready
