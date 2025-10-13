@@ -156,7 +156,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             whileTap={{ scale: gameStarting ? 1 : 0.98 }}
             onClick={onReady}
             disabled={gameStarting}
-            className={`w-full py-3 rounded-xl font-black text-base transition-all duration-300 shadow-lg ${
+            className={`relative w-full py-3 rounded-xl font-black text-base transition-all duration-300 shadow-lg overflow-hidden ${
               gameStarting
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : player.ready
@@ -166,11 +166,52 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                 : `bg-gradient-to-r ${tierConfig.gradient} text-white hover:shadow-xl`
             }`}
           >
-            {gameStarting
-              ? '⏳ PROCESSING...'
-              : player.ready
-              ? '❌ NOT READY'
-              : '✅ READY UP!'}
+            {!gameStarting && !player.ready && (
+              <motion.div
+                className="absolute inset-0 bg-white/20"
+                animate={{
+                  x: ['-100%', '100%'],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {gameStarting ? (
+                <>
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  >
+                    ⏳
+                  </motion.span>
+                  PROCESSING...
+                </>
+              ) : player.ready ? (
+                <>
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  >
+                    🔓
+                  </motion.span>
+                  CANCEL READY
+                </>
+              ) : (
+                <>
+                  <motion.span
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    ⚔️
+                  </motion.span>
+                  I'M READY!
+                </>
+              )}
+            </span>
           </motion.button>
         )}
       </div>

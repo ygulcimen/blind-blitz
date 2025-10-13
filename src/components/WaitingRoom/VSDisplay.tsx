@@ -80,7 +80,7 @@ export const VSDisplay: React.FC<VSDisplayProps> = ({ prizePool, tierConfig, isR
             }`}>
               {prizePool}
             </span>
-            <span className="text-lg sm:text-xl">💰</span>
+            <span className="text-lg sm:text-xl">🪙</span>
           </div>
         </div>
       </motion.div>
