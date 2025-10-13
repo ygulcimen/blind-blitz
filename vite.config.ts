@@ -44,9 +44,9 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.* in production
+        drop_console: false, // TEMPORARILY ENABLED for debugging move log issue
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.warn', 'console.info'],
+        // pure_funcs: ['console.log', 'console.warn', 'console.info'], // Commented out for debugging
         passes: 2, // Run compression twice for better results
         unsafe_arrows: true, // Optimize arrow functions
         unsafe_methods: true, // Optimize method calls
