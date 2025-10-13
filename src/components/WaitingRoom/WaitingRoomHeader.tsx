@@ -164,7 +164,7 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
           </button>
 
           {/* Center: Arena Title */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-center">
             {/* Arena Icon */}
             <motion.div
               animate={isRoboChaos ? {
@@ -216,21 +216,8 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
             </div>
           </div>
 
-          {/* Right: Entry Fee (compact) */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border backdrop-blur-sm ${
-            isRoboChaos
-              ? 'bg-pink-900/30 border-pink-500/40'
-              : 'bg-black/30 border-white/20'
-          }`}>
-            <span className={`text-[10px] sm:text-xs font-medium ${
-              isRoboChaos ? 'text-pink-400' : 'text-gray-400'
-            }`}>Entry:</span>
-            <span className={`text-xs sm:text-sm font-black ${
-              isRoboChaos ? 'text-pink-300' : tierConfig.textClass
-            }`}>
-              {roomData.entry_fee}
-            </span>
-          </div>
+          {/* Right side empty for symmetry */}
+          <div className="w-[40px] sm:w-[80px]"></div>
         </div>
       </div>
     </div>

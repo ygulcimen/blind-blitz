@@ -1,12 +1,13 @@
 // components/WaitingRoom/WaitingRoomArena.tsx
 import React from 'react';
-import { Users, CreditCard } from 'lucide-react';
+import { Users, CreditCard, Zap, Swords } from 'lucide-react';
 import { PlayerCard } from './PlayerCard';
 import { VSDisplay } from './VSDisplay';
 import { WaitingSlot } from './WaitingSlot';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import type { PaymentPhase } from '../../hooks/useWaitingRoomState';
 import { getTierFromEntryFee, TIER_CONFIG } from './WaitingRoomHeader';
+import { motion } from 'framer-motion';
 
 interface RealPlayer {
   id: string;
@@ -49,9 +50,77 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
   const isRoboChaos = roomData.mode === 'robochaos';
   const prizePool = roomData.entry_fee * 2;
 
+  const TierIcon = tierConfig.Icon;
+
   return (
-    <div className="flex-1 flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="max-w-5xl w-full">
+    <div className="relative flex-1 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden">
+      {/* Floating Tier Emblems - Background Decoration */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute opacity-10"
+            initial={{
+              x: `${Math.random() * 100}%`,
+              y: `${Math.random() * 100}%`,
+              rotate: Math.random() * 360,
+              scale: 0.5 + Math.random() * 0.5,
+            }}
+            animate={{
+              y: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
+              rotate: [0, 360],
+              scale: [0.5 + Math.random() * 0.5, 0.8 + Math.random() * 0.5, 0.5 + Math.random() * 0.5],
+            }}
+            transition={{
+              duration: 15 + Math.random() * 10,
+              repeat: Infinity,
+              ease: 'linear',
+              delay: Math.random() * 5,
+            }}
+          >
+            <TierIcon className={`w-24 h-24 sm:w-32 sm:h-32 ${
+              isRoboChaos ? 'text-pink-500' : tierConfig.iconClass
+            }`} />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Battle Lightning Effects */}
+      {players.length === 2 && (
+        <>
+          <motion.div
+            className="absolute left-1/4 top-1/4 pointer-events-none"
+            animate={{
+              opacity: [0, 0.3, 0],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3,
+            }}
+          >
+            <Zap className={`w-16 h-16 ${isRoboChaos ? 'text-pink-500' : tierConfig.iconClass}`} />
+          </motion.div>
+          <motion.div
+            className="absolute right-1/4 bottom-1/4 pointer-events-none"
+            animate={{
+              opacity: [0, 0.3, 0],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3,
+              delay: 1,
+            }}
+          >
+            <Swords className={`w-16 h-16 ${isRoboChaos ? 'text-pink-500' : tierConfig.iconClass}`} />
+          </motion.div>
+        </>
+      )}
+
+      <div className="relative z-10 max-w-5xl w-full">
         {/* Mobile: Vertical Stack, Desktop: Horizontal */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 mb-4 sm:mb-6">
           {players.length === 0 ? (
