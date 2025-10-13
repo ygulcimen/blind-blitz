@@ -222,7 +222,9 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
               ? 'bg-pink-900/30 border-pink-500/40'
               : 'bg-black/30 border-white/20'
           }`}>
-            <span className="text-xs">🪙</span>
+            <span className={`text-[10px] sm:text-xs font-medium ${
+              isRoboChaos ? 'text-pink-400' : 'text-gray-400'
+            }`}>Entry:</span>
             <span className={`text-xs sm:text-sm font-black ${
               isRoboChaos ? 'text-pink-300' : tierConfig.textClass
             }`}>

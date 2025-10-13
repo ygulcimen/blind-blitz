@@ -6,6 +6,7 @@ import { VSDisplay } from './VSDisplay';
 import { WaitingSlot } from './WaitingSlot';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import type { PaymentPhase } from '../../hooks/useWaitingRoomState';
+import { getTierFromEntryFee, TIER_CONFIG } from './WaitingRoomHeader';
 
 interface RealPlayer {
   id: string;
@@ -43,43 +44,9 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
   paymentPhase,
 }) => {
   const { playerData } = useCurrentUser();
-
-  const getModeConfig = (mode: 'classic' | 'robochaos') => {
-    switch (mode) {
-      case 'classic':
-        return {
-          name: 'Classic Blind',
-          subtitle: 'First 5 moves in darkness',
-          icon: '👁️‍🗨️',
-          gradient: 'from-purple-700 via-indigo-600 to-blue-700',
-          bgGradient: 'from-purple-900/20 via-indigo-900/10 to-blue-900/20',
-          accentColor: 'text-purple-400',
-          borderColor: 'border-purple-500/50',
-        };
-      case 'robochaos':
-        return {
-          name: 'RoboChaos',
-          subtitle: 'AI trolls make your opening',
-          icon: '🤖',
-          gradient: 'from-red-600 via-orange-500 to-yellow-500',
-          bgGradient: 'from-red-900/20 via-orange-900/10 to-yellow-900/20',
-          accentColor: 'text-orange-400',
-          borderColor: 'border-orange-500/50',
-        };
-      default:
-        return {
-          name: 'Unknown Mode',
-          subtitle: 'Unknown challenge awaits',
-          icon: '❓',
-          gradient: 'from-slate-500 to-slate-600',
-          bgGradient: 'from-slate-900/20 to-slate-800/10',
-          accentColor: 'text-slate-400',
-          borderColor: 'border-slate-500/50',
-        };
-    }
-  };
-
-  const modeConfig = getModeConfig(roomData.mode);
+  const tier = getTierFromEntryFee(roomData.entry_fee);
+  const tierConfig = TIER_CONFIG[tier];
+  const isRoboChaos = roomData.mode === 'robochaos';
   const prizePool = roomData.entry_fee * 2;
 
   return (
@@ -101,25 +68,28 @@ export const WaitingRoomArena: React.FC<WaitingRoomArenaProps> = ({
             <>
               <PlayerCard
                 player={players[0]}
-                mode={modeConfig}
+                tierConfig={tierConfig}
+                isRoboChaos={isRoboChaos}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} mode={roomData.mode} />
+              <VSDisplay prizePool={prizePool} tierConfig={tierConfig} isRoboChaos={isRoboChaos} />
               <WaitingSlot />
             </>
           ) : (
             <>
               <PlayerCard
                 player={players[0]}
-                mode={modeConfig}
+                tierConfig={tierConfig}
+                isRoboChaos={isRoboChaos}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
-              <VSDisplay prizePool={prizePool} mode={roomData.mode} />
+              <VSDisplay prizePool={prizePool} tierConfig={tierConfig} isRoboChaos={isRoboChaos} />
               <PlayerCard
                 player={players[1]}
-                mode={modeConfig}
+                tierConfig={tierConfig}
+                isRoboChaos={isRoboChaos}
                 onReady={onReady}
                 gameStarting={paymentPhase !== 'waiting'}
               />
