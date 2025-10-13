@@ -29,10 +29,26 @@ export const useLiveTimer = (
     onTimeoutRef.current = onTimeout;
   }, [gameState, onTimeout]);
 
+  // Sync display time with server when move happens (based on last_move_time change)
+  useEffect(() => {
+    if (!gameState || !gameState.last_move_time) return;
+
+    // When a new move happens, sync timers with server values
+    setDisplayTime({
+      white: gameState.white_time_ms,
+      black: gameState.black_time_ms,
+    });
+  }, [gameState?.last_move_time]);
+
   // ONE-TIME interval setup - never restarts
   useEffect(() => {
+    let lastUpdateTime = Date.now();
+
     intervalRef.current = window.setInterval(() => {
       const state = gameStateRef.current;
+      const now = Date.now();
+      const delta = now - lastUpdateTime;
+      lastUpdateTime = now;
 
       if (!state) {
         return; // Keep current display time instead of resetting
@@ -55,29 +71,27 @@ export const useLiveTimer = (
         return;
       }
 
-      // Calculate elapsed time since current turn started
-      const now = Date.now();
-      const turnStartTime = new Date(state.last_move_time).getTime();
-      const elapsed = now - turnStartTime;
+      // Smoothly decrease timer based on elapsed time since last tick
+      setDisplayTime(prev => {
+        let whiteTime = prev.white;
+        let blackTime = prev.black;
 
-      let whiteTime = state.white_time_ms;
-      let blackTime = state.black_time_ms;
+        // Deduct delta from current player only for smooth countdown
+        if (state.current_turn === 'white') {
+          whiteTime = Math.max(0, prev.white - delta);
+        } else {
+          blackTime = Math.max(0, prev.black - delta);
+        }
 
-      // Deduct elapsed time from current player only
-      if (state.current_turn === 'white') {
-        whiteTime = Math.max(0, state.white_time_ms - elapsed);
-      } else {
-        blackTime = Math.max(0, state.black_time_ms - elapsed);
-      }
+        // Check timeout
+        if (whiteTime === 0 && state.current_turn === 'white') {
+          onTimeoutRef.current('white');
+        } else if (blackTime === 0 && state.current_turn === 'black') {
+          onTimeoutRef.current('black');
+        }
 
-      setDisplayTime({ white: whiteTime, black: blackTime });
-
-      // Check timeout
-      if (whiteTime === 0 && state.current_turn === 'white') {
-        onTimeoutRef.current('white');
-      } else if (blackTime === 0 && state.current_turn === 'black') {
-        onTimeoutRef.current('black');
-      }
+        return { white: whiteTime, black: blackTime };
+      });
     }, 100);
 
     // Cleanup on unmount only

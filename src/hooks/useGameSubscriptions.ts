@@ -32,6 +32,12 @@ export const useGameSubscriptions = ({
 }: UseGameSubscriptionsParams) => {
   const pendingOptimisticIdRef = useRef<string | null>(null);
 
+  // Store currentUser in ref to avoid stale closures
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   // Heartbeat monitoring
   useEffect(() => {
     if (!gameId || !liveGameState || loading) return;
@@ -101,7 +107,7 @@ export const useGameSubscriptions = ({
       },
 
       onNewMove: (move) => {
-        const isMine = move.player_id === currentUser?.id;
+        const isMine = move.player_id === currentUserRef.current?.id;
         const hasOptimistic = !!pendingOptimisticIdRef.current;
 
         if (isMine && hasOptimistic) {

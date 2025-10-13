@@ -53,7 +53,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       }`}
     >
       <div
-        className={`relative backdrop-blur-sm border-2 rounded-2xl p-5 sm:p-6 w-full sm:w-60 md:w-72 transition-all duration-300 shadow-2xl ${
+        className={`relative backdrop-blur-sm border-2 rounded-2xl p-4 sm:p-5 md:p-6 w-full max-w-[280px] sm:w-60 md:w-72 transition-all duration-300 shadow-2xl ${
           player.ready
             ? `${isRoboChaos ? 'border-pink-500/60' : tierConfig.borderClass} shadow-lg`
             : 'border-slate-600/30 hover:border-slate-500/50'
@@ -78,31 +78,31 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           </motion.div>
         )}
 
-        <div className="text-center mb-5">
+        <div className="text-center mb-4 sm:mb-5">
           {/* Avatar */}
-          <div className="relative inline-block mb-3">
+          <div className="relative inline-block mb-2 sm:mb-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-xl ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-xl ${
                 isRoboChaos
                   ? 'bg-gradient-to-br from-purple-500/40 to-pink-500/40 border-2 border-pink-400/50'
                   : `bg-gradient-to-br ${tierConfig.gradient} opacity-90`
               }`}
             >
-              <span className="text-white font-black text-2xl sm:text-3xl drop-shadow-lg">
+              <span className="text-white font-black text-xl sm:text-2xl md:text-3xl drop-shadow-lg">
                 {player.username[0].toUpperCase()}
               </span>
             </motion.div>
             {/* Host Crown */}
             {player.isHost && (
-              <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
-                <Crown className="w-4 h-4 text-white fill-current" />
+              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
+                <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-current" />
               </div>
             )}
           </div>
 
           {/* Username */}
-          <h3 className="text-lg sm:text-xl font-black mb-2 tracking-wide truncate px-2">
+          <h3 className="text-base sm:text-lg md:text-xl font-black mb-1.5 sm:mb-2 tracking-wide truncate px-2">
             {player.username}
             {isCurrentPlayer && (
               <span className={`font-normal text-base ml-1 ${
@@ -112,11 +112,11 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           </h3>
 
           {/* Rating */}
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Star className={`w-4 h-4 fill-current ${
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+            <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current ${
               isRoboChaos ? 'text-pink-400' : tierConfig.textClass
             }`} />
-            <span className={`font-black text-base sm:text-lg ${
+            <span className={`font-black text-sm sm:text-base md:text-lg ${
               isRoboChaos ? 'text-pink-300' : tierConfig.textClass
             }`}>
               {player.rating}
@@ -125,7 +125,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
           {/* Role Badge */}
           <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
+            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold ${
               player.isHost
                 ? isRoboChaos
                   ? 'bg-pink-900/40 text-pink-300 border border-pink-500/30'
@@ -137,12 +137,12 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           >
             {player.isHost ? (
               <>
-                <Shield className="w-3 h-3" />
+                <Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 <span>Host</span>
               </>
             ) : (
               <>
-                <Sword className="w-3 h-3" />
+                <Sword className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 <span>Challenger</span>
               </>
             )}
@@ -156,7 +156,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             whileTap={{ scale: gameStarting ? 1 : 0.98 }}
             onClick={onReady}
             disabled={gameStarting}
-            className={`relative w-full py-3 rounded-xl font-black text-base transition-all duration-300 shadow-lg overflow-hidden ${
+            className={`relative w-full py-2.5 sm:py-3 rounded-xl font-black text-sm sm:text-base transition-all duration-300 shadow-lg overflow-hidden ${
               gameStarting
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : player.ready
