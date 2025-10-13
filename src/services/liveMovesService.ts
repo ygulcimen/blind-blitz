@@ -885,6 +885,13 @@ class LiveMovesService {
       onDrawOfferUpdate?: (offer: DrawOffer | null) => void;
     }
   ): () => void {
+    console.log('🔌 SUBSCRIBE: Setting up game subscriptions', {
+      gameId,
+      hasGameStateCallback: !!callbacks.onGameStateUpdate,
+      hasNewMoveCallback: !!callbacks.onNewMove,
+      hasDrawOfferCallback: !!callbacks.onDrawOfferUpdate,
+    });
+
     const gameStateSubscription = supabase
       .channel(`live-game-state-${gameId}`)
       .on(
@@ -934,8 +941,17 @@ class LiveMovesService {
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
+          console.log('🎯 REALTIME: Received live move INSERT', {
+            gameId,
+            event: payload.eventType,
+            move: payload.new,
+          });
+
           if (callbacks.onNewMove) {
+            console.log('🎯 REALTIME: Calling onNewMove callback');
             callbacks.onNewMove(payload.new as LiveMove);
+          } else {
+            console.log('⚠️ REALTIME: No onNewMove callback registered');
           }
         }
       )
