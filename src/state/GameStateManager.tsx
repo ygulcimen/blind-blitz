@@ -824,10 +824,14 @@ export const useGameStateManager = (gameId?: string) => {
     );
     subscriptionsRef.current.push(blindCleanup);
 
-    const liveCleanup = liveMovesService.subscribeToGameUpdates(gameId, {
-      onGameStateUpdate: handleLiveGameUpdate,
-    });
-    subscriptionsRef.current.push(liveCleanup);
+    // ❌ REMOVED: This subscription was interfering with GameSubscriptions component
+    // The live game subscription is now ONLY handled in GameSubscriptions.tsx
+    // which properly registers ALL callbacks (onGameStateUpdate, onNewMove, onDrawOfferUpdate)
+    //
+    // const liveCleanup = liveMovesService.subscribeToGameUpdates(gameId, {
+    //   onGameStateUpdate: handleLiveGameUpdate,
+    // });
+    // subscriptionsRef.current.push(liveCleanup);
 
     const roomChannel = supabase
       .channel(`room-${gameId}`)
