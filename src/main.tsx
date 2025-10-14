@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { initSentry } from './lib/sentry'
 import { initAnalytics } from './lib/analytics'
+import './i18n/config' // Initialize i18n
 
 // Initialize error tracking and analytics
 initSentry()

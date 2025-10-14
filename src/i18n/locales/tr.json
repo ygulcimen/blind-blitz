@@ -1,0 +1,214 @@
+{
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "success": "Başarılı",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "close": "Kapat",
+    "save": "Kaydet",
+    "back": "Geri",
+    "next": "İleri",
+    "submit": "Gönder",
+    "play": "Oyna",
+    "ready": "Hazır",
+    "waiting": "Bekleniyor..."
+  },
+  "navigation": {
+    "home": "Ana Sayfa",
+    "play": "Oyna",
+    "leaderboard": "Lider Tablosu",
+    "profile": "Profil",
+    "settings": "Ayarlar",
+    "about": "Hakkında",
+    "howToPlay": "Nasıl Oynanır",
+    "faq": "Sık Sorulan Sorular",
+    "rewards": "Ödüller",
+    "logout": "Çıkış Yap",
+    "login": "Giriş Yap",
+    "signup": "Kayıt Ol"
+  },
+  "auth": {
+    "login": {
+      "title": "Giriş Yap",
+      "email": "E-posta",
+      "password": "Şifre",
+      "submit": "Giriş Yap",
+      "forgotPassword": "Şifremi Unuttum?",
+      "noAccount": "Hesabınız yok mu?",
+      "signupLink": "Kayıt ol"
+    },
+    "signup": {
+      "title": "Kayıt Ol",
+      "username": "Kullanıcı Adı",
+      "email": "E-posta",
+      "password": "Şifre",
+      "confirmPassword": "Şifreyi Onayla",
+      "submit": "Hesap Oluştur",
+      "hasAccount": "Zaten hesabınız var mı?",
+      "loginLink": "Giriş yap"
+    },
+    "forgotPassword": {
+      "title": "Şifremi Unuttum",
+      "description": "Şifrenizi sıfırlamak için e-posta adresinizi girin",
+      "email": "E-posta",
+      "submit": "Sıfırlama Bağlantısı Gönder",
+      "backToLogin": "Girişe Dön"
+    }
+  },
+  "game": {
+    "modes": {
+      "classic": "Klasik",
+      "robotChaos": "Robot Kaos"
+    },
+    "phases": {
+      "waiting": "Bekleme Odası",
+      "blind": "Kör Aşama",
+      "reveal": "Açılım Aşaması",
+      "live": "Canlı Aşama"
+    },
+    "playerCard": {
+      "you": "Sen",
+      "host": "Ev Sahibi",
+      "challenger": "Rakip",
+      "ready": "Hazır",
+      "notReady": "Hazır Değil",
+      "waitingForOpponent": "Rakip bekleniyor..."
+    },
+    "actions": {
+      "makeMove": "Hamle Yap",
+      "resign": "Pes Et",
+      "offerDraw": "Berabere Teklif Et",
+      "acceptDraw": "Beraberliği Kabul Et",
+      "declineDraw": "Beraberliği Reddet",
+      "rematch": "Rövanş",
+      "leave": "Oyundan Ayrıl"
+    },
+    "timer": {
+      "whiteTime": "Beyaz Süre",
+      "blackTime": "Siyah Süre",
+      "timeRemaining": "Kalan Süre"
+    },
+    "result": {
+      "victory": "Zafer!",
+      "defeat": "Yenilgi",
+      "draw": "Berabere",
+      "checkmate": "Şah Mat",
+      "timeout": "Süre Doldu",
+      "resignation": "Pes",
+      "stalemate": "Pat",
+      "insufficientMaterial": "Yetersiz Malzeme",
+      "threefoldRepetition": "Üçlü Tekrar"
+    },
+    "moveLog": {
+      "title": "Hamle Kaydı",
+      "blindPhase": "Kör Aşama",
+      "livePhase": "Canlı Aşama",
+      "noMoves": "Henüz hamle yok"
+    }
+  },
+  "matchmaking": {
+    "title": "Eşleşme Bul",
+    "selectStake": "Bahis Aralığı Seç",
+    "selectMode": "Oyun Modu Seç",
+    "searching": "Rakip aranıyor...",
+    "matchFound": "Eşleşme Bulundu!",
+    "cancel": "Aramayı İptal Et",
+    "minStake": "Min Bahis",
+    "maxStake": "Maks Bahis"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "language": {
+      "title": "Dil",
+      "english": "İngilizce",
+      "turkish": "Türkçe"
+    },
+    "theme": {
+      "title": "Tema",
+      "light": "Açık",
+      "dark": "Koyu",
+      "auto": "Otomatik"
+    },
+    "sound": {
+      "title": "Ses Efektleri",
+      "enabled": "Açık",
+      "disabled": "Kapalı"
+    },
+    "notifications": {
+      "title": "Bildirimler",
+      "enabled": "Açık",
+      "disabled": "Kapalı"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "stats": {
+      "rating": "Puan",
+      "gamesPlayed": "Oynanan Oyun",
+      "wins": "Galibiyet",
+      "losses": "Mağlubiyet",
+      "draws": "Beraberlik",
+      "winRate": "Kazanma Oranı"
+    },
+    "edit": "Profili Düzenle",
+    "changePassword": "Şifre Değiştir"
+  },
+  "leaderboard": {
+    "title": "Lider Tablosu",
+    "rank": "Sıra",
+    "player": "Oyuncu",
+    "rating": "Puan",
+    "games": "Oyunlar",
+    "winRate": "Kazanma Oranı"
+  },
+  "rewards": {
+    "title": "Ödüller",
+    "description": "Oyun oynayarak ve kazanarak ödül kazan",
+    "dailyBonus": "Günlük Bonus",
+    "achievements": "Başarımlar",
+    "totalEarned": "Toplam Kazanılan"
+  },
+  "about": {
+    "title": "Blind Blitz Hakkında",
+    "description": "Stratejinin sürprizle buluştuğu benzersiz bir satranç varyantı",
+    "version": "Sürüm"
+  },
+  "howToPlay": {
+    "title": "Nasıl Oynanır",
+    "blindPhase": {
+      "title": "Kör Aşama",
+      "description": "Rakibinizin hamlelerini görmeden hamlelerinizi gönderin"
+    },
+    "revealPhase": {
+      "title": "Açılım Aşaması",
+      "description": "Hamlelerin oynanışını izleyin ve iyi hamleler için ödül kazanın"
+    },
+    "livePhase": {
+      "title": "Canlı Aşama",
+      "description": "Açılan pozisyondan zamanlı standart satranç oynayın"
+    }
+  },
+  "faq": {
+    "title": "Sık Sorulan Sorular"
+  },
+  "errors": {
+    "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",
+    "authError": "Kimlik doğrulama başarısız. Lütfen tekrar deneyin.",
+    "gameNotFound": "Oyun bulunamadı",
+    "invalidMove": "Geçersiz hamle",
+    "sessionExpired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
+    "unknownError": "Bilinmeyen bir hata oluştu"
+  },
+  "notifications": {
+    "matchFound": "Eşleşme bulundu! Oyuna giriliyor...",
+    "opponentJoined": "Rakip oyuna katıldı",
+    "opponentLeft": "Rakip oyundan ayrıldı",
+    "drawOffered": "Beraberlik teklifi alındı",
+    "drawAccepted": "Beraberlik kabul edildi",
+    "drawDeclined": "Beraberlik reddedildi",
+    "gameStarted": "Oyun başladı!",
+    "gameEnded": "Oyun bitti",
+    "yourTurn": "Sizin sıranız!"
+  }
+}

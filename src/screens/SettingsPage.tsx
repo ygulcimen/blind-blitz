@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const SettingsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
+
   const [settings, setSettings] = useState({
     soundEnabled: true,
     musicVolume: 70,
@@ -13,6 +16,7 @@ const SettingsPage: React.FC = () => {
     highlightMoves: true,
     blindTimer: 30,
     notifications: true,
+    language: i18n.language,
   });
 
   const handleSettingChange = (key: string, value: any) => {
@@ -39,7 +43,7 @@ const SettingsPage: React.FC = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-black mb-4">
             <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-red-500 bg-clip-text text-transparent">
-              Settings
+              {t('settings.title')}
             </span>
           </h1>
           <p className="text-xl text-gray-300">
@@ -48,6 +52,56 @@ const SettingsPage: React.FC = () => {
         </div>
 
         <div className="space-y-8">
+          {/* Language Settings */}
+          <div className="bg-black/20 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+              <span className="text-2xl mr-3">🌍</span>
+              {t('settings.language.title')}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  i18n.changeLanguage('en');
+                  handleSettingChange('language', 'en');
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  i18n.language === 'en'
+                    ? 'border-blue-500 bg-blue-900/30 shadow-lg shadow-blue-500/20'
+                    : 'border-gray-600 bg-gray-700/30 hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-3xl">🇬🇧</span>
+                  <div className="text-left">
+                    <div className="text-white font-bold">{t('settings.language.english')}</div>
+                    <div className="text-gray-400 text-sm">English</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  i18n.changeLanguage('tr');
+                  handleSettingChange('language', 'tr');
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  i18n.language === 'tr'
+                    ? 'border-blue-500 bg-blue-900/30 shadow-lg shadow-blue-500/20'
+                    : 'border-gray-600 bg-gray-700/30 hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-3xl">🇹🇷</span>
+                  <div className="text-left">
+                    <div className="text-white font-bold">{t('settings.language.turkish')}</div>
+                    <div className="text-gray-400 text-sm">Türkçe</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Audio Settings */}
           <div className="bg-black/20 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">

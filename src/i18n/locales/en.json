@@ -1,0 +1,214 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "play": "Play",
+    "ready": "Ready",
+    "waiting": "Waiting..."
+  },
+  "navigation": {
+    "home": "Home",
+    "play": "Play",
+    "leaderboard": "Leaderboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "about": "About",
+    "howToPlay": "How to Play",
+    "faq": "FAQ",
+    "rewards": "Rewards",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign Up"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Login",
+      "forgotPassword": "Forgot Password?",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Sign Up",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Login"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Enter your email to reset your password",
+      "email": "Email",
+      "submit": "Send Reset Link",
+      "backToLogin": "Back to Login"
+    }
+  },
+  "game": {
+    "modes": {
+      "classic": "Classic",
+      "robotChaos": "Robot Chaos"
+    },
+    "phases": {
+      "waiting": "Waiting Room",
+      "blind": "Blind Phase",
+      "reveal": "Reveal Phase",
+      "live": "Live Phase"
+    },
+    "playerCard": {
+      "you": "You",
+      "host": "Host",
+      "challenger": "Challenger",
+      "ready": "Ready",
+      "notReady": "Not Ready",
+      "waitingForOpponent": "Waiting for opponent..."
+    },
+    "actions": {
+      "makeMove": "Make Move",
+      "resign": "Resign",
+      "offerDraw": "Offer Draw",
+      "acceptDraw": "Accept Draw",
+      "declineDraw": "Decline Draw",
+      "rematch": "Rematch",
+      "leave": "Leave Game"
+    },
+    "timer": {
+      "whiteTime": "White Time",
+      "blackTime": "Black Time",
+      "timeRemaining": "Time Remaining"
+    },
+    "result": {
+      "victory": "Victory!",
+      "defeat": "Defeat",
+      "draw": "Draw",
+      "checkmate": "Checkmate",
+      "timeout": "Time Out",
+      "resignation": "Resignation",
+      "stalemate": "Stalemate",
+      "insufficientMaterial": "Insufficient Material",
+      "threefoldRepetition": "Threefold Repetition"
+    },
+    "moveLog": {
+      "title": "Move Log",
+      "blindPhase": "Blind Phase",
+      "livePhase": "Live Phase",
+      "noMoves": "No moves yet"
+    }
+  },
+  "matchmaking": {
+    "title": "Find a Match",
+    "selectStake": "Select Stake Range",
+    "selectMode": "Select Game Mode",
+    "searching": "Searching for opponent...",
+    "matchFound": "Match Found!",
+    "cancel": "Cancel Search",
+    "minStake": "Min Stake",
+    "maxStake": "Max Stake"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": {
+      "title": "Language",
+      "english": "English",
+      "turkish": "Turkish"
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto"
+    },
+    "sound": {
+      "title": "Sound Effects",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "stats": {
+      "rating": "Rating",
+      "gamesPlayed": "Games Played",
+      "wins": "Wins",
+      "losses": "Losses",
+      "draws": "Draws",
+      "winRate": "Win Rate"
+    },
+    "edit": "Edit Profile",
+    "changePassword": "Change Password"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "rank": "Rank",
+    "player": "Player",
+    "rating": "Rating",
+    "games": "Games",
+    "winRate": "Win Rate"
+  },
+  "rewards": {
+    "title": "Rewards",
+    "description": "Earn rewards by playing and winning games",
+    "dailyBonus": "Daily Bonus",
+    "achievements": "Achievements",
+    "totalEarned": "Total Earned"
+  },
+  "about": {
+    "title": "About Blind Blitz",
+    "description": "A unique chess variant where strategy meets surprise",
+    "version": "Version"
+  },
+  "howToPlay": {
+    "title": "How to Play",
+    "blindPhase": {
+      "title": "Blind Phase",
+      "description": "Submit your moves without seeing your opponent's moves"
+    },
+    "revealPhase": {
+      "title": "Reveal Phase",
+      "description": "Watch the moves play out and earn rewards for good moves"
+    },
+    "livePhase": {
+      "title": "Live Phase",
+      "description": "Play standard chess with a timer from the revealed position"
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions"
+  },
+  "errors": {
+    "networkError": "Network error. Please check your connection.",
+    "authError": "Authentication failed. Please try again.",
+    "gameNotFound": "Game not found",
+    "invalidMove": "Invalid move",
+    "sessionExpired": "Session expired. Please login again.",
+    "unknownError": "An unknown error occurred"
+  },
+  "notifications": {
+    "matchFound": "Match found! Entering game...",
+    "opponentJoined": "Opponent has joined",
+    "opponentLeft": "Opponent has left the game",
+    "drawOffered": "Draw offer received",
+    "drawAccepted": "Draw accepted",
+    "drawDeclined": "Draw declined",
+    "gameStarted": "Game started!",
+    "gameEnded": "Game ended",
+    "yourTurn": "Your turn!"
+  }
+}
