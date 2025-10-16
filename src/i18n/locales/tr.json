@@ -12,7 +12,9 @@
     "submit": "Gönder",
     "play": "Oyna",
     "ready": "Hazır",
-    "waiting": "Bekleniyor..."
+    "waiting": "Bekleniyor...",
+    "player": "Oyuncu",
+    "online": "Çevrimiçi"
   },
   "navigation": {
     "home": "Ana Sayfa",
@@ -142,32 +144,136 @@
     }
   },
   "profile": {
-    "title": "Profil",
+    "title": "Oyuncu Profili",
+    "subtitle": "BlindChess yolculuğunuz ve başarılarınız",
+    "loading": "Profil yükleniyor...",
+    "notFound": "Profil bulunamadı",
     "stats": {
       "rating": "Puan",
-      "gamesPlayed": "Oynanan Oyun",
+      "gamesPlayed": "Oynanan oyun",
       "wins": "Galibiyet",
       "losses": "Mağlubiyet",
       "draws": "Beraberlik",
-      "winRate": "Kazanma Oranı"
+      "winRate": "Kazanma Oranı",
+      "gold": "Altın",
+      "memberSince": "Üyelik tarihi",
+      "victories": "Zaferler",
+      "gamesWon": "Kazanılan Oyun",
+      "defeats": "Yenilgiler"
+    },
+    "playNow": "🚀 Şimdi Oyna",
+    "recentGames": {
+      "title": "Son Oyunlar",
+      "vs": "vs",
+      "ratingLabel": "Puan:",
+      "moves": "hamle",
+      "win": "GALİBİYET",
+      "loss": "MAĞLUBİYET",
+      "draw": "BERABERE",
+      "justNow": "Az önce",
+      "hourAgo": "saat önce",
+      "hoursAgo": "saat önce",
+      "dayAgo": "gün önce",
+      "daysAgo": "gün önce"
+    },
+    "achievements": {
+      "title": "Başarımlar",
+      "firstBlood": {
+        "title": "İlk Kan",
+        "description": "İlk BlindChess oyununuzu kazanın"
+      },
+      "blindMaster": {
+        "title": "Kör Usta",
+        "description": "Kör fazda 25 oyun kazanın"
+      },
+      "chessRoyalty": {
+        "title": "Satranç Kraliyeti",
+        "description": "2000+ puana ulaşın"
+      },
+      "lightningFast": {
+        "title": "Şimşek Hızı",
+        "description": "10 bullet oyunu kazanın"
+      }
     },
     "edit": "Profili Düzenle",
     "changePassword": "Şifre Değiştir"
   },
+  "lobby": {
+    "title": "BlindBlitz Arenası",
+    "subtitle": "Yıldırım Hızında Savaşlar",
+    "loadingArena": "Arena Yükleniyor...",
+    "preparingBattlefield": "Savaş alanınız hazırlanıyor",
+    "quickJoin": "Hızlı Katıl",
+    "findingMatch": "Eşleşme Bulunuyor...",
+    "searchingOpponents": "Rakipler aranıyor",
+    "range": "aralığında",
+    "searchTime": "Arama süresi",
+    "cancelSearch": "Aramayı İptal Et",
+    "tipHigherStake": "💡 İpucu: Yüksek bahis arenalar genellikle daha hızlı eşleşir",
+    "insufficientGold": "Yetersiz altın! Bu arenaya girmek için en az",
+    "toEnterArena": "altına ihtiyacınız var.",
+    "insufficientForAny": "Hiçbir arena için yeterli altın yok. Lütfen önce daha fazla 🪙 kazanın.",
+    "players": "oyuncu",
+    "classic": {
+      "welcome": "Arenaya Hoş Geldiniz",
+      "description": "Savaş alanı seviyenizi seçin ve yeteneinizi kanıtlayın."
+    },
+    "robochaos": {
+      "welcome": "Kaosa Girin!",
+      "description": "Robotik çılgınlıkta hayatta kalın! Kaos sizi bekliyor."
+    }
+  },
   "leaderboard": {
-    "title": "Lider Tablosu",
+    "title": "Altın Lider Tablosu",
     "rank": "Sıra",
     "player": "Oyuncu",
     "rating": "Puan",
     "games": "Oyunlar",
-    "winRate": "Kazanma Oranı"
+    "winRate": "Kazanma Oranı",
+    "topPlayers": "İlk",
+    "playersLabel": "oyuncu",
+    "yourRank": "Sıranız:",
+    "topPercentile": "İlk %",
+    "noPlayers": "Oyuncu bulunamadı",
+    "you": "SEN",
+    "loading": "Yükleniyor..."
   },
   "rewards": {
-    "title": "Ödüller",
-    "description": "Oyun oynayarak ve kazanarak ödül kazan",
+    "title": "Ödül Merkezi",
+    "description": "Günlük ödüllerinizi ve bonuslarınızı alın",
     "dailyBonus": "Günlük Bonus",
     "achievements": "Başarımlar",
-    "totalEarned": "Toplam Kazanılan"
+    "totalEarned": "Toplam Kazanılan",
+    "dailyLogin": {
+      "title": "Günlük Giriş Ödülü",
+      "available": "Her 24 saatte bir mevcut",
+      "claim": "Ödülünüzü Alın",
+      "claiming": "Alınıyor...",
+      "nextReward": "Sonraki ödül:",
+      "loadingTime": "Yükleniyor..."
+    },
+    "watchAd": {
+      "title": "İzle ve Kazan",
+      "description": "30 saniyelik video reklamı",
+      "locked": "Kilitli",
+      "comingSoon": "YAKINDA"
+    },
+    "achievementsCard": {
+      "title": "Başarımlar",
+      "description": "Görevleri tamamla",
+      "locked": "Kilitli",
+      "comingSoon": "YAKINDA",
+      "challenges": {
+        "win10": "10 oyun kazan",
+        "play50": "50 oyun oyna",
+        "reach1500": "1500 puana ulaş"
+      }
+    },
+    "footer": "Daha fazla heyecan verici ödül yakında geliyor!",
+    "success": {
+      "title": "Ödül Başarıyla Alındı!",
+      "comeBack": "Daha fazlası için yarın tekrar gel 🎁"
+    }
   },
   "about": {
     "title": "Blind Blitz Hakkında",
@@ -191,6 +297,69 @@
   },
   "faq": {
     "title": "Sık Sorulan Sorular"
+  },
+  "landing": {
+    "hero": {
+      "headline": "OYNA, RİSK AL, KAZAN.",
+      "subheadline": "Bunu Tekrarla",
+      "description": "Gerçek risklerle yıldırım hızında kör satranç",
+      "ctaPrimary": "Yolculuğa Başla",
+      "ctaPrimaryLoggedIn": "Savaş Arenasına Gir",
+      "ctaSecondary": "Nasıl Oynanır",
+      "liveLabel": "CANLI",
+      "playersLabel": "oyuncu",
+      "gamesLabel": "oyun",
+      "loginButton": "GİRİŞ YAP",
+      "signupButton": "Kayıt Ol",
+      "goldLabel": "🪙",
+      "trustRating": "4.9",
+      "trustReviews": "değerlendirme",
+      "trustPlatform": "ChessClub",
+      "quotes": {
+        "quote1": "Kör hamleler gerçek ustaları ortaya çıkarır ✨",
+        "quote2": "Harcanan her altın zihninizi keskinleştirir 🧠",
+        "quote3": "Her şeyi riske at, her şeyi kazan ⚡",
+        "quote4": "Görmeden satranç, içgörüyle zafer 👁️",
+        "quote5": "Şans stratejik olandan yanadır 🎯",
+        "quote6": "Görünmeyene hakim ol, görüneni yönet 🔮",
+        "quote7": "Karanlıkta strateji aydınlatır 💡",
+        "quote8": "Cesur hamleler, cesur ödüller 💎"
+      }
+    },
+    "modes": {
+      "sectionLabel": "Savaş alanını seç",
+      "title": "Farklı",
+      "titleHighlight": "Oyun Modlarında Uzmanlaş",
+      "description": "Her mod farklı becerileri test eder. Klasik stratejik düşünmeyi ödüllendirirken, RoboChaos öngörülemez kaosa hızlı adaptasyon gerektirir.",
+      "tabClassical": "Klasik Kör",
+      "tabRoboChaos": "RoboChaos",
+      "ctaButton": "Modunu Seç",
+      "classical": {
+        "title": "Klasik Kör Satranç",
+        "description": "Saf stratejik savaş. Her iki oyuncu da 5 hamleyi körü körüne yapar, ardından tahta standart satranç savaşı için açılır. Planlama, tahmin ve klasik satranç ustalığını ödüllendirir.",
+        "feature1": "Stratejik kör faz planlaması",
+        "feature2": "Açılımdan sonra standart satranç",
+        "feature3": "Doğru tahminler için bonus altın",
+        "entryFee": "Giriş Ücreti",
+        "winReward": "Kazanma Ödülü",
+        "playNow": "Klasik Oyna",
+        "cardTitle": "Stratejik Derinlik",
+        "cardDescription": "Klasik satranç ustalığı kör sezgiyle buluşuyor"
+      },
+      "roboChaos": {
+        "title": "RoboChaos Modu",
+        "description": "Çılgınlığı kucakla. Yapay zekamız her iki taraf için de kaotik açılış hamleleri yaparak geleneksel stratejiyi yok eder. Hızla adapte ol veya bu yüksek riskli kaos arenasında yenilgiye uğra.",
+        "feature1": "Yapay zeka tarafından üretilen kaotik açılışlar",
+        "feature2": "Hızlı adaptasyon gerekli",
+        "feature3": "Dev çarpan ödüller",
+        "entryFee": "Giriş Ücreti",
+        "winReward": "Kazanma Ödülü",
+        "winRewardValue": "2000 🪙'e kadar",
+        "playNow": "RoboChaos Oyna",
+        "cardTitle": "Kontrollü Kaos",
+        "cardDescription": "Yapay zeka çılgınlığı insan adaptasyonuyla buluşuyor"
+      }
+    }
   },
   "errors": {
     "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",

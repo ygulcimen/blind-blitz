@@ -12,7 +12,9 @@
     "submit": "Submit",
     "play": "Play",
     "ready": "Ready",
-    "waiting": "Waiting..."
+    "waiting": "Waiting...",
+    "player": "Player",
+    "online": "Online"
   },
   "navigation": {
     "home": "Home",
@@ -142,32 +144,136 @@
     }
   },
   "profile": {
-    "title": "Profile",
+    "title": "Player Profile",
+    "subtitle": "Your BlindChess journey and achievements",
+    "loading": "Loading profile...",
+    "notFound": "Profile not found",
     "stats": {
       "rating": "Rating",
-      "gamesPlayed": "Games Played",
+      "gamesPlayed": "Games played",
       "wins": "Wins",
       "losses": "Losses",
       "draws": "Draws",
-      "winRate": "Win Rate"
+      "winRate": "Win Rate",
+      "gold": "Gold",
+      "memberSince": "Member since",
+      "victories": "Victories",
+      "gamesWon": "Games Won",
+      "defeats": "Defeats"
+    },
+    "playNow": "🚀 Play Now",
+    "recentGames": {
+      "title": "Recent Games",
+      "vs": "vs",
+      "ratingLabel": "Rating:",
+      "moves": "moves",
+      "win": "WIN",
+      "loss": "LOSS",
+      "draw": "DRAW",
+      "justNow": "Just now",
+      "hourAgo": "hour ago",
+      "hoursAgo": "hours ago",
+      "dayAgo": "day ago",
+      "daysAgo": "days ago"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "firstBlood": {
+        "title": "First Blood",
+        "description": "Win your first BlindChess game"
+      },
+      "blindMaster": {
+        "title": "Blind Master",
+        "description": "Win 25 games in blind phase"
+      },
+      "chessRoyalty": {
+        "title": "Chess Royalty",
+        "description": "Reach 2000+ rating"
+      },
+      "lightningFast": {
+        "title": "Lightning Fast",
+        "description": "Win 10 bullet games"
+      }
     },
     "edit": "Edit Profile",
     "changePassword": "Change Password"
   },
+  "lobby": {
+    "title": "BlindBlitz Arena",
+    "subtitle": "Lightning-Fast Battles",
+    "loadingArena": "Loading Arena...",
+    "preparingBattlefield": "Preparing your battlefield",
+    "quickJoin": "Quick Join",
+    "findingMatch": "Finding Match...",
+    "searchingOpponents": "Searching for opponents in the",
+    "range": "range",
+    "searchTime": "Search time",
+    "cancelSearch": "Cancel Search",
+    "tipHigherStake": "💡 Tip: Higher stake arenas typically have faster matching",
+    "insufficientGold": "Insufficient gold! You need at least",
+    "toEnterArena": "to enter this arena.",
+    "insufficientForAny": "Insufficient gold for any arena. Please earn more 🪙 first.",
+    "players": "players",
+    "classic": {
+      "welcome": "Welcome to the Arena",
+      "description": "Choose your battlefield tier and prove your skill."
+    },
+    "robochaos": {
+      "welcome": "Enter the Chaos!",
+      "description": "Survive the robotic madness! Chaos awaits."
+    }
+  },
   "leaderboard": {
-    "title": "Leaderboard",
+    "title": "Gold Leaderboard",
     "rank": "Rank",
     "player": "Player",
     "rating": "Rating",
     "games": "Games",
-    "winRate": "Win Rate"
+    "winRate": "Win Rate",
+    "topPlayers": "Top",
+    "playersLabel": "players",
+    "yourRank": "Your Rank:",
+    "topPercentile": "Top",
+    "noPlayers": "No players found",
+    "you": "YOU",
+    "loading": "Loading..."
   },
   "rewards": {
-    "title": "Rewards",
-    "description": "Earn rewards by playing and winning games",
+    "title": "Rewards Hub",
+    "description": "Claim your daily rewards and bonuses",
     "dailyBonus": "Daily Bonus",
     "achievements": "Achievements",
-    "totalEarned": "Total Earned"
+    "totalEarned": "Total Earned",
+    "dailyLogin": {
+      "title": "Daily Login Reward",
+      "available": "Available every 24 hours",
+      "claim": "Claim Your Reward",
+      "claiming": "Claiming...",
+      "nextReward": "Next reward in:",
+      "loadingTime": "Loading..."
+    },
+    "watchAd": {
+      "title": "Watch & Earn",
+      "description": "30 second video ad",
+      "locked": "Locked",
+      "comingSoon": "COMING SOON"
+    },
+    "achievementsCard": {
+      "title": "Achievements",
+      "description": "Complete challenges",
+      "locked": "Locked",
+      "comingSoon": "COMING SOON",
+      "challenges": {
+        "win10": "Win 10 games",
+        "play50": "Play 50 games",
+        "reach1500": "Reach 1500 rating"
+      }
+    },
+    "footer": "More exciting rewards coming soon!",
+    "success": {
+      "title": "Reward Claimed Successfully!",
+      "comeBack": "Come back tomorrow for more 🎁"
+    }
   },
   "about": {
     "title": "About Blind Blitz",
@@ -191,6 +297,69 @@
   },
   "faq": {
     "title": "Frequently Asked Questions"
+  },
+  "landing": {
+    "hero": {
+      "headline": "PLAY, RISK, WIN.",
+      "subheadline": "Repeat This",
+      "description": "Lightning-fast blind chess with real stakes",
+      "ctaPrimary": "Start Your Journey",
+      "ctaPrimaryLoggedIn": "Enter Battle Arena",
+      "ctaSecondary": "How to Play",
+      "liveLabel": "LIVE",
+      "playersLabel": "players",
+      "gamesLabel": "games",
+      "loginButton": "LOGIN",
+      "signupButton": "Sign Up",
+      "goldLabel": "🪙",
+      "trustRating": "4.9",
+      "trustReviews": "reviews on",
+      "trustPlatform": "ChessClub",
+      "quotes": {
+        "quote1": "Blind moves reveal true masters ✨",
+        "quote2": "Every gold spent sharpens your mind 🧠",
+        "quote3": "Risk everything, gain everything ⚡",
+        "quote4": "Chess without sight, victory with insight 👁️",
+        "quote5": "Fortune favors the strategic 🎯",
+        "quote6": "Master the unseen, dominate the seen 🔮",
+        "quote7": "In darkness, strategy illuminates 💡",
+        "quote8": "Bold moves, bold rewards 💎"
+      }
+    },
+    "modes": {
+      "sectionLabel": "Choose your battlefield",
+      "title": "Master Different",
+      "titleHighlight": "Game Modes",
+      "description": "Each mode tests different skills. Classical rewards strategic thinking, while RoboChaos demands rapid adaptation to unpredictable chaos.",
+      "tabClassical": "Classical Blind",
+      "tabRoboChaos": "RoboChaos",
+      "ctaButton": "Choose Your Mode",
+      "classical": {
+        "title": "Classical Blind Chess",
+        "description": "Pure strategic warfare. Both players commit 5 moves blindly, then the board reveals for standard chess combat. Rewards planning, prediction, and classical chess mastery.",
+        "feature1": "Strategic blind phase planning",
+        "feature2": "Standard chess after reveal",
+        "feature3": "Bonus gold for accurate predictions",
+        "entryFee": "Entry Fee",
+        "winReward": "Win Reward",
+        "playNow": "Play Classical Now",
+        "cardTitle": "Strategic Depth",
+        "cardDescription": "Classic chess mastery meets blind intuition"
+      },
+      "roboChaos": {
+        "title": "RoboChaos Mode",
+        "description": "Embrace the madness. Our AI makes chaotic opening moves for both sides, destroying traditional strategy. Adapt quickly or face defeat in this high-stakes chaos arena.",
+        "feature1": "AI-generated chaotic openings",
+        "feature2": "Rapid adaptation required",
+        "feature3": "Massive multiplier rewards",
+        "entryFee": "Entry Fee",
+        "winReward": "Win Reward",
+        "winRewardValue": "Up to 2000 🪙",
+        "playNow": "Play RoboChaos Now",
+        "cardTitle": "Controlled Chaos",
+        "cardDescription": "AI madness meets human adaptation"
+      }
+    }
   },
   "errors": {
     "networkError": "Network error. Please check your connection.",

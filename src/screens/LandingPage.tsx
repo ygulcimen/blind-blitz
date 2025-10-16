@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import HeroSection from './landingPage/HeroSection';
 import GameModes from './landingPage/GameModes';
 
 const LandingPage: React.FC = () => {
+  const { t } = useTranslation();
   const { loading } = useAuth();
 
   // Show loading while checking auth
@@ -14,7 +16,7 @@ const LandingPage: React.FC = () => {
           <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mb-4 mx-auto animate-pulse">
             <span className="text-black font-black text-2xl">BB</span>
           </div>
-          <div className="text-white text-xl font-bold">Loading...</div>
+          <div className="text-white text-xl font-bold">{t('common.loading')}</div>
         </div>
       </div>
     );

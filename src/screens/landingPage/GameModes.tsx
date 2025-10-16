@@ -1,8 +1,10 @@
 // src/components/landingPage/GameModes.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const GameModes: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedMode, setSelectedMode] = useState<'classical' | 'robochaos'>(
     'classical'
   );
@@ -86,20 +88,18 @@ const GameModes: React.FC = () => {
           <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
             <span className="text-gray-400 text-xs sm:text-sm">
-              Choose your battlefield
+              {t('landing.modes.sectionLabel')}
             </span>
           </div>
 
           <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-6 leading-tight">
-            Master Different
+            {t('landing.modes.title')}
             <br />
-            <span className="text-gray-400">Game Modes</span>
+            <span className="text-gray-400">{t('landing.modes.titleHighlight')}</span>
           </h2>
 
           <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-2xl mx-auto px-4">
-            Each mode tests different skills. Classical rewards strategic
-            thinking, while RoboChaos demands rapid adaptation to unpredictable
-            chaos.
+            {t('landing.modes.description')}
           </p>
         </div>
 
@@ -114,7 +114,7 @@ const GameModes: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Classical Blind
+              {t('landing.modes.tabClassical')}
             </button>
             <button
               onClick={() => setSelectedMode('robochaos')}
@@ -124,7 +124,7 @@ const GameModes: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              RoboChaos
+              {t('landing.modes.tabRoboChaos')}
             </button>
           </div>
         </div>
@@ -136,12 +136,10 @@ const GameModes: React.FC = () => {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
-                    Classical Blind Chess
+                    {t('landing.modes.classical.title')}
                   </h3>
                   <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-                    Pure strategic warfare. Both players commit 5 moves blindly,
-                    then the board reveals for standard chess combat. Rewards
-                    planning, prediction, and classical chess mastery.
+                    {t('landing.modes.classical.description')}
                   </p>
                 </div>
 
@@ -149,19 +147,19 @@ const GameModes: React.FC = () => {
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      Strategic blind phase planning
+                      {t('landing.modes.classical.feature1')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      Standard chess after reveal
+                      {t('landing.modes.classical.feature2')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      Bonus gold for accurate predictions
+                      {t('landing.modes.classical.feature3')}
                     </span>
                   </div>
                 </div>
@@ -169,11 +167,11 @@ const GameModes: React.FC = () => {
                 <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-gray-400 text-xs sm:text-sm">Entry Fee</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.classical.entryFee')}</div>
                       <div className="text-white text-sm sm:text-base font-semibold">100 🪙</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-400 text-xs sm:text-sm">Win Reward</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.classical.winReward')}</div>
                       <div className="text-green-400 text-sm sm:text-base font-semibold">
                         300 🪙
                       </div>
@@ -186,7 +184,7 @@ const GameModes: React.FC = () => {
                   onClick={() => handlePlayMode('classical')}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold py-2.5 sm:py-3 rounded-lg transition-colors"
                 >
-                  Play Classical Now
+                  {t('landing.modes.classical.playNow')}
                 </button>
               </div>
 
@@ -205,10 +203,10 @@ const GameModes: React.FC = () => {
                 </div>
                 <div className="text-center">
                   <div className="text-blue-400 text-sm sm:text-base font-semibold mb-1">
-                    Strategic Depth
+                    {t('landing.modes.classical.cardTitle')}
                   </div>
                   <div className="text-gray-400 text-xs sm:text-sm">
-                    Classic chess mastery meets blind intuition
+                    {t('landing.modes.classical.cardDescription')}
                   </div>
                 </div>
               </div>
@@ -220,12 +218,10 @@ const GameModes: React.FC = () => {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
-                    RoboChaos Mode
+                    {t('landing.modes.roboChaos.title')}
                   </h3>
                   <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-                    Embrace the madness. Our AI makes chaotic opening moves for
-                    both sides, destroying traditional strategy. Adapt quickly
-                    or face defeat in this high-stakes chaos arena.
+                    {t('landing.modes.roboChaos.description')}
                   </p>
                 </div>
 
@@ -233,19 +229,19 @@ const GameModes: React.FC = () => {
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      AI-generated chaotic openings
+                      {t('landing.modes.roboChaos.feature1')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      Rapid adaptation required
+                      {t('landing.modes.roboChaos.feature2')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-gray-300">
-                      Massive multiplier rewards
+                      {t('landing.modes.roboChaos.feature3')}
                     </span>
                   </div>
                 </div>
@@ -253,13 +249,13 @@ const GameModes: React.FC = () => {
                 <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-gray-400 text-xs sm:text-sm">Entry Fee</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.roboChaos.entryFee')}</div>
                       <div className="text-white text-sm sm:text-base font-semibold">200 🪙</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-400 text-xs sm:text-sm">Win Reward</div>
+                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.roboChaos.winReward')}</div>
                       <div className="text-yellow-400 text-sm sm:text-base font-semibold">
-                        Up to 2000 🪙
+                        {t('landing.modes.roboChaos.winRewardValue')}
                       </div>
                     </div>
                   </div>
@@ -270,7 +266,7 @@ const GameModes: React.FC = () => {
                   onClick={() => handlePlayMode('robochaos')}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-semibold py-2.5 sm:py-3 rounded-lg transition-colors"
                 >
-                  Play RoboChaos Now
+                  {t('landing.modes.roboChaos.playNow')}
                 </button>
               </div>
 
@@ -302,10 +298,10 @@ const GameModes: React.FC = () => {
                 </div>
                 <div className="text-center relative z-10">
                   <div className="text-purple-400 text-sm sm:text-base font-semibold mb-1">
-                    Controlled Chaos
+                    {t('landing.modes.roboChaos.cardTitle')}
                   </div>
                   <div className="text-gray-400 text-xs sm:text-sm">
-                    AI madness meets human adaptation
+                    {t('landing.modes.roboChaos.cardDescription')}
                   </div>
                 </div>
               </div>
@@ -319,7 +315,7 @@ const GameModes: React.FC = () => {
             onClick={handleChooseMode}
             className="bg-white text-black font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg hover:bg-gray-100 transition-colors hover:scale-105 transform transition-transform duration-200"
           >
-            Choose Your Mode
+            {t('landing.modes.ctaButton')}
           </button>
         </div>
       </div>

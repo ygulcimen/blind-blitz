@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -25,6 +26,7 @@ interface RecentGame {
 }
 
 const ProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
@@ -92,9 +94,11 @@ const ProfilePage: React.FC = () => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffHours < 1) return 'Just now';
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours < 1) return t('profile.recentGames.justNow');
+    if (diffHours === 1) return `${diffHours} ${t('profile.recentGames.hourAgo')}`;
+    if (diffHours < 24) return `${diffHours} ${t('profile.recentGames.hoursAgo')}`;
+    if (diffDays === 1) return `${diffDays} ${t('profile.recentGames.dayAgo')}`;
+    return `${diffDays} ${t('profile.recentGames.daysAgo')}`;
   };
 
   const getMemberSince = (timestamp: string) => {
@@ -107,7 +111,7 @@ const ProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-white">Loading profile...</div>
+        <div className="text-2xl text-white">{t('profile.loading')}</div>
       </div>
     );
   }
@@ -115,7 +119,7 @@ const ProfilePage: React.FC = () => {
   if (!stats) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-white">Profile not found</div>
+        <div className="text-2xl text-white">{t('profile.notFound')}</div>
       </div>
     );
   }
@@ -138,11 +142,11 @@ const ProfilePage: React.FC = () => {
           >
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-3 sm:mb-4">
               <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-                Player Profile
+                {t('profile.title')}
               </span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-400 px-4">
-              Your BlindChess journey and achievements
+              {t('profile.subtitle')}
             </p>
           </motion.div>
 
@@ -174,7 +178,7 @@ const ProfilePage: React.FC = () => {
 
                   {/* Rating Badge */}
                   <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
-                    <span className="text-xs sm:text-sm text-yellow-400 font-semibold">Rating</span>
+                    <span className="text-xs sm:text-sm text-yellow-400 font-semibold">{t('profile.stats.rating')}</span>
                     <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                       {stats.rating}
                     </span>
@@ -184,7 +188,7 @@ const ProfilePage: React.FC = () => {
                   <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-amber-600/20 to-yellow-600/20 border border-amber-500/30 rounded-lg sm:rounded-xl">
                     <span className="text-base sm:text-xl">💰</span>
                     <span className="text-amber-400 font-bold text-base sm:text-lg">{stats.gold_balance}</span>
-                    <span className="text-amber-400/70 text-xs sm:text-sm">Gold</span>
+                    <span className="text-amber-400/70 text-xs sm:text-sm">{t('profile.stats.gold')}</span>
                   </div>
                 </div>
 
@@ -193,21 +197,21 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
                     <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
                       <span className="text-base sm:text-xl">📅</span>
-                      Member since
+                      {t('profile.stats.memberSince')}
                     </span>
                     <span className="text-white text-xs sm:text-base font-semibold">{getMemberSince(stats.created_at)}</span>
                   </div>
                   <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
                     <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
                       <span className="text-base sm:text-xl">🎮</span>
-                      Games played
+                      {t('profile.stats.gamesPlayed')}
                     </span>
                     <span className="text-white text-xs sm:text-base font-semibold">{stats.games_played}</span>
                   </div>
                   <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl">
                     <span className="text-gray-400 text-xs sm:text-base flex items-center gap-1.5 sm:gap-2">
                       <span className="text-base sm:text-xl">🏆</span>
-                      Victories
+                      {t('profile.stats.victories')}
                     </span>
                     <span className="text-green-400 text-xs sm:text-base font-semibold">{stats.wins}</span>
                   </div>
@@ -221,7 +225,7 @@ const ProfilePage: React.FC = () => {
                              transition-all duration-300 transform hover:scale-105 active:scale-95
                              shadow-lg hover:shadow-purple-500/50 text-center text-base sm:text-lg"
                 >
-                  🚀 Play Now
+                  {t('profile.playNow')}
                 </Link>
               </div>
             </motion.div>
@@ -239,28 +243,28 @@ const ProfilePage: React.FC = () => {
                     <div className="text-2xl sm:text-3xl md:text-4xl font-black text-green-400 mb-1 sm:mb-2">
                       {stats.wins}
                     </div>
-                    <div className="text-green-300/80 text-xs sm:text-sm font-semibold">Games Won</div>
+                    <div className="text-green-300/80 text-xs sm:text-sm font-semibold">{t('profile.stats.gamesWon')}</div>
                   </div>
 
                   <div className="group bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-blue-500/50 transition-all duration-300 hover:scale-105">
                     <div className="text-2xl sm:text-3xl md:text-4xl font-black text-blue-400 mb-1 sm:mb-2">
                       {winRate}%
                     </div>
-                    <div className="text-blue-300/80 text-xs sm:text-sm font-semibold">Win Rate</div>
+                    <div className="text-blue-300/80 text-xs sm:text-sm font-semibold">{t('profile.stats.winRate')}</div>
                   </div>
 
                   <div className="group bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
                     <div className="text-2xl sm:text-3xl md:text-4xl font-black text-purple-400 mb-1 sm:mb-2">
                       {stats.losses}
                     </div>
-                    <div className="text-purple-300/80 text-xs sm:text-sm font-semibold">Defeats</div>
+                    <div className="text-purple-300/80 text-xs sm:text-sm font-semibold">{t('profile.stats.defeats')}</div>
                   </div>
 
                   <div className="group bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-6 text-center hover:border-yellow-500/50 transition-all duration-300 hover:scale-105">
                     <div className="text-2xl sm:text-3xl md:text-4xl font-black text-yellow-400 mb-1 sm:mb-2">
                       {stats.draws || 0}
                     </div>
-                    <div className="text-yellow-300/80 text-xs sm:text-sm font-semibold">Draws</div>
+                    <div className="text-yellow-300/80 text-xs sm:text-sm font-semibold">{t('profile.stats.draws')}</div>
                   </div>
                 </div>
               </motion.div>
@@ -274,7 +278,7 @@ const ProfilePage: React.FC = () => {
               >
                 <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
                   <span className="text-3xl">📜</span>
-                  Recent Games
+                  {t('profile.recentGames.title')}
                 </h3>
 
                 <div className="space-y-3">
@@ -297,12 +301,12 @@ const ProfilePage: React.FC = () => {
 
                         <div>
                           <div className="text-white font-bold text-lg">
-                            vs {game.opponent_username}
+                            {t('profile.recentGames.vs')} {game.opponent_username}
                           </div>
                           <div className="text-gray-400 text-sm flex items-center gap-2">
-                            <span>Rating: {game.opponent_rating}</span>
+                            <span>{t('profile.recentGames.ratingLabel')} {game.opponent_rating}</span>
                             <span>•</span>
-                            <span>{game.moves_count} moves</span>
+                            <span>{game.moves_count} {t('profile.recentGames.moves')}</span>
                           </div>
                         </div>
                       </div>
@@ -315,7 +319,7 @@ const ProfilePage: React.FC = () => {
                             ? 'text-red-400'
                             : 'text-gray-400'
                         }`}>
-                          {game.result === 'win' ? 'WIN' : game.result === 'loss' ? 'LOSS' : 'DRAW'}
+                          {game.result === 'win' ? t('profile.recentGames.win') : game.result === 'loss' ? t('profile.recentGames.loss') : t('profile.recentGames.draw')}
                         </div>
                         <div className="text-gray-500 text-sm">
                           {getTimeAgo(game.created_at)}
@@ -335,7 +339,7 @@ const ProfilePage: React.FC = () => {
               >
                 <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
                   <span className="text-3xl">🏆</span>
-                  Achievements
+                  {t('profile.achievements.title')}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -346,9 +350,9 @@ const ProfilePage: React.FC = () => {
                   >
                     <span className="text-4xl">🎯</span>
                     <div>
-                      <div className="text-yellow-400 font-black text-lg">First Blood</div>
+                      <div className="text-yellow-400 font-black text-lg">{t('profile.achievements.firstBlood.title')}</div>
                       <div className="text-yellow-300/70 text-sm">
-                        Win your first BlindChess game
+                        {t('profile.achievements.firstBlood.description')}
                       </div>
                     </div>
                   </motion.div>
@@ -360,10 +364,10 @@ const ProfilePage: React.FC = () => {
                     <span className="text-4xl">🕶️</span>
                     <div>
                       <div className="text-purple-400 font-black text-lg">
-                        Blind Master
+                        {t('profile.achievements.blindMaster.title')}
                       </div>
                       <div className="text-purple-300/70 text-sm">
-                        Win 25 games in blind phase
+                        {t('profile.achievements.blindMaster.description')}
                       </div>
                     </div>
                   </motion.div>
@@ -372,9 +376,9 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-gray-800/30 to-gray-700/20 border border-gray-600/30 rounded-2xl opacity-50">
                     <span className="text-4xl grayscale">👑</span>
                     <div>
-                      <div className="text-gray-400 font-black text-lg">Chess Royalty</div>
+                      <div className="text-gray-400 font-black text-lg">{t('profile.achievements.chessRoyalty.title')}</div>
                       <div className="text-gray-500 text-sm">
-                        Reach 2000+ rating
+                        {t('profile.achievements.chessRoyalty.description')}
                       </div>
                     </div>
                   </div>
@@ -383,10 +387,10 @@ const ProfilePage: React.FC = () => {
                     <span className="text-4xl grayscale">⚡</span>
                     <div>
                       <div className="text-gray-400 font-black text-lg">
-                        Lightning Fast
+                        {t('profile.achievements.lightningFast.title')}
                       </div>
                       <div className="text-gray-500 text-sm">
-                        Win 10 bullet games
+                        {t('profile.achievements.lightningFast.description')}
                       </div>
                     </div>
                   </div>

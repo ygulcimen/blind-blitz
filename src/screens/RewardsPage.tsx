@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dailyRewardService } from '../services/dailyRewardService';
 import { useAuth } from '../context/AuthContext';
 import { Gift, Clock, Play, Lock, CheckCircle, Sparkles, Trophy, Target, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const RewardsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claiming, setClaiming] = useState(false);
@@ -84,10 +86,10 @@ export const RewardsPage: React.FC = () => {
               </motion.div>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text">
-              Rewards Hub
+              {t('rewards.title')}
             </h1>
           </motion.div>
-          <p className="text-gray-400 text-sm sm:text-base md:text-lg px-4">Claim your daily rewards and bonuses</p>
+          <p className="text-gray-400 text-sm sm:text-base md:text-lg px-4">{t('rewards.description')}</p>
         </motion.div>
 
         {/* Main Rewards Grid - Mobile Responsive */}
@@ -122,10 +124,10 @@ export const RewardsPage: React.FC = () => {
                     <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </motion.div>
                   <div>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-0.5 sm:mb-1">Daily Login Reward</h3>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-0.5 sm:mb-1">{t('rewards.dailyLogin.title')}</h3>
                     <div className="flex items-center gap-1.5 sm:gap-2 text-gray-400 text-xs sm:text-sm">
                       <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span>Available every 24 hours</span>
+                      <span>{t('rewards.dailyLogin.available')}</span>
                     </div>
                   </div>
                 </div>
@@ -138,7 +140,7 @@ export const RewardsPage: React.FC = () => {
                     <span>🪙</span>
                     <span>100</span>
                   </div>
-                  <div className="text-purple-300 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">Daily Bonus</div>
+                  <div className="text-purple-300 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">{t('rewards.dailyBonus')}</div>
                 </motion.div>
               </div>
 
@@ -169,12 +171,12 @@ export const RewardsPage: React.FC = () => {
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                         />
-                        Claiming...
+                        {t('rewards.dailyLogin.claiming')}
                       </>
                     ) : (
                       <>
                         <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-                        Claim Your Reward
+                        {t('rewards.dailyLogin.claim')}
                       </>
                     )}
                   </span>
@@ -183,7 +185,7 @@ export const RewardsPage: React.FC = () => {
                 <div className="w-full bg-gray-800/50 border-2 border-gray-700 text-gray-300 font-semibold py-3 sm:py-4 rounded-lg sm:rounded-xl flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                   <span className="text-sm sm:text-base md:text-lg text-center">
-                    Next reward in: <span className="text-blue-400 font-bold">{getTimeRemaining() || 'Loading...'}</span>
+                    {t('rewards.dailyLogin.nextReward')} <span className="text-blue-400 font-bold">{getTimeRemaining() || t('rewards.dailyLogin.loadingTime')}</span>
                   </span>
                 </div>
               )}
@@ -199,7 +201,7 @@ export const RewardsPage: React.FC = () => {
           >
             <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
               <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
-                COMING SOON
+                {t('rewards.watchAd.comingSoon')}
               </span>
             </div>
 
@@ -208,8 +210,8 @@ export const RewardsPage: React.FC = () => {
                 <Play className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">Watch & Earn</h3>
-                <p className="text-gray-400 text-xs sm:text-sm">30 second video ad</p>
+                <h3 className="text-base sm:text-xl font-bold text-white">{t('rewards.watchAd.title')}</h3>
+                <p className="text-gray-400 text-xs sm:text-sm">{t('rewards.watchAd.description')}</p>
               </div>
             </div>
 
@@ -223,7 +225,7 @@ export const RewardsPage: React.FC = () => {
               className="w-full bg-gray-800/50 border border-gray-700 text-gray-500 font-semibold py-2 sm:py-3 rounded-lg sm:rounded-xl cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Locked
+              {t('rewards.watchAd.locked')}
             </button>
           </motion.div>
 
@@ -236,7 +238,7 @@ export const RewardsPage: React.FC = () => {
           >
             <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
               <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
-                COMING SOON
+                {t('rewards.achievementsCard.comingSoon')}
               </span>
             </div>
 
@@ -245,8 +247,8 @@ export const RewardsPage: React.FC = () => {
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
               </div>
               <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">Achievements</h3>
-                <p className="text-gray-400 text-xs sm:text-sm">Complete challenges</p>
+                <h3 className="text-base sm:text-xl font-bold text-white">{t('rewards.achievementsCard.title')}</h3>
+                <p className="text-gray-400 text-xs sm:text-sm">{t('rewards.achievementsCard.description')}</p>
               </div>
             </div>
 
@@ -254,7 +256,7 @@ export const RewardsPage: React.FC = () => {
               <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-800">
                 <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-400">
                   <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Win 10 games</span>
+                  <span>{t('rewards.achievementsCard.challenges.win10')}</span>
                 </div>
                 <div className="flex items-center gap-0.5 sm:gap-1 text-green-400 font-bold text-xs sm:text-base">
                   <span>🪙</span>
@@ -264,7 +266,7 @@ export const RewardsPage: React.FC = () => {
               <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-800">
                 <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-400">
                   <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Play 50 games</span>
+                  <span>{t('rewards.achievementsCard.challenges.play50')}</span>
                 </div>
                 <div className="flex items-center gap-0.5 sm:gap-1 text-green-400 font-bold text-xs sm:text-base">
                   <span>🪙</span>
@@ -274,7 +276,7 @@ export const RewardsPage: React.FC = () => {
               <div className="flex items-center justify-between py-1.5 sm:py-2">
                 <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-400">
                   <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Reach 1500 rating</span>
+                  <span>{t('rewards.achievementsCard.challenges.reach1500')}</span>
                 </div>
                 <div className="flex items-center gap-0.5 sm:gap-1 text-green-400 font-bold text-xs sm:text-base">
                   <span>🪙</span>
@@ -288,7 +290,7 @@ export const RewardsPage: React.FC = () => {
               className="w-full bg-gray-800/50 border border-gray-700 text-gray-500 font-semibold py-2 sm:py-3 rounded-lg sm:rounded-xl cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Locked
+              {t('rewards.achievementsCard.locked')}
             </button>
           </motion.div>
         </div>
@@ -302,7 +304,7 @@ export const RewardsPage: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-full px-6 py-3">
             <Sparkles className="w-4 h-4 text-purple-400" />
-            <span className="text-gray-400 text-sm">More exciting rewards coming soon!</span>
+            <span className="text-gray-400 text-sm">{t('rewards.footer')}</span>
           </div>
         </motion.div>
       </div>
@@ -377,7 +379,7 @@ export const RewardsPage: React.FC = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                Reward Claimed Successfully!
+                {t('rewards.success.title')}
               </motion.p>
 
               <motion.div
@@ -386,7 +388,7 @@ export const RewardsPage: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                Come back tomorrow for more 🎁
+                {t('rewards.success.comeBack')}
               </motion.div>
             </motion.div>
           </motion.div>

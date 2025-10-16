@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { matchmakingService } from '../../services/matchmakingService';
 import { Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
@@ -10,6 +11,7 @@ import { ModeToggle } from './components/ModeToggle';
 import { StakeCard } from './components/StakeCard';
 
 const LobbyPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { playerData, loading } = useCurrentUser();
 
@@ -80,7 +82,7 @@ const LobbyPage: React.FC = () => {
   const handleQuickMatch = async (minStake: number, maxStake: number) => {
     if (!playerData || playerData.gold_balance < minStake) {
       alert(
-        `Insufficient gold! You need at least ${minStake} 🪙 to enter this arena.`
+        `${t('lobby.insufficientGold')} ${minStake} 🪙 ${t('lobby.toEnterArena')}`
       );
       return;
     }
@@ -123,7 +125,7 @@ const LobbyPage: React.FC = () => {
       } else {
         console.error('❌ Matchmaking failed:', result.message);
         setSearchingStake(null);
-        alert(result.message || 'Failed to find match. Please try again.');
+        alert(result.message || t('common.error'));
       }
     } catch (error) {
       console.error('💥 Matchmaking error:', error);
@@ -133,9 +135,7 @@ const LobbyPage: React.FC = () => {
       setSearchTimer(null);
       setSearchingStake(null);
 
-      alert(
-        'Network error during matchmaking. Please check your connection and try again.'
-      );
+      alert(t('common.error'));
     }
   };
 
@@ -161,7 +161,7 @@ const LobbyPage: React.FC = () => {
     if (affordableOption) {
       handleQuickMatch(affordableOption.minStake, affordableOption.maxStake);
     } else {
-      alert('Insufficient gold for any arena. Please earn more 🪙 first.');
+      alert(t('lobby.insufficientForAny'));
     }
   };
 
@@ -172,9 +172,9 @@ const LobbyPage: React.FC = () => {
           <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
             <Swords className="w-6 h-6 text-white" />
           </div>
-          <div className="text-white text-xl font-bold">Loading Arena...</div>
+          <div className="text-white text-xl font-bold">{t('lobby.loadingArena')}</div>
           <div className="text-gray-400 text-sm mt-2">
-            Preparing your battlefield
+            {t('lobby.preparingBattlefield')}
           </div>
         </div>
       </div>
@@ -214,8 +214,8 @@ const LobbyPage: React.FC = () => {
               <Swords className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-bold text-lg sm:text-xl lg:text-2xl truncate">BlindBlitz Arena</h1>
-              <p className="text-gray-400 text-[10px] sm:text-xs hidden xs:block">Lightning-Fast Battles</p>
+              <h1 className="font-bold text-lg sm:text-xl lg:text-2xl truncate">{t('lobby.title')}</h1>
+              <p className="text-gray-400 text-[10px] sm:text-xs hidden xs:block">{t('lobby.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -373,8 +373,8 @@ const LobbyPage: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
                 {selectedMode === 'classic'
-                  ? 'Welcome to the Arena'
-                  : 'Enter the Chaos!'}
+                  ? t('lobby.classic.welcome')
+                  : t('lobby.robochaos.welcome')}
               </motion.div>
               <motion.p
                 className="text-[10px] sm:text-xs text-gray-300 leading-tight hidden sm:block"
@@ -383,8 +383,8 @@ const LobbyPage: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 {selectedMode === 'classic'
-                  ? 'Choose your battlefield tier and prove your skill.'
-                  : 'Survive the robotic madness! Chaos awaits.'}
+                  ? t('lobby.classic.description')
+                  : t('lobby.robochaos.description')}
               </motion.p>
             </div>
           </div>
@@ -432,7 +432,7 @@ const LobbyPage: React.FC = () => {
               }}
             />
             <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
-            <span className="relative z-10">Quick Join</span>
+            <span className="relative z-10">{t('lobby.quickJoin')}</span>
           </motion.button>
         </motion.div>
 
@@ -500,17 +500,17 @@ const LobbyPage: React.FC = () => {
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                Finding Match...
+                {t('lobby.findingMatch')}
               </h3>
               <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6">
-                Searching for opponents in the{' '}
+                {t('lobby.searchingOpponents')}{' '}
                 <span className="text-yellow-400 font-semibold">
                   {
                     stakeOptions.find((opt) => opt.minStake === searchingStake)
                       ?.displayRange
                   }
                 </span>{' '}
-                🪙 range
+                🪙 {t('lobby.range')}
               </p>
 
               {/* Timer */}
@@ -519,7 +519,7 @@ const LobbyPage: React.FC = () => {
                   {Math.floor(searchTime / 60)}:
                   {(searchTime % 60).toString().padStart(2, '0')}
                 </div>
-                <div className="text-xs sm:text-sm text-gray-500">Search time</div>
+                <div className="text-xs sm:text-sm text-gray-500">{t('lobby.searchTime')}</div>
               </div>
 
               {/* Game mode indicator */}
@@ -542,12 +542,12 @@ const LobbyPage: React.FC = () => {
                 onClick={cancelSearch}
                 className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm sm:text-base font-semibold transition-colors"
               >
-                Cancel Search
+                {t('lobby.cancelSearch')}
               </button>
 
               {/* Tips */}
               <div className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-500">
-                💡 Tip: Higher stake arenas typically have faster matching
+                {t('lobby.tipHigherStake')}
               </div>
             </motion.div>
           </motion.div>

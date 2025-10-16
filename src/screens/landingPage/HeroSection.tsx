@@ -1,6 +1,7 @@
 // src/components/landingPage/HeroSection.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 // Add this before your HeroSection component
@@ -40,6 +41,7 @@ const TypewriterText: React.FC<{
 };
 
 const HeroSection: React.FC = () => {
+  const { t } = useTranslation();
   const [robotMessage, setRobotMessage] = useState("I'll ruin your opening...");
   const [liveCount, setLiveCount] = useState(1247);
   const [currentQuote, setCurrentQuote] = useState(0);
@@ -61,14 +63,14 @@ const HeroSection: React.FC = () => {
 
   // Strategic quotes for rotating display
   const strategicQuotes = [
-    'Blind moves reveal true masters ✨',
-    'Every gold spent sharpens your mind 🧠',
-    'Risk everything, gain everything ⚡',
-    'Chess without sight, victory with insight 👁️',
-    'Fortune favors the strategic 🎯',
-    'Master the unseen, dominate the seen 🔮',
-    'In darkness, strategy illuminates 💡',
-    'Bold moves, bold rewards 💎',
+    t('landing.hero.quotes.quote1'),
+    t('landing.hero.quotes.quote2'),
+    t('landing.hero.quotes.quote3'),
+    t('landing.hero.quotes.quote4'),
+    t('landing.hero.quotes.quote5'),
+    t('landing.hero.quotes.quote6'),
+    t('landing.hero.quotes.quote7'),
+    t('landing.hero.quotes.quote8'),
   ];
 
   useEffect(() => {
@@ -131,13 +133,13 @@ const HeroSection: React.FC = () => {
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-green-400 font-bold text-xs sm:text-sm tracking-wide">
-                  LIVE
+                  {t('landing.hero.liveLabel')}
                 </span>
                 <span className="text-white font-bold text-sm sm:text-lg">
                   {liveCount.toLocaleString()}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm font-medium hidden xs:inline">
-                  players
+                  {t('landing.hero.playersLabel')}
                 </span>
               </div>
 
@@ -170,7 +172,7 @@ const HeroSection: React.FC = () => {
                   {Math.floor(liveCount * 0.12)}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm font-medium hidden lg:inline">
-                  games
+                  {t('landing.hero.gamesLabel')}
                 </span>
               </div>
             </div>
@@ -204,13 +206,13 @@ const HeroSection: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  <span className="hidden xs:inline">LOGIN</span>
+                  <span className="hidden xs:inline">{t('landing.hero.loginButton')}</span>
                 </button>
                 <button
                   onClick={() => navigate('/signup')}
                   className="bg-white text-black px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-black hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform tracking-wider uppercase"
                 >
-                  Sign Up
+                  {t('landing.hero.signupButton')}
                 </button>
               </div>
             )}
@@ -253,7 +255,7 @@ const HeroSection: React.FC = () => {
               }}
             >
               <TypewriterText
-                text="PLAY, RISK, WIN."
+                text={t('landing.hero.headline')}
                 speed={150}
                 className="text-white"
               />
@@ -261,7 +263,7 @@ const HeroSection: React.FC = () => {
             <br />
             <div className="text-gray-400 font-light tracking-wide mt-2 text-xl xs:text-2xl sm:text-3xl lg:text-4xl">
               <TypewriterText
-                text="Repeat This"
+                text={t('landing.hero.subheadline')}
                 speed={100}
                 delay={2000}
                 className="text-gray-400"
@@ -271,7 +273,7 @@ const HeroSection: React.FC = () => {
 
           {/* Short Stylish Subtitle - Responsive */}
           <p className="text-sm sm:text-base lg:text-lg text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-12 italic font-light leading-relaxed px-4">
-            Lightning-fast blind chess with real stakes
+            {t('landing.hero.description')}
           </p>
 
           {/* Dual CTA Buttons - Better mobile sizing */}
@@ -281,7 +283,7 @@ const HeroSection: React.FC = () => {
               className="group bg-white text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
             >
               <span className="relative z-10">
-                {isLoggedIn ? 'Enter Battle Arena' : 'Start Your Journey'}
+                {isLoggedIn ? t('landing.hero.ctaPrimaryLoggedIn') : t('landing.hero.ctaPrimary')}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
@@ -291,7 +293,7 @@ const HeroSection: React.FC = () => {
               className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
             >
               <span className="text-xl sm:text-2xl">📖</span>
-              <span>How to Play</span>
+              <span>{t('landing.hero.ctaSecondary')}</span>
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1"
                 fill="none"
@@ -321,12 +323,12 @@ const HeroSection: React.FC = () => {
               ))}
             </div>
             <span className="text-white font-black text-base sm:text-lg tracking-wide">
-              4.9
+              {t('landing.hero.trustRating')}
             </span>
             <span className="text-gray-400 hidden xs:inline">•</span>
-            <span className="text-gray-400 font-medium hidden sm:inline">438 reviews on</span>
+            <span className="text-gray-400 font-medium hidden sm:inline">438 {t('landing.hero.trustReviews')}</span>
             <span className="text-white font-bold tracking-wide">
-              ChessClub
+              {t('landing.hero.trustPlatform')}
             </span>
           </div>
         </div>

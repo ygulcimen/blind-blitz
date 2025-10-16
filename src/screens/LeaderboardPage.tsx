@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Trophy, Crown, Medal, TrendingUp } from 'lucide-react';
@@ -22,6 +23,7 @@ interface PlayerRank {
 }
 
 export const LeaderboardPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [playerRank, setPlayerRank] = useState<PlayerRank | null>(null);
@@ -87,7 +89,7 @@ export const LeaderboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white">{t('leaderboard.loading')}</div>
       </div>
     );
   }
@@ -99,10 +101,10 @@ export const LeaderboardPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">Gold Leaderboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">{t('leaderboard.title')}</h1>
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">
-            Top {leaderboard.length} players
+            {t('leaderboard.topPlayers')} {leaderboard.length} {t('leaderboard.playersLabel')}
           </div>
         </div>
 
@@ -114,10 +116,10 @@ export const LeaderboardPage: React.FC = () => {
                 <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
                 <div>
                   <div className="text-white text-xs sm:text-sm font-medium">
-                    Your Rank: #{playerRank.rank?.toLocaleString()}
+                    {t('leaderboard.yourRank')} #{playerRank.rank?.toLocaleString()}
                   </div>
                   <div className="text-gray-400 text-[10px] sm:text-xs">
-                    Top {playerRank.percentile}%
+                    {t('leaderboard.topPercentile')}{playerRank.percentile}%
                   </div>
                 </div>
               </div>
@@ -130,11 +132,11 @@ export const LeaderboardPage: React.FC = () => {
 
         {/* Compact Table Header - Mobile: Hide Games column */}
         <div className="grid grid-cols-12 gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-[10px] sm:text-xs text-gray-500 font-medium border-b border-gray-800">
-          <div className="col-span-1">Rank</div>
-          <div className="col-span-6 sm:col-span-5">Player</div>
-          <div className="col-span-2 text-right hidden sm:block">Rating</div>
-          <div className="col-span-2 text-right hidden md:block">Games</div>
-          <div className="col-span-3 sm:col-span-2 text-right">Gold</div>
+          <div className="col-span-1">{t('leaderboard.rank')}</div>
+          <div className="col-span-6 sm:col-span-5">{t('leaderboard.player')}</div>
+          <div className="col-span-2 text-right hidden sm:block">{t('leaderboard.rating')}</div>
+          <div className="col-span-2 text-right hidden md:block">{t('leaderboard.games')}</div>
+          <div className="col-span-3 sm:col-span-2 text-right">{t('profile.stats.gold')}</div>
         </div>
 
         {/* Compact Leaderboard Rows - Mobile Responsive */}
@@ -170,7 +172,7 @@ export const LeaderboardPage: React.FC = () => {
                   </span>
                   {isCurrentPlayer && (
                     <span className="text-[10px] sm:text-xs bg-blue-500 text-white px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">
-                      YOU
+                      {t('leaderboard.you')}
                     </span>
                   )}
                 </div>
@@ -196,7 +198,7 @@ export const LeaderboardPage: React.FC = () => {
 
         {leaderboard.length === 0 && (
           <div className="text-center text-gray-500 py-12">
-            No players found
+            {t('leaderboard.noPlayers')}
           </div>
         )}
       </div>

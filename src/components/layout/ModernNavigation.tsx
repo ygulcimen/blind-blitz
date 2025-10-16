@@ -1,7 +1,9 @@
 // src/components/layout/ModernNavigation.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { LanguageDropdown } from '../LanguageDropdown';
 
 interface NavItem {
   id: string;
@@ -17,6 +19,8 @@ const ModernNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth(); // ✅ Get auth functions
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
 
   // Check if we're in actual game mode (playing) or auth pages
   useEffect(() => {
@@ -45,7 +49,7 @@ const ModernNavigation: React.FC = () => {
       ? [
           {
             id: 'games',
-            label: 'Games',
+            label: t('navigation.play'),
             path: '/games',
             icon: (
               <svg
@@ -65,7 +69,7 @@ const ModernNavigation: React.FC = () => {
           },
           {
             id: 'rewards',
-            label: 'Rewards',
+            label: t('navigation.rewards'),
             path: '/rewards',
             icon: (
               <svg
@@ -85,7 +89,7 @@ const ModernNavigation: React.FC = () => {
           },
           {
             id: 'leaderboard',
-            label: 'Leaderboard',
+            label: t('navigation.leaderboard'),
             path: '/leaderboard',
             icon: (
               <svg
@@ -105,7 +109,7 @@ const ModernNavigation: React.FC = () => {
           },
           {
             id: 'profile',
-            label: 'Profile',
+            label: t('navigation.profile'),
             path: '/profile',
             icon: (
               <svg
@@ -125,7 +129,7 @@ const ModernNavigation: React.FC = () => {
           },
           {
             id: 'logout',
-            label: 'Logout',
+            label: t('navigation.logout'),
             path: '#',
             isAction: true,
             icon: (
@@ -149,7 +153,7 @@ const ModernNavigation: React.FC = () => {
           // Only show these to unauthenticated users
           {
             id: 'about',
-            label: 'About',
+            label: t('navigation.about'),
             path: '/about',
             icon: (
               <svg
@@ -169,7 +173,7 @@ const ModernNavigation: React.FC = () => {
           },
           {
             id: 'faq',
-            label: 'FAQ',
+            label: t('navigation.faq'),
             path: '/faq',
             icon: (
               <svg
@@ -270,9 +274,9 @@ const ModernNavigation: React.FC = () => {
                   }`}
                 >
                   <div className="text-white text-sm font-medium truncate">
-                    {user.user_metadata?.username || 'Player'}
+                    {user.user_metadata?.username || t('common.player')}
                   </div>
-                  <div className="text-green-400 text-xs">Online</div>
+                  <div className="text-green-400 text-xs">{t('common.online')}</div>
                 </div>
               </div>
             </div>
@@ -326,6 +330,11 @@ const ModernNavigation: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Language Selector at Bottom */}
+          <div className="px-3 pb-4 border-t border-white/10 pt-4">
+            <LanguageDropdown className="w-full" />
           </div>
 
           {/* Collapse Indicator */}

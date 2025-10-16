@@ -26,6 +26,21 @@ const Navigation: React.FC = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (languageMenuOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.language-dropdown')) {
+          setLanguageMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [languageMenuOpen]);
+
   const handleNavClick = (path: string) => {
     navigate(path);
     setMobileMenuOpen(false);
@@ -43,16 +58,31 @@ const Navigation: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <button
-            onClick={() => handleNavClick('/')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-sm">BB</span>
-            </div>
-            <span className="text-white font-bold text-lg">BLINDBLITZ</span>
-          </button>
+          {/* Logo & Language Selector */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => handleNavClick('/')}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <span className="text-black font-black text-sm">BB</span>
+              </div>
+              <span className="text-white font-bold text-lg">BLINDBLITZ</span>
+            </button>
+
+            {/* Language Toggle - SUPER VISIBLE */}
+            <button
+              onClick={() => {
+                const newLang = currentLanguage === 'en' ? 'tr' : 'en';
+                i18n.changeLanguage(newLang);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 border-2 border-yellow-300 transition-all shadow-lg"
+              title={currentLanguage === 'en' ? 'Switch to Turkish' : 'Switch to English'}
+            >
+              <span className="text-2xl">{currentLanguage === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
+              <span className="text-black text-sm font-bold">{currentLanguage === 'tr' ? 'TR' : 'EN'}</span>
+            </button>
+          </div>
 
           {/* Main Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -118,55 +148,8 @@ const Navigation: React.FC = () => {
             </button>
           </div>
 
-          {/* Language & Auth Buttons */}
+          {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Language Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors p-2 rounded-lg hover:bg-white/5"
-              >
-                <span className="text-lg">{currentLanguage === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
-                <svg
-                  className={`w-4 h-4 transition-transform ${languageMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {languageMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl z-50">
-                  <button
-                    onClick={() => {
-                      i18n.changeLanguage('en');
-                      setLanguageMenuOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-colors flex items-center gap-3 ${
-                      currentLanguage === 'en' ? 'text-white bg-white/10' : 'text-gray-400'
-                    }`}
-                  >
-                    <span className="text-lg">🇬🇧</span>
-                    <span>English</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      i18n.changeLanguage('tr');
-                      setLanguageMenuOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-colors flex items-center gap-3 rounded-b-lg ${
-                      currentLanguage === 'tr' ? 'text-white bg-white/10' : 'text-gray-400'
-                    }`}
-                  >
-                    <span className="text-lg">🇹🇷</span>
-                    <span>Türkçe</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
             {user ? (
               <button
                 onClick={() => handleNavClick('/profile')}
