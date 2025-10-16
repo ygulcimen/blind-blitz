@@ -1,14 +1,19 @@
 // src/components/layout/Navigation.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 const Navigation: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+
+  const currentLanguage = i18n.language;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -59,7 +64,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Games
+              {t('navigation.play')}
             </button>
             <button
               onClick={() => handleNavClick('/rewards')}
@@ -69,7 +74,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-yellow-400'
               }`}
             >
-              🎁 Rewards
+              🎁 {t('navigation.rewards')}
             </button>
             <button
               onClick={() => handleNavClick('/leaderboard')}
@@ -79,7 +84,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Leaderboard
+              {t('navigation.leaderboard')}
             </button>
             <button
               onClick={() => handleNavClick('/about')}
@@ -89,7 +94,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              About us
+              {t('navigation.about')}
             </button>
             <button
               onClick={() => handleNavClick('/faq')}
@@ -99,7 +104,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              FAQ
+              {t('navigation.faq')}
             </button>
             <button
               onClick={() => handleNavClick('/how-to-play')}
@@ -109,92 +114,79 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              How to Play
+              {t('navigation.howToPlay')}
             </button>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Language & Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <>
-                <button
-                  onClick={() => handleNavClick('/settings')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isActive('/settings')
-                      ? 'bg-white/10 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                  title="Settings"
+            {/* Language Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+                className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors p-2 rounded-lg hover:bg-white/5"
+              >
+                <span className="text-lg">{currentLanguage === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${languageMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {languageMenuOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl z-50">
+                  <button
+                    onClick={() => {
+                      i18n.changeLanguage('en');
+                      setLanguageMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-colors flex items-center gap-3 ${
+                      currentLanguage === 'en' ? 'text-white bg-white/10' : 'text-gray-400'
+                    }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleNavClick('/profile')}
-                  className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
-                >
-                  Profile
-                </button>
-              </>
+                    <span className="text-lg">🇬🇧</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      i18n.changeLanguage('tr');
+                      setLanguageMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-colors flex items-center gap-3 rounded-b-lg ${
+                      currentLanguage === 'tr' ? 'text-white bg-white/10' : 'text-gray-400'
+                    }`}
+                  >
+                    <span className="text-lg">🇹🇷</span>
+                    <span>Türkçe</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {user ? (
+              <button
+                onClick={() => handleNavClick('/profile')}
+                className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
+              >
+                {t('navigation.profile')}
+              </button>
             ) : (
               <>
-                <button
-                  onClick={() => handleNavClick('/settings')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isActive('/settings')
-                      ? 'bg-white/10 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                  title="Settings"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </button>
                 <button
                   onClick={() => handleNavClick('/login')}
                   className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
                 >
-                  Login
+                  {t('navigation.login')}
                 </button>
                 <button
                   onClick={() => handleNavClick('/signup')}
                   className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
                 >
-                  Sign Up
+                  {t('navigation.signup')}
                 </button>
               </>
             )}
@@ -252,7 +244,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              Games
+              {t('navigation.play')}
             </button>
             <button
               onClick={() => handleNavClick('/rewards')}
@@ -262,7 +254,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-yellow-400'
               }`}
             >
-              🎁 Rewards
+              🎁 {t('navigation.rewards')}
             </button>
             <button
               onClick={() => handleNavClick('/leaderboard')}
@@ -272,7 +264,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              Leaderboard
+              {t('navigation.leaderboard')}
             </button>
             <button
               onClick={() => handleNavClick('/about')}
@@ -282,7 +274,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              About
+              {t('navigation.about')}
             </button>
             <button
               onClick={() => handleNavClick('/faq')}
@@ -292,7 +284,7 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              FAQ
+              {t('navigation.faq')}
             </button>
             <button
               onClick={() => handleNavClick('/how-to-play')}
@@ -302,8 +294,38 @@ const Navigation: React.FC = () => {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              How to Play
+              {t('navigation.howToPlay')}
             </button>
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-4"></div>
+
+            {/* Language Selector */}
+            <div className="space-y-2">
+              <div className="text-gray-500 text-xs uppercase px-4 mb-2">Language</div>
+              <button
+                onClick={() => i18n.changeLanguage('en')}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-3 ${
+                  currentLanguage === 'en'
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span className="text-lg">🇬🇧</span>
+                <span>English</span>
+              </button>
+              <button
+                onClick={() => i18n.changeLanguage('tr')}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-3 ${
+                  currentLanguage === 'tr'
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span className="text-lg">🇹🇷</span>
+                <span>Türkçe</span>
+              </button>
+            </div>
 
             {/* Divider */}
             <div className="border-t border-white/10 my-4"></div>
@@ -315,42 +337,22 @@ const Navigation: React.FC = () => {
                   onClick={() => handleNavClick('/profile')}
                   className="w-full text-left px-4 py-3 rounded-lg text-white bg-white/5 hover:bg-white/10 transition-colors"
                 >
-                  Profile
-                </button>
-                <button
-                  onClick={() => handleNavClick('/settings')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    isActive('/settings')
-                      ? 'bg-white/10 text-white'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  ⚙️ Settings
+                  {t('navigation.profile')}
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
                 <button
-                  onClick={() => handleNavClick('/settings')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    isActive('/settings')
-                      ? 'bg-white/10 text-white'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  ⚙️ Settings
-                </button>
-                <button
                   onClick={() => handleNavClick('/login')}
                   className="w-full text-left px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
-                  Login
+                  {t('navigation.login')}
                 </button>
                 <button
                   onClick={() => handleNavClick('/signup')}
                   className="w-full bg-white text-black px-4 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-center"
                 >
-                  Sign Up
+                  {t('navigation.signup')}
                 </button>
               </div>
             )}

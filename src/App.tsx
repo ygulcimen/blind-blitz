@@ -33,7 +33,6 @@ import { AuthRedirect } from './screens/auth/AuthRedirect';
 
 // Non-critical screens - lazy load (saves ~300-400kb initial bundle)
 const ProfilePage = lazy(() => import('./screens/ProfilePage'));
-const SettingsPage = lazy(() => import('./screens/SettingsPage'));
 const LeaderboardPage = lazy(() => import('./screens/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
 const RewardsPage = lazy(() => import('./screens/RewardsPage').then(m => ({ default: m.RewardsPage })));
 const AboutPage = lazy(() => import('./screens/AboutPage'));
@@ -177,14 +176,6 @@ function App() {
                         <ProfilePage />
                       </AppLayout>
                     </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <AppLayout>
-                      <SettingsPage />
-                    </AppLayout>
                   }
                 />
               </SentryRoutes>
