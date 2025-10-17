@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { statsService } from '../../services/statsService';
 // Add this before your HeroSection component
 const TypewriterText: React.FC<{
   text: string;
@@ -43,7 +44,8 @@ const TypewriterText: React.FC<{
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const [robotMessage, setRobotMessage] = useState("I'll ruin your opening...");
-  const [liveCount, setLiveCount] = useState(1247);
+  const [liveCount, setLiveCount] = useState(0);
+  const [activeGamesCount, setActiveGamesCount] = useState(0);
   const [currentQuote, setCurrentQuote] = useState(0);
   const navigate = useNavigate();
 
@@ -100,11 +102,19 @@ const HeroSection: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Simulate live player count fluctuation
+  // Fetch real-time stats
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveCount((prev) => prev + Math.floor(Math.random() * 21) - 10); // ±10 variation
-    }, 8000);
+    const fetchStats = async () => {
+      const stats = await statsService.getGameStats();
+      setLiveCount(stats.playersOnline);
+      setActiveGamesCount(stats.activeGames);
+    };
+
+    // Fetch immediately
+    fetchStats();
+
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchStats, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -169,7 +179,7 @@ const HeroSection: React.FC = () => {
               <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <span className="text-blue-400 text-sm sm:text-base">🎮</span>
                 <span className="text-white font-bold text-xs sm:text-sm">
-                  {Math.floor(liveCount * 0.12)}
+                  {activeGamesCount}
                 </span>
                 <span className="text-gray-400 text-xs sm:text-sm font-medium hidden lg:inline">
                   {t('landing.hero.gamesLabel')}

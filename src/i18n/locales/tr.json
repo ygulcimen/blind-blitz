@@ -379,5 +379,39 @@
     "gameStarted": "Oyun başladı!",
     "gameEnded": "Oyun bitti",
     "yourTurn": "Sizin sıranız!"
+  },
+  "footer": {
+    "brand": {
+      "name": "BLINDBLITZ",
+      "tagline": "Yıldırım hızında kör satranç",
+      "description": "Her hamlenin altına mal olduğu devrim niteliğinde satranç platformu. Kör stratejiyi öğren, ekonomini yönet ve tahtaya hakim ol."
+    },
+    "game": {
+      "title": "Oyun",
+      "playClassical": "Klasik Oyna",
+      "playRoboChaos": "RoboChaos Oyna",
+      "leaderboard": "Lider Tablosu"
+    },
+    "learn": {
+      "title": "Öğren",
+      "howToPlay": "Nasıl Oynanır",
+      "about": "Hakkımızda",
+      "strategyGuide": "Strateji Rehberi",
+      "economyRules": "Ekonomi Kuralları",
+      "faq": "Sık Sorulan Sorular"
+    },
+    "support": {
+      "title": "Destek",
+      "contact": "Bize Ulaşın",
+      "bugReports": "Hata Raporları",
+      "privacy": "Gizlilik Politikası",
+      "terms": "Hizmet Şartları"
+    },
+    "bottom": {
+      "copyright": "© 2025 BlindBlitz. Tüm hakları saklıdır.",
+      "privacy": "Gizlilik",
+      "terms": "Şartlar",
+      "cookies": "Çerezler"
+    }
   }
 }

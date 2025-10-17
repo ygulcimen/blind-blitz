@@ -379,5 +379,39 @@
     "gameStarted": "Game started!",
     "gameEnded": "Game ended",
     "yourTurn": "Your turn!"
+  },
+  "footer": {
+    "brand": {
+      "name": "BLINDBLITZ",
+      "tagline": "Lightning-fast blind chess",
+      "description": "Revolutionary chess platform where every move costs gold. Master blind strategy, manage your economy, and dominate the board."
+    },
+    "game": {
+      "title": "Game",
+      "playClassical": "Play Classical",
+      "playRoboChaos": "Play RoboChaos",
+      "leaderboard": "Leaderboard"
+    },
+    "learn": {
+      "title": "Learn",
+      "howToPlay": "How to Play",
+      "about": "About Us",
+      "strategyGuide": "Strategy Guide",
+      "economyRules": "Economy Rules",
+      "faq": "FAQ"
+    },
+    "support": {
+      "title": "Support",
+      "contact": "Contact Us",
+      "bugReports": "Bug Reports",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "bottom": {
+      "copyright": "© 2025 BlindBlitz. All rights reserved.",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "cookies": "Cookies"
+    }
   }
 }

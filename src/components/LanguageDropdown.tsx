@@ -48,12 +48,12 @@ export const LanguageDropdown: React.FC<{ className?: string }> = ({ className =
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-300 group"
+        className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-300 group"
         aria-label="Select language"
       >
-        <span className="text-sm font-bold text-white">{currentLanguage.label}</span>
+        <span className="text-xs font-bold text-white">{currentLanguage.label}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

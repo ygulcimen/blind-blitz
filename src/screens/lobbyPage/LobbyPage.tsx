@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { matchmakingService } from '../../services/matchmakingService';
+import { statsService } from '../../services/statsService';
 import { Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,6 +25,9 @@ const LobbyPage: React.FC = () => {
 
   // Search timer ref
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Player counts per stake range
+  const [playerCounts, setPlayerCounts] = useState<Record<number, number>>({});
 
   const stakeOptions = [
     {
@@ -69,6 +73,29 @@ const LobbyPage: React.FC = () => {
       displayRange: '500+',
     },
   ];
+
+  // Fetch real-time player counts for each stake range
+  useEffect(() => {
+    const fetchPlayerCounts = async () => {
+      const counts: Record<number, number> = {};
+      for (const option of stakeOptions) {
+        const count = await statsService.getPlayerCountForStake(
+          option.minStake,
+          option.maxStake
+        );
+        counts[option.minStake] = count;
+      }
+      setPlayerCounts(counts);
+    };
+
+    // Fetch immediately
+    fetchPlayerCounts();
+
+    // Refresh every 15 seconds
+    const interval = setInterval(fetchPlayerCounts, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Cleanup search timer on unmount
   useEffect(() => {
@@ -455,7 +482,7 @@ const LobbyPage: React.FC = () => {
                 maxStake={option.maxStake}
                 displayRange={option.displayRange}
                 tier={option.tier}
-                playerCount={option.playerCount}
+                playerCount={playerCounts[option.minStake] ?? 0}
                 canAfford={playerData.gold_balance >= option.minStake}
                 isSearching={searchingStake === option.minStake}
                 onQuickMatch={() =>
