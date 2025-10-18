@@ -204,6 +204,7 @@
     "loadingArena": "Arena Yükleniyor...",
     "preparingBattlefield": "Savaş alanınız hazırlanıyor",
     "quickJoin": "Hızlı Katıl",
+    "playVsBot": "Bota Karşı Oyna",
     "findingMatch": "Eşleşme Bulunuyor...",
     "searchingOpponents": "Rakipler aranıyor",
     "range": "aralığında",
@@ -221,6 +222,14 @@
     "robochaos": {
       "welcome": "Kaosa Girin!",
       "description": "Robotik çılgınlıkta hayatta kalın! Kaos sizi bekliyor."
+    },
+    "bot": {
+      "selectDifficulty": "Bot Zorluk Seviyesi Seç",
+      "entryFee": "Giriş Ücreti",
+      "insufficientGold": "Yetersiz altın",
+      "botReady": "Bot oyun sistemi hazır!",
+      "noBotAvailable": "Bu zorluk seviyesi için bot bulunamadı. Lütfen tekrar deneyin.",
+      "failedToStart": "Bot oyunu başlatılamadı. Lütfen tekrar deneyin."
     }
   },
   "leaderboard": {

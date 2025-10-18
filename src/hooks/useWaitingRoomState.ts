@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { lobbyService } from '../services/lobbyService';
 import { matchmakingService } from '../services/matchmakingService';
+import { botInjectionService } from '../services/botInjectionService';
 import { useCurrentUser } from './useCurrentUser';
 
 export type GameMode = 'classic' | 'robot_chaos';
@@ -47,6 +48,7 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
   // Refs for cleanup
   const subscriptionRef = useRef<any>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const botInjectionCleanupRef = useRef<(() => void) | null>(null);
 
   // Load room data and players
   const loadRoomData = async () => {
@@ -246,6 +248,59 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
   useEffect(() => {
     loadRoomData();
   }, [gameId]);
+
+  // Bot injection timer - Start when room has 1 player waiting
+  useEffect(() => {
+    if (!gameId || !roomData || !playerData) return;
+
+    // Only start timer if:
+    // 1. Room is waiting
+    // 2. Room has exactly 1 player (us)
+    // 3. We haven't started injection already
+    const shouldStartBotTimer =
+      roomData.status === 'waiting' &&
+      roomData.current_players === 1 &&
+      players.length === 1 &&
+      !botInjectionCleanupRef.current;
+
+    if (shouldStartBotTimer) {
+      console.log('🤖 Starting bot injection timer (8 seconds)...');
+
+      // Start 8-second bot injection timer
+      const cleanup = botInjectionService.startBotInjectionTimer(
+        gameId,
+        playerData.rating || 1200,
+        async (result) => {
+          if (result.success) {
+            console.log(`✅ Bot injected: ${result.botUsername}`);
+            // Bot will auto-mark ready after 1 second
+            // Room will reload via realtime subscription
+          } else {
+            console.log(`⚠️ No bot available: ${result.reason}`);
+            // Player keeps waiting for humans
+          }
+        },
+        8 // 8 seconds delay
+      );
+
+      botInjectionCleanupRef.current = cleanup;
+    }
+
+    // Stop timer if second player joins (human or bot)
+    if (roomData.current_players === 2 && botInjectionCleanupRef.current) {
+      console.log('🛑 Second player joined, stopping bot injection timer');
+      botInjectionCleanupRef.current();
+      botInjectionCleanupRef.current = null;
+    }
+
+    // Cleanup on unmount or when room changes
+    return () => {
+      if (botInjectionCleanupRef.current) {
+        botInjectionCleanupRef.current();
+        botInjectionCleanupRef.current = null;
+      }
+    };
+  }, [gameId, roomData, players, playerData]);
 
   // Auto-process payments when ready
   const allPlayersReady = players.length === 2 && players.every((p) => p.ready);

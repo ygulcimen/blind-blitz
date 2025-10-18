@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { supabase } from '../lib/supabase';
 import { useCurrentUser } from './useCurrentUser';
+import { useCelestialBot } from './useCelestialBot';
+import { celestialBotAI } from '../services/celestialBotAI';
 import { useViolations } from '../components/shared/ViolationSystem';
 
 import {
@@ -26,9 +28,11 @@ export interface BlindPhasePlayer {
 export const useBlindPhaseState = (gameState: any, gameId?: string) => {
   const { playerData: currentUser } = useCurrentUser();
   const { showViolations, createViolation, clearViolations } = useViolations();
+  const { isBotGame, bot, botColor } = useCelestialBot(gameId);
 
   // Refs
   const submissionAttemptRef = useRef<number>(0);
+  const botSubmittedRef = useRef<boolean>(false);
 
   // Extract data from GameStateManager
   const myColor = gameState.gameState.blind.myColor;
@@ -380,6 +384,121 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
       window.location.href = '/games';
     }
   }, []);
+
+  // Bot auto-submission - When human submits, bot generates and submits moves
+  useEffect(() => {
+    const submitBotMoves = async () => {
+      // Only proceed if:
+      // 1. This is a bot game
+      // 2. Human has submitted their moves
+      // 3. Bot hasn't submitted yet
+      // 4. We have the bot config
+      if (!isBotGame || !mySubmitted || !bot || !botColor || botSubmittedRef.current || !gameId) {
+        return;
+      }
+
+      // Check if bot has already submitted (double-check from DB)
+      try {
+        const { data: botMoves, error } = await supabase
+          .from('game_blind_moves')
+          .select('is_submitted')
+          .eq('game_id', gameId)
+          .eq('player_color', botColor)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error checking bot submission status:', error);
+          return;
+        }
+
+        if (botMoves?.is_submitted) {
+          console.log('✅ Bot already submitted moves');
+          botSubmittedRef.current = true;
+          return;
+        }
+
+        console.log(`🤖 ${bot.config.name} generating blind phase moves...`);
+        botSubmittedRef.current = true; // Prevent double submission
+
+        // Generate bot's 5 blind moves
+        const botBlindMoves = await celestialBotAI.generateBlindPhaseMoves(
+          bot.config,
+          botColor
+        );
+
+        console.log(`✅ Bot generated moves: ${botBlindMoves.join(', ')}`);
+
+        // Submit bot moves to database
+        // NOTE: Moves are already in SAN format from the AI, so we need to parse them
+        const botGame = new Chess(INITIAL_FEN);
+
+        for (let i = 0; i < botBlindMoves.length; i++) {
+          // Set the correct turn before making the move
+          const currentFen = botGame.fen().split(' ');
+          currentFen[1] = botColor === 'white' ? 'w' : 'b';
+          botGame.load(currentFen.join(' '));
+
+          const moveResult = botGame.move(botBlindMoves[i]);
+          if (!moveResult) {
+            console.error(`❌ Bot move ${i + 1} is invalid: ${botBlindMoves[i]}`);
+            console.error(`Current FEN: ${botGame.fen()}`);
+            console.error(`Attempted move: ${botBlindMoves[i]}`);
+            continue;
+          }
+
+          // Save each bot move to database using RLS-bypassing function
+          const { data: insertResult, error: saveError } = await supabase.rpc(
+            'insert_bot_blind_move',
+            {
+              p_game_id: gameId,
+              p_player_color: botColor,
+              p_move_number: i + 1,
+              p_move_from: moveResult.from,
+              p_move_to: moveResult.to,
+              p_move_san: moveResult.san,
+              p_is_submitted: false,
+            }
+          );
+
+          if (saveError || !insertResult?.success) {
+            console.error(`❌ Error saving bot move ${i + 1}:`, {
+              error: saveError,
+              result: insertResult,
+              moveData: {
+                game_id: gameId,
+                color: botColor,
+                move_number: i + 1,
+                move: botBlindMoves[i],
+                from: moveResult.from,
+                to: moveResult.to,
+                san: moveResult.san
+              }
+            });
+          }
+        }
+
+        // Mark bot moves as submitted using RLS-bypassing function
+        const { data: submitResult, error: submitError } = await supabase.rpc(
+          'mark_bot_moves_submitted',
+          {
+            p_game_id: gameId,
+            p_player_color: botColor,
+          }
+        );
+
+        if (submitError || !submitResult?.success) {
+          console.error('Error marking bot moves as submitted:', submitError || submitResult);
+        } else {
+          console.log(`✅ ${bot.config.name} submitted all blind moves!`);
+        }
+      } catch (error) {
+        console.error('Error in bot auto-submission:', error);
+        botSubmittedRef.current = false; // Allow retry
+      }
+    };
+
+    submitBotMoves();
+  }, [isBotGame, mySubmitted, bot, botColor, gameId]);
 
   // Return state and actions
   return {

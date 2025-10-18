@@ -53,12 +53,19 @@ interface MultiplayerLivePhaseScreenProps {
   gameState: any;
   gameId?: string;
   gameMode?: 'classic' | 'robot_chaos';
+  botGame?: {
+    isBotGame: boolean;
+    bot: any | null;
+    playerColor: 'white' | 'black' | null;
+    loading: boolean;
+  };
 }
 
 const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   gameState,
   gameId,
   gameMode = 'classic',
+  botGame,
 }) => {
   const navigate = useNavigate();
   const { clearViolations } = useViolations();
@@ -190,6 +197,102 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   );
 
   const { handleDrop } = useMoveHandler(moveHandlerProps);
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🤖 BOT MOVE HANDLING
+  // ═══════════════════════════════════════════════════════════════
+
+  useEffect(() => {
+    // Check if opponent is a bot using the opponentData that GameInitializer already loaded
+    const isBotOpponent = opponentData?.isBot === true;
+    const botId = opponentData?.botId;
+
+    if (!isBotOpponent || !botId || !chessGame || !liveGameState || !myColor) {
+      return;
+    }
+
+    // Check if it's bot's turn (opposite of player's color)
+    const isBotsTurn = liveGameState.current_turn !== myColor;
+
+    if (!isBotsTurn || liveGameState.game_ended || isProcessingMove) {
+      return;
+    }
+
+    console.log('🤖 Bot turn detected, calculating move...');
+
+    // Small delay for UX
+    const botMoveTimeout = setTimeout(async () => {
+      try {
+        setIsProcessingMove(true);
+
+        // Fetch bot config
+        const { celestialBotMatchmaking } = await import('../../services/celestialBotMatchmaking');
+        const bot = await celestialBotMatchmaking.getBotPlayerDetails(botId);
+
+        if (!bot) {
+          console.error('❌ Bot config not found');
+          setIsProcessingMove(false);
+          return;
+        }
+
+        // Import celestial bot AI
+        const { celestialBotAI } = await import('../../services/celestialBotAI');
+
+        // Calculate bot move
+        const botMoveSAN = await celestialBotAI.calculateLivePhaseMove(
+          liveGameState.current_fen,
+          bot.config
+        );
+
+        if (!botMoveSAN) {
+          console.error('❌ Bot failed to calculate a move');
+          setIsProcessingMove(false);
+          return;
+        }
+
+        console.log('🤖 Bot calculated move:', botMoveSAN);
+
+        // Parse the move to get from/to squares
+        const testChess = new Chess(liveGameState.current_fen);
+        const move = testChess.move(botMoveSAN);
+
+        if (!move) {
+          console.error('❌ Invalid bot move:', botMoveSAN);
+          setIsProcessingMove(false);
+          return;
+        }
+
+        // Submit the bot move to the server using makeMove
+        const result = await liveMovesService.makeMove(
+          gameId!,
+          move.from,
+          move.to,
+          move.promotion
+        );
+
+        if (!result.success) {
+          console.error('❌ Failed to submit bot move:', result.error);
+          setIsProcessingMove(false);
+          return;
+        }
+
+        console.log('✅ Bot move submitted successfully');
+        setIsProcessingMove(false);
+      } catch (error) {
+        console.error('❌ Error making bot move:', error);
+        setIsProcessingMove(false);
+      }
+    }, 800); // 0.8 second delay
+
+    return () => clearTimeout(botMoveTimeout);
+  }, [
+    opponentData,
+    chessGame,
+    liveGameState,
+    myColor,
+    isProcessingMove,
+    gameId,
+  ]);
 
   // ═══════════════════════════════════════════════════════════════
   // 🎮 GAME END HANDLING
@@ -375,13 +478,30 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
   }, [currentUser, myColor, defaultPlayerData]);
 
   const players = useMemo(
-    () => ({
-      white:
-        myColor === 'white' ? myPlayerData : opponentData || defaultPlayerData,
-      black:
-        myColor === 'black' ? myPlayerData : opponentData || defaultPlayerData,
-    }),
-    [myColor, myPlayerData, opponentData, defaultPlayerData]
+    () => {
+      // If bot game, use bot data for opponent
+      if (botGame?.isBotGame && botGame?.bot) {
+        const botPlayerData = {
+          name: `${botGame.bot.avatar_emoji} ${botGame.bot.name}`,
+          rating: botGame.bot.rating,
+          isHost: false,
+        };
+
+        return {
+          white: myColor === 'white' ? myPlayerData : botPlayerData,
+          black: myColor === 'black' ? myPlayerData : botPlayerData,
+        };
+      }
+
+      // Regular multiplayer game
+      return {
+        white:
+          myColor === 'white' ? myPlayerData : opponentData || defaultPlayerData,
+        black:
+          myColor === 'black' ? myPlayerData : opponentData || defaultPlayerData,
+      };
+    },
+    [myColor, myPlayerData, opponentData, defaultPlayerData, botGame]
   );
 
   // Calculate captured pieces from current FEN

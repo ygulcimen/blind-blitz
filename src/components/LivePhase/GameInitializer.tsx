@@ -85,8 +85,9 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
         const playerColor =
           gameStateData.white_player_id === currentUser.id ? 'white' : 'black';
 
-        // 4. Load opponent data
+        // 4. Load opponent data and check if opponent is a bot
         let opponentData = null;
+        let isBotOpponent = false;
         try {
           const { data: roomPlayers } = await supabase
             .from('game_room_players')
@@ -98,6 +99,15 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
               (p) => p.player_id !== currentUser.id
             );
             if (opponent) {
+              // Check if opponent is a bot
+              const { data: playerData } = await supabase
+                .from('players')
+                .select('is_bot')
+                .eq('id', opponent.player_id)
+                .single();
+
+              isBotOpponent = playerData?.is_bot === true;
+
               const opponentColor = playerColor === 'white' ? 'black' : 'white';
               opponentData = {
                 name: `${opponent.player_username} (${
@@ -105,6 +115,8 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
                 })`,
                 rating: opponent.player_rating || 1500,
                 isHost: false,
+                isBot: isBotOpponent,
+                botId: isBotOpponent ? opponent.player_id : null,
               };
             }
           }

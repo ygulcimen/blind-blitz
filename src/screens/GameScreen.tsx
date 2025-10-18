@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useGameStateManager } from '../state/GameStateManager';
+import { useCelestialBot } from '../hooks/useCelestialBot';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   ViolationToast,
@@ -22,6 +23,7 @@ const GameScreen: React.FC = () => {
   const { gameId } = useParams();
   const location = useLocation();
   const gameState = useGameStateManager(gameId);
+  const botGame = useCelestialBot(gameId);
   const { violations, showViolation } = useViolations();
 
   // Track if game has actually started
@@ -101,7 +103,12 @@ const GameScreen: React.FC = () => {
 
       case 'LIVE':
         return (
-          <MultiplayerLivePhaseScreen gameState={gameState} gameId={gameId} gameMode={gameMode} />
+          <MultiplayerLivePhaseScreen
+            gameState={gameState}
+            gameId={gameId}
+            gameMode={gameMode}
+            botGame={botGame}
+          />
         );
 
       default:

@@ -416,51 +416,53 @@ const LobbyPage: React.FC = () => {
             </div>
           </div>
 
-          <motion.button
-            onClick={handleQuickJoin}
-            disabled={searchingStake !== null}
-            className={`relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-[length:200%_100%] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 z-10 overflow-hidden ${
-              selectedMode === 'classic'
-                ? 'bg-gradient-to-r from-blue-500 via-cyan-600 to-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
-                : 'bg-gradient-to-r from-purple-500 via-pink-600 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.6)]'
-            }`}
-            whileHover={{
-              scale: 1.05,
-              boxShadow:
+          <div className="flex items-center gap-2 flex-shrink-0 z-10">
+            <motion.button
+              onClick={handleQuickJoin}
+              disabled={searchingStake !== null}
+              className={`relative flex items-center gap-1.5 sm:gap-2 rounded-lg bg-[length:200%_100%] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap overflow-hidden ${
                 selectedMode === 'classic'
-                  ? '0 0 30px rgba(6,182,212,0.7)'
-                  : '0 0 35px rgba(236,72,153,0.9)',
-            }}
-            whileTap={{ scale: 0.95 }}
-            animate={{
-              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-            }}
-            transition={{
-              backgroundPosition: {
-                duration: selectedMode === 'classic' ? 3 : 2,
-                repeat: Infinity,
-                ease: 'linear',
-              },
-            }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-          >
-            {/* Button glow effect */}
-            <motion.div
-              className="absolute inset-0 bg-white/20 rounded-lg"
+                  ? 'bg-gradient-to-r from-blue-500 via-cyan-600 to-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                  : 'bg-gradient-to-r from-purple-500 via-pink-600 to-purple-500 shadow-[0_0_20px_rgba(236,72,153,0.6)]'
+              }`}
+              whileHover={{
+                scale: 1.05,
+                boxShadow:
+                  selectedMode === 'classic'
+                    ? '0 0 30px rgba(6,182,212,0.7)'
+                    : '0 0 35px rgba(236,72,153,0.9)',
+              }}
+              whileTap={{ scale: 0.95 }}
               animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0, 0.3],
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
               }}
               transition={{
-                duration: selectedMode === 'classic' ? 2 : 1,
-                repeat: Infinity,
-                ease: 'easeInOut',
+                backgroundPosition: {
+                  duration: selectedMode === 'classic' ? 3 : 2,
+                  repeat: Infinity,
+                  ease: 'linear',
+                },
               }}
-            />
-            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
-            <span className="relative z-10">{t('lobby.quickJoin')}</span>
-          </motion.button>
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+            >
+              {/* Button glow effect */}
+              <motion.div
+                className="absolute inset-0 bg-white/20 rounded-lg"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0, 0.3],
+                }}
+                transition={{
+                  duration: selectedMode === 'classic' ? 2 : 1,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
+              <span className="relative z-10">{t('lobby.quickJoin')}</span>
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Stake Cards - Optimized spacing for Chrome */}

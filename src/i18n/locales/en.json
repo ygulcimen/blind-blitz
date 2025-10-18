@@ -204,6 +204,7 @@
     "loadingArena": "Loading Arena...",
     "preparingBattlefield": "Preparing your battlefield",
     "quickJoin": "Quick Join",
+    "playVsBot": "Play vs Bot",
     "findingMatch": "Finding Match...",
     "searchingOpponents": "Searching for opponents in the",
     "range": "range",
@@ -221,6 +222,14 @@
     "robochaos": {
       "welcome": "Enter the Chaos!",
       "description": "Survive the robotic madness! Chaos awaits."
+    },
+    "bot": {
+      "selectDifficulty": "Choose Bot Difficulty",
+      "entryFee": "Entry Fee",
+      "insufficientGold": "Insufficient gold",
+      "botReady": "Bot game system is ready!",
+      "noBotAvailable": "No bot available for this difficulty. Please try again.",
+      "failedToStart": "Failed to start bot game. Please try again."
     }
   },
   "leaderboard": {
