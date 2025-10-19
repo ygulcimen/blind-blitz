@@ -2,7 +2,7 @@
 // Service to fetch and manage Celestial bot players
 
 import { supabase } from '../lib/supabase';
-import { BotConfig } from './celestialBotAI';
+import type { BotConfig } from './celestialBotAI';
 
 export interface CelestialBot {
   id: string;

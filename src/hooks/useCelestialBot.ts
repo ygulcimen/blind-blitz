@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { celestialBotMatchmaking, CelestialBot } from '../services/celestialBotMatchmaking';
+import { celestialBotMatchmaking } from '../services/celestialBotMatchmaking';
+import type { CelestialBot } from '../services/celestialBotMatchmaking';
 
 export interface BotGameInfo {
   isBotGame: boolean;
