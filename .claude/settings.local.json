@@ -17,7 +17,14 @@
       "Bash(git push:*)",
       "Bash(git revert:*)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm uninstall stockfish.js)",
+      "Bash(npm uninstall stockfish)",
+      "Bash(git checkout src/services/celestialBotAI.ts)",
+      "Bash(curl -L -o stockfish.js \"https://raw.githubusercontent.com/niklasf/stockfish.wasm/master/stockfish.js\")",
+      "Bash(curl -L -o stockfish.wasm \"https://raw.githubusercontent.com/niklasf/stockfish.wasm/master/stockfish.wasm\")",
+      "Bash(curl -L -o stockfish-16.1.zip \"https://github.com/niklasf/stockfish.wasm/releases/download/sf_16.1/stockfish-16.1.zip\")",
+      "Bash(npm uninstall stockfish.wasm)"
     ],
     "deny": [],
     "ask": []

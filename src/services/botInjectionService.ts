@@ -2,7 +2,7 @@
 // Service to inject Celestial bots into waiting matchmaking rooms
 
 import { supabase } from '../lib/supabase';
-import { BotConfig } from './celestialBotAI';
+import type { BotConfig } from './celestialBotAI';
 
 export interface BotInjectionResult {
   success: boolean;
@@ -51,11 +51,19 @@ export async function getAvailableCelestialBot(
 
     if (error) {
       console.error('Error getting available bot:', error);
-      return { success: false, reason: 'database_error', message: error.message };
+      return {
+        success: false,
+        reason: 'database_error',
+        message: error.message,
+      };
     }
 
     if (!data || data.length === 0) {
-      return { success: false, reason: 'no_bot_available', message: 'All bots are currently in games' };
+      return {
+        success: false,
+        reason: 'no_bot_available',
+        message: 'All bots are currently in games',
+      };
     }
 
     const bot = data[0];
@@ -81,7 +89,9 @@ export async function injectBotIntoRoom(
   playerRating: number
 ): Promise<BotInjectionResult> {
   try {
-    console.log(`🤖 Attempting to inject bot into room ${roomId} (player rating: ${playerRating})`);
+    console.log(
+      `🤖 Attempting to inject bot into room ${roomId} (player rating: ${playerRating})`
+    );
 
     // Calculate rating range (±300 from player rating)
     const minRating = Math.max(800, playerRating - 300);
@@ -98,16 +108,20 @@ export async function injectBotIntoRoom(
         message: error.message,
         details: error.details,
         hint: error.hint,
-        code: error.code
+        code: error.code,
       });
-      return { success: false, reason: 'database_error', message: error.message || 'Database error' };
+      return {
+        success: false,
+        reason: 'database_error',
+        message: error.message || 'Database error',
+      };
     }
 
     if (!data || !data.success) {
       console.log('⚠️ Bot injection failed:', {
         reason: data?.reason,
         message: data?.message,
-        fullData: data
+        fullData: data,
       });
       return {
         success: false,
@@ -116,7 +130,9 @@ export async function injectBotIntoRoom(
       };
     }
 
-    console.log(`✅ Bot injected successfully: ${data.bot_username} (${data.bot_color})`);
+    console.log(
+      `✅ Bot injected successfully: ${data.bot_username} (${data.bot_color})`
+    );
 
     return {
       success: true,
@@ -157,7 +173,10 @@ export async function getRoomWaitTime(roomId: string): Promise<number> {
  * Auto-mark bot as ready after 1 second delay
  * Called after bot is injected into room
  */
-export async function markBotReady(roomId: string, botId: string): Promise<boolean> {
+export async function markBotReady(
+  roomId: string,
+  botId: string
+): Promise<boolean> {
   try {
     console.log(`🤖 Marking bot ready in room ${roomId}...`);
 
@@ -193,10 +212,14 @@ export function startBotInjectionTimer(
   onBotInjected: (result: BotInjectionResult) => void,
   delaySeconds: number = 8
 ): () => void {
-  console.log(`⏱️ Starting bot injection timer for room ${roomId} (${delaySeconds}s delay)`);
+  console.log(
+    `⏱️ Starting bot injection timer for room ${roomId} (${delaySeconds}s delay)`
+  );
 
   const timer = setTimeout(async () => {
-    console.log(`⏰ Timer expired! Attempting bot injection for room ${roomId}`);
+    console.log(
+      `⏰ Timer expired! Attempting bot injection for room ${roomId}`
+    );
 
     const result = await injectBotIntoRoom(roomId, playerRating);
 

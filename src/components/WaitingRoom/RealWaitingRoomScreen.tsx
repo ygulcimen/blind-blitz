@@ -45,14 +45,17 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     navigate('/games');
   };
 
-  // Set up real-time subscription to monitor game start
+  // Set up real-time subscription to monitor game start - OPTIMIZED
   useEffect(() => {
     if (!gameId || !roomData) return;
 
-    console.log('Setting up game start monitoring for room:', gameId);
+    console.log('⚡ Setting up game start monitoring for room:', gameId);
+
+    // Use a ref to prevent duplicate transitions
+    let hasTransitioned = false;
 
     const subscription = supabase
-      .channel(`game-start-${gameId}`)
+      .channel(`game-start-${gameId}-${Date.now()}`) // Unique channel per mount
       .on(
         'postgres_changes',
         {
@@ -62,24 +65,24 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
-          console.log('Room update detected:', payload);
-
           // Check if game started (blind phase)
-          if ((payload.new as any)?.status === 'blind') {
-            console.log('Game started! Transitioning to blind phase...');
+          if ((payload.new as any)?.status === 'blind' && !hasTransitioned) {
+            hasTransitioned = true;
+            console.log('🎮 Game started! Transitioning to blind phase (optimized)');
             const gameScreenMode: GameMode =
               roomData?.mode === 'robochaos' ? 'robot_chaos' : 'classic';
 
-            // Immediately transition to prevent payment screen flash
-            onGameStart(gameScreenMode);
-            return;
+            // Immediate transition with minimal delay for smooth UX
+            requestAnimationFrame(() => {
+              onGameStart(gameScreenMode);
+            });
           }
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up game start subscription');
+      console.log('🧹 Cleaning up game start subscription');
       supabase.removeChannel(subscription);
     };
   }, [gameId, roomData?.mode, onGameStart]);

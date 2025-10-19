@@ -1,5 +1,5 @@
-// components/AnimatedReveal/AnimatedRevealScreen.tsx - Using Proven Layout
-import React from 'react';
+// components/AnimatedReveal/AnimatedRevealScreen.tsx - OPTIMIZED
+import React, { memo } from 'react';
 import { useAnimatedReveal } from '../../hooks/useAnimatedReveal';
 
 // Component imports
@@ -28,7 +28,8 @@ interface AnimatedRevealScreenProps {
   gameId?: string;
 }
 
-const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
+// Memoized to prevent unnecessary re-renders during animation
+const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = memo(({
   initialFen,
   moveLog,
   finalFen,
@@ -175,6 +176,8 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = ({
       </div>
     </div>
   );
-};
+});
+
+AnimatedRevealScreen.displayName = 'AnimatedRevealScreen';
 
 export default AnimatedRevealScreen;

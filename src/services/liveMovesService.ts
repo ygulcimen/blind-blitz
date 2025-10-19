@@ -179,14 +179,33 @@ class LiveMovesService {
   ): Promise<LiveGameState | null> {
     try {
       console.log('⏰ Initializing live game with 5 minute time control');
+      console.log('🔍 Starting FEN received:', startingFen);
+
+      // Validate FEN before proceeding
+      if (!startingFen || typeof startingFen !== 'string') {
+        console.error('❌ Invalid FEN: not a string', startingFen);
+        throw new Error('Invalid FEN: must be a string');
+      }
+
+      // Check FEN has 6 space-delimited fields
+      const fenParts = startingFen.trim().split(/\s+/);
+      if (fenParts.length !== 6) {
+        console.error('❌ Invalid FEN: must have 6 fields', {
+          fen: startingFen,
+          parts: fenParts.length,
+        });
+        throw new Error(`Invalid FEN: must contain six space-delimited fields (has ${fenParts.length})`);
+      }
 
       // Fixed time control: 5 minutes, no increment
       const minutes = 5;
       const increment = 0;
       const timeMs = minutes * 60 * 1000; // 5 minutes = 300,000ms
 
+      console.log('✅ FEN validation passed, creating Chess instance');
       const chess = new Chess(startingFen);
       const actualTurn = chess.turn() === 'w' ? 'white' : 'black';
+      console.log('✅ Chess instance created, turn:', actualTurn);
 
       // Use UPSERT with ignoreDuplicates to handle concurrent initialization
       // This is atomic and prevents race conditions
@@ -239,6 +258,67 @@ class LiveMovesService {
     } catch (error) {
       console.error('❌ Failed to initialize live game:', error);
       return null;
+    }
+  }
+
+  /**
+   * Make a bot move (bypasses authentication)
+   */
+  async makeBotMove(
+    gameId: string,
+    botPlayerId: string,
+    from: string,
+    to: string,
+    san: string,
+    newFen: string,
+    isCheck: boolean,
+    isCheckmate: boolean,
+    isDraw: boolean,
+    promotion?: string
+  ): Promise<{ success: boolean; error?: string; move?: LiveMove }> {
+    try {
+      console.log('🤖 Making bot move:', {
+        gameId,
+        botPlayerId,
+        from,
+        to,
+        san,
+        newFen,
+        isCheck,
+        isCheckmate,
+        isDraw,
+      });
+
+      // Use RPC to make bot move server-side
+      const { data, error } = await supabase.rpc('make_bot_live_move', {
+        p_game_id: gameId,
+        p_bot_player_id: botPlayerId,
+        p_from_square: from,
+        p_to_square: to,
+        p_move_san: san,
+        p_new_fen: newFen,
+        p_is_check: isCheck,
+        p_is_checkmate: isCheckmate,
+        p_is_draw: isDraw,
+        p_promotion: promotion || null,
+      });
+
+      if (error) {
+        console.error('❌ Bot move RPC error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Check if the RPC returned a success response
+      if (data && data.success === false) {
+        console.error('❌ Bot move failed:', data.error);
+        return { success: false, error: data.error };
+      }
+
+      console.log('✅ Bot move successful:', data);
+      return { success: true, move: data?.move };
+    } catch (error: any) {
+      console.error('❌ Bot move failed:', error);
+      return { success: false, error: error.message };
     }
   }
 

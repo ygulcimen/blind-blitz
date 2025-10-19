@@ -28,12 +28,12 @@ export const BlindActionButtons: React.FC<BlindActionButtonsProps> = ({
   return (
     <div className="space-y-2 sm:space-y-4">
       {/* Control Buttons Row */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <button
           onClick={onUndo}
           disabled={myMoves.length === 0 || mySubmitted}
           title="Undo Last Strike"
-          className={`relative overflow-hidden p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 ${
+          className={`relative overflow-hidden p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 ${
             myMoves.length > 0 && !mySubmitted
               ? 'bg-gradient-to-br from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:scale-105'
               : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/50'
@@ -46,7 +46,7 @@ export const BlindActionButtons: React.FC<BlindActionButtonsProps> = ({
           onClick={onReset}
           disabled={mySubmitted}
           title="Reset All Strikes"
-          className={`relative overflow-hidden p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 ${
+          className={`relative overflow-hidden p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 ${
             !mySubmitted
               ? 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-lg shadow-red-500/25 hover:scale-105'
               : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/50'
@@ -54,44 +54,13 @@ export const BlindActionButtons: React.FC<BlindActionButtonsProps> = ({
         >
           <RotateCcw className="w-4 h-4 sm:w-6 sm:h-6 mx-auto" />
         </button>
-
-        {/* Submit Button - Inline on mobile */}
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitDisabled}
-          className={`relative overflow-hidden p-2 sm:hidden rounded-lg transition-all duration-300 ${
-            mySubmitted
-              ? 'bg-green-900/50 text-green-400 border border-green-500/30 cursor-not-allowed'
-              : isSubmitting
-              ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed animate-pulse'
-              : isComplete
-              ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-400 hover:via-emerald-400 hover:to-green-500 text-white animate-pulse shadow-xl shadow-green-500/40 hover:scale-105'
-              : myMoves.length > 0
-              ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-500 hover:via-purple-500 hover:to-blue-600 text-white shadow-lg shadow-blue-500/30 hover:scale-105'
-              : 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700/50'
-          }`}
-        >
-          <div className="flex items-center justify-center">
-            {mySubmitted ? (
-              <Shield className="w-5 h-5" />
-            ) : isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-            ) : isComplete ? (
-              <Rocket className="w-5 h-5" />
-            ) : myMoves.length > 0 ? (
-              <Send className="w-5 h-5" />
-            ) : (
-              <EyeOff className="w-5 h-5" />
-            )}
-          </div>
-        </button>
       </div>
 
-      {/* Submit Button - Full width on desktop */}
+      {/* Submit Button - Full width for all screens */}
       <button
         onClick={onSubmit}
         disabled={isSubmitDisabled}
-        className={`hidden sm:block w-full relative overflow-hidden py-6 px-6 rounded-xl transition-all duration-300 ${
+        className={`w-full relative overflow-hidden py-4 sm:py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 ${
           mySubmitted
             ? 'bg-green-900/50 text-green-400 border border-green-500/30 cursor-not-allowed'
             : isSubmitting

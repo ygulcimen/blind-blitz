@@ -1,13 +1,14 @@
-// screens/GameScreen.tsx - FIXED: No header during blind phases
-import React, { useState, useEffect } from 'react';
+// screens/GameScreen.tsx - OPTIMIZED with smooth transitions
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useGameStateManager } from '../state/GameStateManager';
+import { useGameStateManager, type GamePhase } from '../state/GameStateManager';
 import { useCelestialBot } from '../hooks/useCelestialBot';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   ViolationToast,
   useViolations,
 } from '../components/shared/ViolationSystem';
+import { PhaseTransition } from '../components/shared/PhaseTransition';
 //import WaitingRoomScreen from '../components/WaitingRoom/WaitingRoomScreen';
 //import BlindPhaseScreen from '../components/BlindPhase/BlindPhaseScreen';
 import RobotChaosBlindPhase from '../components/RobotChaos/RobotChaosBlindPhase';
@@ -31,6 +32,14 @@ const GameScreen: React.FC = () => {
   const [showExitModal, setShowExitModal] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('classic');
 
+  // Track phase transitions for smooth UX
+  const [showTransition, setShowTransition] = useState(false);
+  const [transitionInfo, setTransitionInfo] = useState<{
+    from: GamePhase;
+    to: GamePhase;
+  } | null>(null);
+  const previousPhaseRef = useRef<GamePhase>(gameState.gameState.phase);
+
   // Extract game mode from navigation state or URL params
   useEffect(() => {
     // Check if game mode was passed via navigation state
@@ -51,6 +60,33 @@ const GameScreen: React.FC = () => {
     // Default to classic mode
     setGameMode('classic');
   }, [location]);
+
+  // Detect phase transitions and show smooth overlay
+  useEffect(() => {
+    const currentPhase = gameState.gameState.phase;
+    const previousPhase = previousPhaseRef.current;
+
+    // Only show transition for major phase changes (not REVEAL -> ANIMATED_REVEAL)
+    if (
+      currentPhase !== previousPhase &&
+      !(previousPhase === 'REVEAL' && currentPhase === 'ANIMATED_REVEAL')
+    ) {
+      console.log(`🎬 Phase transition detected: ${previousPhase} → ${currentPhase}`);
+      setTransitionInfo({ from: previousPhase, to: currentPhase });
+      setShowTransition(true);
+
+      // Hide transition after delay
+      const timer = setTimeout(() => {
+        setShowTransition(false);
+      }, 400);
+
+      previousPhaseRef.current = currentPhase;
+
+      return () => clearTimeout(timer);
+    }
+
+    previousPhaseRef.current = currentPhase;
+  }, [gameState.gameState.phase]);
 
   // ─────────────────────────────────────────────────────────────
   // 🎮 GAME START HANDLER
@@ -238,6 +274,15 @@ const GameScreen: React.FC = () => {
 
         {/* Main Game Content */}
         <div className="relative z-10">{renderGamePhase()}</div>
+
+        {/* Smooth Phase Transition Overlay */}
+        {showTransition && transitionInfo && (
+          <PhaseTransition
+            fromPhase={transitionInfo.from}
+            toPhase={transitionInfo.to}
+            duration={400}
+          />
+        )}
 
         {/* Violation System */}
         <ViolationToast

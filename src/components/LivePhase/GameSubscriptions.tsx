@@ -13,6 +13,7 @@ interface GameSubscriptionsProps {
   setLiveMoves: React.Dispatch<React.SetStateAction<LiveMove[]>>;
   setChessGame: React.Dispatch<React.SetStateAction<Chess | null>>;
   setDrawOffer: React.Dispatch<React.SetStateAction<DrawOffer | null>>;
+  setIsProcessingMove: React.Dispatch<React.SetStateAction<boolean>>;
   clearViolations: () => void;
 }
 
@@ -27,6 +28,7 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
   setLiveMoves,
   setChessGame,
   setDrawOffer,
+  setIsProcessingMove,
   clearViolations,
 }) => {
   // Heartbeat monitoring
@@ -153,6 +155,8 @@ export const GameSubscriptions: React.FC<GameSubscriptionsProps> = ({
             return newMoves;
           });
           pendingOptimisticIdRef.current = null;
+          // Reset processing state now that move is confirmed
+          setIsProcessingMove(false);
         } else {
           console.log('📥 Adding opponent move to list');
           setLiveMoves(prev => {

@@ -140,6 +140,7 @@ export const useGameStateManager = (gameId?: string) => {
   const subscriptionsRef = useRef<(() => void)[]>([]);
   const hasStartedRef = useRef(false);
   const blindPhaseStartTimeRef = useRef<number | null>(null);
+  const revealTriggeredRef = useRef(false);
 
   const deriveMyColor = useCallback(
     async (bs: BlindGameState): Promise<'white' | 'black' | null> => {
@@ -248,34 +249,16 @@ export const useGameStateManager = (gameId?: string) => {
 
           case 'revealing':
           case 'reveal':
-            const blindState = await blindMovesService.getBlindGameState(
-              gameId
-            );
-            if (blindState) {
-              const { data: room } = await supabase
-                .from('game_rooms')
-                .select('entry_fee, game_mode')
-                .eq('id', gameId)
-                .single();
-
-              // Remove the if-else, just call once
-              const result = simulateBlindMovesWithRewards(
-                blindState.whiteMoves,
-                blindState.blackMoves,
-                room?.entry_fee || 100,
-                room?.game_mode || 'classic'
-              );
-
-              const fen = result.fen;
-              const log = result.log;
-
-              setGameState((prev) => ({
-                ...prev,
-                phase: 'REVEAL',
-                reveal: { finalFen: fen, moveLog: log, isComplete: false },
-              }));
-              return 'REVEAL';
+            // Room is in revealing state - trigger proceedToReveal if not already done
+            console.log('🔄 Room in revealing state, triggering proceedToReveal');
+            if (!revealTriggeredRef.current) {
+              revealTriggeredRef.current = true;
+              proceedToReveal().catch(err => {
+                console.error('Failed in recoverGameState reveal:', err);
+                revealTriggeredRef.current = false;
+              });
             }
+            return 'BLIND'; // Stay in BLIND until proceedToReveal completes
             break;
 
           case 'blind':
@@ -479,16 +462,23 @@ export const useGameStateManager = (gameId?: string) => {
 
   const proceedToReveal = useCallback(async () => {
     if (!gameId) {
-      console.error('No gameId available for reveal');
+      console.error('❌ No gameId available for reveal');
       return;
     }
+
+    console.log('🎬 PROCEED TO REVEAL: Starting transition for game:', gameId);
 
     try {
       const freshBlindState = await blindMovesService.getBlindGameState(gameId);
       if (!freshBlindState) {
-        console.error('Failed to get fresh blind state for reveal');
+        console.error('❌ Failed to get fresh blind state for reveal');
         return;
       }
+
+      console.log('✅ Blind state loaded:', {
+        whiteMovesCount: freshBlindState.whiteMoves.length,
+        blackMovesCount: freshBlindState.blackMoves.length,
+      });
 
       const { data: room } = await supabase
         .from('game_rooms')
@@ -498,6 +488,7 @@ export const useGameStateManager = (gameId?: string) => {
 
       const entryFee = room?.entry_fee || 100;
 
+      console.log('🎮 Simulating blind moves with rewards...');
       // Use simulation with checkmate detection
       const {
         fen,
@@ -513,9 +504,19 @@ export const useGameStateManager = (gameId?: string) => {
         room?.game_mode
       );
 
+      console.log('✅ Simulation complete:', {
+        fen,
+        moveLogLength: log.length,
+        checkmateOccurred,
+      });
+
+      // Validate FEN before proceeding
+      const validatedFen = validateAndFixFEN(fen);
+      console.log('🔍 FEN validation:', { original: fen, validated: validatedFen });
+
       // Handle checkmate scenario
       if (checkmateOccurred && checkmateWinner) {
-        console.log(`Checkmate detected - ${checkmateWinner} wins in blind phase`);
+        console.log(`♔ Checkmate detected - ${checkmateWinner} wins in blind phase`);
 
         const totalPot = entryFee * 2;
         const commission = Math.floor(totalPot * 0.05);
@@ -536,6 +537,7 @@ export const useGameStateManager = (gameId?: string) => {
           p_winner: checkmateWinner,
         });
       } else {
+        console.log('💰 Saving calculated rewards...');
         // Normal case - save regular rewards
         await supabase.rpc('save_calculated_rewards', {
           p_game_id: gameId,
@@ -549,23 +551,25 @@ export const useGameStateManager = (gameId?: string) => {
         await goldRewardsService.waitForRewardsToBeCalculated(gameId);
       }
 
+      console.log('🎮 Initializing live game with FEN:', validatedFen);
       // ALWAYS initialize live game (even for checkmate)
       await liveMovesService.initializeLiveGame(
         gameId,
         freshBlindState.whitePlayerId,
         freshBlindState.blackPlayerId,
-        fen // ✅ Use the FEN directly from simulation (already has correct turn)
+        validatedFen // ✅ Use validated FEN
       );
 
+      console.log('✅ Live game initialized, setting REVEAL phase');
       // Set game state with checkmate info if applicable
       setGameState((prev) => ({
         ...prev,
         phase: 'REVEAL',
-        reveal: { finalFen: fen, moveLog: log, isComplete: false },
+        reveal: { finalFen: validatedFen, moveLog: log, isComplete: false },
         live: {
           ...prev.live,
-          game: new Chess(fen),
-          fen: fen,
+          game: new Chess(validatedFen),
+          fen: validatedFen,
           gameEnded: checkmateOccurred, // Will be true for checkmate
           gameResult: checkmateOccurred
             ? {
@@ -577,67 +581,81 @@ export const useGameStateManager = (gameId?: string) => {
         },
         timer: { ...prev.timer, isRunning: false },
       }));
+
+      console.log('✅ PROCEED TO REVEAL: Complete!');
     } catch (error) {
-      console.error('Failed to proceed to reveal:', error);
+      console.error('❌ Failed to proceed to reveal:', error);
+      // Reset the trigger flag so user can retry
+      revealTriggeredRef.current = false;
     }
   }, [gameId]);
 
-  // Updated to work with cleanBlindMovesService structure
+  // Updated to work with cleanBlindMovesService structure - OPTIMIZED
   const handleBlindGameUpdate = useCallback(
     (blindGameState: BlindGameState) => {
-      const { myColor } = gameState.blind;
-      if (!myColor) return;
+      setGameState((prev) => {
+        const { myColor } = prev.blind;
+        if (!myColor) return prev;
 
-      // Set blind phase start time from server if available
-      if (
-        blindGameState.blindPhaseStartedAt &&
-        blindPhaseStartTimeRef.current === null
-      ) {
-        blindPhaseStartTimeRef.current = new Date(
-          blindGameState.blindPhaseStartedAt
-        ).getTime();
-      }
+        // Set blind phase start time from server if available
+        if (
+          blindGameState.blindPhaseStartedAt &&
+          blindPhaseStartTimeRef.current === null
+        ) {
+          blindPhaseStartTimeRef.current = new Date(
+            blindGameState.blindPhaseStartedAt
+          ).getTime();
+        }
 
-      const latestMoves =
-        myColor === 'white'
-          ? blindGameState.whiteMoves
-          : blindGameState.blackMoves;
+        const latestMoves =
+          myColor === 'white'
+            ? blindGameState.whiteMoves
+            : blindGameState.blackMoves;
 
-      const opponentMoveCount =
-        myColor === 'white'
-          ? blindGameState.blackMoves.length
-          : blindGameState.whiteMoves.length;
+        const opponentMoveCount =
+          myColor === 'white'
+            ? blindGameState.blackMoves.length
+            : blindGameState.whiteMoves.length;
 
-      const mySubmitted =
-        myColor === 'white'
-          ? blindGameState.whiteSubmitted
-          : blindGameState.blackSubmitted;
+        const mySubmitted =
+          myColor === 'white'
+            ? blindGameState.whiteSubmitted
+            : blindGameState.blackSubmitted;
 
-      const opponentSubmitted =
-        myColor === 'white'
-          ? blindGameState.blackSubmitted
-          : blindGameState.whiteSubmitted;
+        const opponentSubmitted =
+          myColor === 'white'
+            ? blindGameState.blackSubmitted
+            : blindGameState.whiteSubmitted;
 
-      setGameState((prev) => ({
-        ...prev,
-        blind: {
-          ...prev.blind,
-          myMoves: latestMoves,
-          opponentMoveCount,
-          mySubmitted,
-          opponentSubmitted,
-          bothSubmitted: blindGameState.bothSubmitted,
-        },
-      }));
+        // Check if both submitted and trigger transition (only once)
+        if (
+          blindGameState.bothSubmitted &&
+          prev.phase === 'BLIND' &&
+          !revealTriggeredRef.current
+        ) {
+          revealTriggeredRef.current = true;
+          console.log('⚡ Phase transition: BLIND -> REVEAL (triggering async)');
+          // Trigger reveal transition asynchronously
+          proceedToReveal().catch(err => {
+            console.error('Failed to proceed to reveal:', err);
+            revealTriggeredRef.current = false; // Reset on error
+          });
+        }
 
-      // Check if both submitted and auto-transition - INSTANT for production
-      if (blindGameState.bothSubmitted && gameState.phase === 'BLIND') {
-        console.log('⚡ Phase transition: BLIND -> REVEAL (immediate)');
-        // Remove delay for faster transition in production
-        proceedToReveal();
-      }
+        return {
+          ...prev,
+          blind: {
+            ...prev.blind,
+            myMoves: latestMoves,
+            opponentMoveCount,
+            mySubmitted,
+            opponentSubmitted,
+            bothSubmitted: blindGameState.bothSubmitted,
+          },
+        };
+      });
     },
-    [gameState.blind.myColor, gameState.phase, proceedToReveal]
+    [proceedToReveal]
   );
 
   const handleLiveGameUpdate = useCallback((liveGameState: LiveGameState) => {
@@ -919,11 +937,21 @@ export const useGameStateManager = (gameId?: string) => {
             }
 
             if (newStatus === 'revealing') {
-              transitionToPhase('REVEAL');
+              // Don't just transition - we need to run proceedToReveal!
+              console.log('🔔 Room status changed to revealing - triggering proceedToReveal');
+              if (!revealTriggeredRef.current) {
+                revealTriggeredRef.current = true;
+                proceedToReveal().catch(err => {
+                  console.error('Failed to proceed to reveal from room status:', err);
+                  revealTriggeredRef.current = false;
+                });
+              }
               return;
             }
 
             if (newStatus === 'live') {
+              // Only transition if live game is already initialized
+              console.log('🔔 Room status changed to live');
               transitionToPhase('LIVE');
               return;
             }
@@ -955,6 +983,9 @@ export const useGameStateManager = (gameId?: string) => {
   useEffect(() => {
     if (!gameId) return;
 
+    // Reset reveal trigger flag on game init
+    revealTriggeredRef.current = false;
+
     const initWithRecovery = async () => {
       const recoveredPhase = await recoverGameState(gameId);
 
@@ -969,41 +1000,55 @@ export const useGameStateManager = (gameId?: string) => {
     initWithRecovery();
   }, [gameId, recoverGameState, initializeGame]);
 
-  // Client-side timer
+  // Client-side timer - OPTIMIZED to reduce re-renders
   useEffect(() => {
-    if (!gameState.timer.isRunning) return;
+    if (!gameState.timer.isRunning || gameState.phase !== 'BLIND') return;
 
     timerRef.current = window.setInterval(() => {
       const now = Date.now();
 
       setGameState((prev) => {
-        if (prev.phase === 'BLIND') {
-          // Use ABSOLUTE time calculation to prevent drift
-          let remainingTime = BLIND_TIMER_DURATION;
+        // Only update if still in BLIND phase and timer is running
+        if (prev.phase !== 'BLIND' || !prev.timer.isRunning) {
+          return prev;
+        }
 
-          if (blindPhaseStartTimeRef.current !== null) {
-            const elapsed = now - blindPhaseStartTimeRef.current;
-            remainingTime = Math.max(0, BLIND_TIMER_DURATION - elapsed);
-          }
+        // Use ABSOLUTE time calculation to prevent drift
+        let remainingTime = BLIND_TIMER_DURATION;
 
-          if (remainingTime === 0 && !prev.blind.mySubmitted) {
-            setTimeout(() => submitBlindMoves(), 100);
-          }
+        if (blindPhaseStartTimeRef.current !== null) {
+          const elapsed = now - blindPhaseStartTimeRef.current;
+          remainingTime = Math.max(0, BLIND_TIMER_DURATION - elapsed);
+        }
 
+        // Auto-submit when time expires
+        if (remainingTime === 0 && !prev.blind.mySubmitted) {
+          console.log('⏰ Timer expired - auto-submitting blind moves');
+          setTimeout(() => submitBlindMoves(), 0);
           return {
             ...prev,
             timer: {
               ...prev.timer,
-              whiteTime: remainingTime,
-              blackTime: remainingTime,
+              whiteTime: 0,
+              blackTime: 0,
+              isRunning: false,
             },
           };
-        } else if (prev.phase === 'LIVE') {
-          // Live phase: timer is managed by server, we don't tick down here
-          // useSimplifiedTimer handles live phase timing
+        }
+
+        // Skip update if time hasn't changed significantly (reduce re-renders)
+        if (Math.abs(prev.timer.whiteTime - remainingTime) < 50) {
           return prev;
         }
-        return prev;
+
+        return {
+          ...prev,
+          timer: {
+            ...prev.timer,
+            whiteTime: remainingTime,
+            blackTime: remainingTime,
+          },
+        };
       });
     }, 100);
 
@@ -1014,12 +1059,14 @@ export const useGameStateManager = (gameId?: string) => {
     };
   }, [gameState.timer.isRunning, gameState.phase, submitBlindMoves]);
 
-  // Auto-transition from REVEAL to ANIMATED_REVEAL - Reduced delay for production
+  // Auto-transition from REVEAL to ANIMATED_REVEAL - IMMEDIATE for smooth UX
   useEffect(() => {
     if (gameState.phase === 'REVEAL') {
+      console.log('🎬 Auto-transitioning to ANIMATED_REVEAL (immediate)');
+      // Immediate transition for smooth UX - no artificial delay
       const timer = setTimeout(() => {
         startAnimatedReveal();
-      }, 500); // Reduced from 2000ms to 500ms for faster UX
+      }, 100); // Minimal delay to ensure UI is ready
       return () => clearTimeout(timer);
     }
   }, [gameState.phase, startAnimatedReveal]);

@@ -55,31 +55,20 @@ export const GameInitializer: React.FC<GameInitializerProps> = ({
       onLoadingChange(true);
 
       try {
-        // 1. Try to load existing live game state
+        console.log('🎮 GameInitializer: Starting initialization');
+        console.log('🎮 GameInitializer: Received finalFen:', finalFen);
+
+        // 1. Try to load existing live game state (should exist from proceedToReveal)
         let gameStateData = await liveMovesService.getGameState(gameId);
 
-        // 2. If no state exists, create new one
+        // 2. If no state exists, something went wrong - DON'T create it here
+        // The GameStateManager.proceedToReveal should have created it already
         if (!gameStateData) {
-          const blindGameState = await blindMovesService.getBlindGameState(
-            gameId
-          );
-          if (!blindGameState) throw new Error('No blind game state');
-
-          // ✅ Use simulation finalFen directly, fallback to startpos
-          const liveStartingFen =
-            typeof finalFen === 'string'
-              ? finalFen
-              : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-          gameStateData = await liveMovesService.initializeLiveGame(
-            gameId,
-            blindGameState.whitePlayerId,
-            blindGameState.blackPlayerId,
-            liveStartingFen
-          );
-
-          if (!gameStateData) throw new Error('Failed to initialize live game');
+          console.error('❌ No live game state found - proceedToReveal should have created it!');
+          throw new Error('Live game state not initialized - this should not happen');
         }
+
+        console.log('✅ Live game state found:', gameStateData.game_id);
 
         // 3. Determine my color
         const playerColor =

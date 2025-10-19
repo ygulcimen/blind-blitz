@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { statsService } from '../../services/statsService';
+import FloatingGoldAnimation from './FloatingGoldAnimation';
 // Add this before your HeroSection component
 const TypewriterText: React.FC<{
   text: string;
@@ -132,7 +133,8 @@ const HeroSection: React.FC = () => {
     <section className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-black"></div>
-
+      {/* Floating Gold Coins Animation */}
+      <FloatingGoldAnimation />
       {/* Simplified Live Status Bar - Mobile Responsive */}
       <div className="relative z-20 border-b border-white/10 bg-black/60 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
@@ -191,7 +193,9 @@ const HeroSection: React.FC = () => {
             {isLoggedIn ? (
               <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-yellow-400 text-sm sm:text-base">🪙</span>
+                  <span className="text-yellow-400 text-sm sm:text-base">
+                    🪙
+                  </span>
                   <span className="text-white font-bold text-sm sm:text-lg tracking-wide">
                     {userData.gold.toLocaleString()}
                   </span>
@@ -216,7 +220,9 @@ const HeroSection: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  <span className="hidden xs:inline">{t('landing.hero.loginButton')}</span>
+                  <span className="hidden xs:inline">
+                    {t('landing.hero.loginButton')}
+                  </span>
                 </button>
                 <button
                   onClick={() => navigate('/signup')}
@@ -293,7 +299,9 @@ const HeroSection: React.FC = () => {
               className="group bg-white text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
             >
               <span className="relative z-10">
-                {isLoggedIn ? t('landing.hero.ctaPrimaryLoggedIn') : t('landing.hero.ctaPrimary')}
+                {isLoggedIn
+                  ? t('landing.hero.ctaPrimaryLoggedIn')
+                  : t('landing.hero.ctaPrimary')}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
@@ -328,7 +336,9 @@ const HeroSection: React.FC = () => {
                   key={i}
                   className="w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center"
                 >
-                  <span className="text-white text-[10px] sm:text-xs font-bold">★</span>
+                  <span className="text-white text-[10px] sm:text-xs font-bold">
+                    ★
+                  </span>
                 </div>
               ))}
             </div>
@@ -336,7 +346,9 @@ const HeroSection: React.FC = () => {
               {t('landing.hero.trustRating')}
             </span>
             <span className="text-gray-400 hidden xs:inline">•</span>
-            <span className="text-gray-400 font-medium hidden sm:inline">438 {t('landing.hero.trustReviews')}</span>
+            <span className="text-gray-400 font-medium hidden sm:inline">
+              438 {t('landing.hero.trustReviews')}
+            </span>
             <span className="text-white font-bold tracking-wide">
               {t('landing.hero.trustPlatform')}
             </span>

@@ -1,5 +1,5 @@
-// components/BlindPhase/MultiplayerBlindPhaseScreen.tsx - Refactored
-import React from 'react';
+// components/BlindPhase/MultiplayerBlindPhaseScreen.tsx - OPTIMIZED
+import React, { memo } from 'react';
 import { useBlindPhaseState } from '../../hooks/useBlindPhaseState';
 
 // Component imports
@@ -9,15 +9,17 @@ import { BlindPhaseBoard } from './components/BlindPhaseBoard';
 import { BlindPhaseControls } from './components/BlindPhaseControls';
 import { BlindPhaseHeader } from './components/BlindPhaseHeader';
 import { BlindActionButtons } from './components/BlindActionButtons';
+import { ResignationModal } from '../shared/ResignationModal/ResignationModal';
 
 interface MultiplayerBlindPhaseScreenProps {
   gameState: any;
   gameId?: string;
 }
 
+// Memoized to prevent re-renders from parent timer updates
 const MultiplayerBlindPhaseScreen: React.FC<
   MultiplayerBlindPhaseScreenProps
-> = ({ gameState, gameId }) => {
+> = memo(({ gameState, gameId }) => {
   const {
     // Game state
     game,
@@ -34,6 +36,7 @@ const MultiplayerBlindPhaseScreen: React.FC<
 
     // UI state
     isSubmitting,
+    showLobbyConfirm,
 
     // Computed values
     isWhite,
@@ -48,6 +51,8 @@ const MultiplayerBlindPhaseScreen: React.FC<
     handleReset,
     handleSubmit,
     handleLobbyReturn,
+    handleConfirmLobbyReturn,
+    handleCancelLobbyReturn,
 
     // Constants
     MAX_MOVES,
@@ -143,8 +148,21 @@ const MultiplayerBlindPhaseScreen: React.FC<
           />
         </div>
       </div>
+
+      {/* Return to Lobby Confirmation Modal */}
+      <ResignationModal
+        isOpen={showLobbyConfirm}
+        onConfirm={handleConfirmLobbyReturn}
+        onCancel={handleCancelLobbyReturn}
+        title="Return to Lobby?"
+        message="Returning to the lobby will resign you from this game. Are you sure you want to leave?"
+        confirmText="Yes, Leave"
+        cancelText="Stay"
+      />
     </div>
   );
-};
+});
+
+MultiplayerBlindPhaseScreen.displayName = 'MultiplayerBlindPhaseScreen';
 
 export default MultiplayerBlindPhaseScreen;

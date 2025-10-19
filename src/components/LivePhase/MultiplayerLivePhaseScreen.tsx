@@ -214,7 +214,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     // Check if it's bot's turn (opposite of player's color)
     const isBotsTurn = liveGameState.current_turn !== myColor;
 
-    if (!isBotsTurn || liveGameState.game_ended || isProcessingMove) {
+    if (!isBotsTurn || liveGameState.game_ended) {
       return;
     }
 
@@ -252,7 +252,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
 
         console.log('🤖 Bot calculated move:', botMoveSAN);
 
-        // Parse the move to get from/to squares
+        // Parse the move to get from/to squares and calculate new FEN
         const testChess = new Chess(liveGameState.current_fen);
         const move = testChess.move(botMoveSAN);
 
@@ -262,11 +262,37 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
           return;
         }
 
-        // Submit the bot move to the server using makeMove
-        const result = await liveMovesService.makeMove(
+        // Extract the new FEN and game state after the move
+        const newFen = testChess.fen();
+        const isCheck = testChess.inCheck();
+        const isCheckmate = testChess.isCheckmate();
+        const isDraw =
+          testChess.isStalemate() ||
+          testChess.isThreefoldRepetition() ||
+          testChess.isInsufficientMaterial() ||
+          testChess.isDraw();
+
+        console.log('🤖 Bot move details:', {
+          san: move.san,
+          from: move.from,
+          to: move.to,
+          newFen,
+          isCheck,
+          isCheckmate,
+          isDraw,
+        });
+
+        // Submit the bot move to the server using makeBotMove (bypasses auth)
+        const result = await liveMovesService.makeBotMove(
           gameId!,
+          botId,
           move.from,
           move.to,
+          move.san,
+          newFen,
+          isCheck,
+          isCheckmate,
+          isDraw,
           move.promotion
         );
 
@@ -290,7 +316,6 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
     chessGame,
     liveGameState,
     myColor,
-    isProcessingMove,
     gameId,
   ]);
 
@@ -561,6 +586,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         setLiveMoves={setLiveMoves}
         setChessGame={setChessGame}
         setDrawOffer={setDrawOffer}
+        setIsProcessingMove={setIsProcessingMove}
         clearViolations={clearViolations}
       />
 
@@ -671,7 +697,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                 setShowGameEndModal(false);
               }}
               gameEnded={liveGameState?.game_ended || false}
-              disabled={isProcessingMove}
+              disabled={false}
               className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
             />
           </div>
@@ -727,7 +753,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
                   setShowGameEndModal(false);
                 }}
                 gameEnded={liveGameState?.game_ended || false}
-                disabled={isProcessingMove}
+                disabled={false}
                 className="bg-white/8 backdrop-blur-xl border border-white/15 shadow-lg"
               />
             </div>

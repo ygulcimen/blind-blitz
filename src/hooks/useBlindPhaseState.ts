@@ -49,6 +49,7 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
   // UI State
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLobbyConfirm, setShowLobbyConfirm] = useState(false);
   const [roomPlayers, setRoomPlayers] = useState<any[]>([]);
 
   // Chess game engines
@@ -374,15 +375,38 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
     }
   }, [myMoves.length, mySubmitted, isSubmitting, gameState]);
 
-  // Handle return to lobby
+  // Handle return to lobby - just trigger the modal
   const handleLobbyReturn = useCallback(() => {
-    if (
-      window.confirm(
-        'SURRENDER WARNING\n\nReturning to lobby will count as a RESIGNATION!\n\nAre you sure?'
-      )
-    ) {
+    setShowLobbyConfirm(true);
+  }, []);
+
+  const handleConfirmLobbyReturn = useCallback(async () => {
+    if (!gameId) {
+      console.error('❌ No game ID available for resignation');
+      window.location.href = '/games';
+      return;
+    }
+
+    try {
+      // Import blindMovesService
+      const { blindMovesService } = await import('../services/blindMovesService');
+
+      // Resign from the game
+      const success = await blindMovesService.resignFromBlindPhase(gameId);
+
+      if (!success) {
+        console.error('❌ Failed to resign from game');
+      }
+    } catch (error) {
+      console.error('❌ Error during resignation:', error);
+    } finally {
+      // Always return to lobby, even if resignation fails
       window.location.href = '/games';
     }
+  }, [gameId]);
+
+  const handleCancelLobbyReturn = useCallback(() => {
+    setShowLobbyConfirm(false);
   }, []);
 
   // Bot auto-submission - When human submits, bot generates and submits moves
@@ -404,14 +428,14 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
           .select('is_submitted')
           .eq('game_id', gameId)
           .eq('player_color', botColor)
-          .single();
+          .limit(1);
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error checking bot submission status:', error);
           return;
         }
 
-        if (botMoves?.is_submitted) {
+        if (botMoves && botMoves.length > 0 && botMoves[0].is_submitted) {
           console.log('✅ Bot already submitted moves');
           botSubmittedRef.current = true;
           return;
@@ -524,6 +548,7 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
     // UI state
     isProcessingMove,
     isSubmitting,
+    showLobbyConfirm,
 
     // Computed values
     isWhite,
@@ -539,6 +564,8 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
     handleReset,
     handleSubmit,
     handleLobbyReturn,
+    handleConfirmLobbyReturn,
+    handleCancelLobbyReturn,
 
     // Constants
     MAX_MOVES,

@@ -580,6 +580,47 @@ class BlindMovesService {
       return [];
     }
   }
+
+  /**
+   * Resign from blind phase
+   */
+  async resignFromBlindPhase(gameId: string): Promise<boolean> {
+    try {
+      console.log('🏳️ Resigning from blind phase:', gameId);
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        console.error('❌ Not authenticated:', authError);
+        return false;
+      }
+
+      // Call the SQL function to resign
+      const { data, error } = await supabase.rpc('resign_from_blind_phase', {
+        p_game_id: gameId,
+        p_resigning_player_id: user.id,
+      });
+
+      if (error) {
+        console.error('❌ Error resigning from blind phase:', error);
+        return false;
+      }
+
+      if (data && data.success === false) {
+        console.error('❌ Resignation failed:', data.error);
+        return false;
+      }
+
+      console.log('✅ Successfully resigned from blind phase');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to resign from blind phase:', error);
+      return false;
+    }
+  }
 }
 
 export const blindMovesService = new BlindMovesService();

@@ -128,7 +128,8 @@ SELECT
       ),
       'live_phase', jsonb_build_object(
         'depth', 16,
-        'think_time_ms', 3000,
+        'stockfish_level', 16,
+        'think_time_ms', 2000,
         'randomness', 0.02,
         'aggression', 0.7
       )
@@ -145,7 +146,8 @@ SELECT
       ),
       'live_phase', jsonb_build_object(
         'depth', 13,
-        'think_time_ms', 2500,
+        'stockfish_level', 13,
+        'think_time_ms', 1500,
         'randomness', 0.05,
         'aggression', 0.5
       )
@@ -162,7 +164,8 @@ SELECT
       ),
       'live_phase', jsonb_build_object(
         'depth', 10,
-        'think_time_ms', 2000,
+        'stockfish_level', 8,
+        'think_time_ms', 1000,
         'randomness', 0.08,
         'aggression', 0.85
       )
@@ -179,7 +182,8 @@ SELECT
       ),
       'live_phase', jsonb_build_object(
         'depth', 12,
-        'think_time_ms', 2300,
+        'stockfish_level', 11,
+        'think_time_ms', 1200,
         'randomness', 0.06,
         'aggression', 0.4
       )
@@ -196,7 +200,8 @@ SELECT
       ),
       'live_phase', jsonb_build_object(
         'depth', 20,
-        'think_time_ms', 4000,
+        'stockfish_level', 20,
+        'think_time_ms', 2000,
         'randomness', 0.01,
         'aggression', 0.6
       )
