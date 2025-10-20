@@ -181,12 +181,12 @@ export const simulateBlindMovesWithRewards = (
   const availablePot = totalPot - commission;
   const blindPhasePool = Math.floor(availablePot * 0.4); // 40% for blind phase
 
-  // Scale all rewards proportionally with guaranteed minimum
-  const baseReward = Math.max(1, Math.floor(blindPhasePool / 50)); // Minimum 1 gold per base unit
-  const VALID_REWARD = Math.max(1, baseReward * 5);
-  const INVALID_PENALTY = Math.max(1, baseReward * 5);
-  const OPPONENT_BONUS = Math.max(2, baseReward * 10);
-  const CAPTURE_REWARD = Math.max(3, baseReward * 15);
+  // Scale rewards proportionally to entry fee (10% of blind phase pool per reward unit)
+  const baseReward = Math.max(1, Math.floor(blindPhasePool * 0.10)); // 10% of pool as base unit
+  const VALID_REWARD = baseReward; // Each valid move = 10% of blind pool
+  const INVALID_PENALTY = baseReward; // Penalty = same as valid reward
+  const OPPONENT_BONUS = Math.floor(baseReward * 2); // Opponent gets 20% when you fail
+  const CAPTURE_REWARD = Math.floor(baseReward * 3); // Captures worth 30% of blind pool
 
   let whiteGold = 0;
   let blackGold = 0;
@@ -197,6 +197,17 @@ export const simulateBlindMovesWithRewards = (
     whiteMoves: whiteMoves.length,
     blackMoves: blackMoves.length,
     entryFee,
+  });
+
+  console.log('💰 Blind Phase Reward Structure:', {
+    totalPot,
+    commission,
+    availablePot,
+    blindPhasePool,
+    validReward: VALID_REWARD,
+    captureReward: CAPTURE_REWARD,
+    invalidPenalty: INVALID_PENALTY,
+    opponentBonus: OPPONENT_BONUS,
   });
 
   let whiteIndex = 0;
