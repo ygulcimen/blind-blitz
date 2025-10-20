@@ -181,12 +181,12 @@ export const simulateBlindMovesWithRewards = (
   const availablePot = totalPot - commission;
   const blindPhasePool = Math.floor(availablePot * 0.4); // 40% for blind phase
 
-  // Scale rewards proportionally to entry fee (10% of blind phase pool per reward unit)
-  const baseReward = Math.max(1, Math.floor(blindPhasePool * 0.10)); // 10% of pool as base unit
-  const VALID_REWARD = baseReward; // Each valid move = 10% of blind pool
-  const INVALID_PENALTY = baseReward; // Penalty = same as valid reward
-  const OPPONENT_BONUS = Math.floor(baseReward * 2); // Opponent gets 20% when you fail
-  const CAPTURE_REWARD = Math.floor(baseReward * 3); // Captures worth 30% of blind pool
+  // Scale rewards proportionally with entry fee (100g = base)
+  const scaleFactor = entryFee / 100;
+  const VALID_REWARD = Math.round(5 * scaleFactor); // 5g at 100g entry, scales proportionally
+  const INVALID_PENALTY = Math.round(5 * scaleFactor); // 5g penalty at 100g entry
+  const OPPONENT_BONUS = Math.round(10 * scaleFactor); // 10g opponent bonus at 100g entry
+  const CAPTURE_REWARD = Math.round(10 * scaleFactor); // 10g capture at 100g entry
 
   let whiteGold = 0;
   let blackGold = 0;
