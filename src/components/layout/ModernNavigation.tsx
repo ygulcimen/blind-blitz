@@ -296,6 +296,7 @@ const ModernNavigation: React.FC = () => {
                       ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
+                  title={!isExpanded ? item.label : ''}
                 >
                   {/* Icon */}
                   <div className="flex-shrink-0 relative">
@@ -316,6 +317,13 @@ const ModernNavigation: React.FC = () => {
                   >
                     {item.label}
                   </span>
+
+                  {/* Tooltip on hover when collapsed */}
+                  {!isExpanded && (
+                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 border border-white/10">
+                      {item.label}
+                    </div>
+                  )}
 
                   {/* Hover effect line */}
                   <div

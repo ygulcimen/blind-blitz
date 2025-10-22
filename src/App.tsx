@@ -1,16 +1,12 @@
 // App.tsx
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
 import { ViolationProvider } from './components/shared/ViolationSystem';
 import { PlayerEconomyProvider } from './context/PlayerEconomyConcept';
 import { ModalProvider } from './context/ModalContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import { trackPageView } from './lib/analytics';
-
-// Wrap Router with Sentry for better error tracking
-const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 // Analytics tracker component
 const AnalyticsTracker = () => {
@@ -59,7 +55,7 @@ function App() {
               <Router>
                 <AnalyticsTracker />
                 <Suspense fallback={<PageLoader />}>
-                  <SentryRoutes>
+                  <Routes>
                 <Route
                   path="/"
                   element={
@@ -178,7 +174,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-              </SentryRoutes>
+              </Routes>
                 </Suspense>
               </Router>
             </ModalProvider>

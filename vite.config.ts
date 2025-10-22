@@ -33,8 +33,6 @@ export default defineConfig({
           'supabase': ['@supabase/supabase-js'],
           // Split React ecosystem
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // Split Sentry (error tracking)
-          'sentry': ['@sentry/react'],
           // Split Analytics
           'analytics': ['react-ga4'],
         }

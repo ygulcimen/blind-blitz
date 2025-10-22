@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { setUserContext, clearUserContext } from '../lib/sentry';
 import { analytics, setUserProperties } from '../lib/analytics';
 
 interface AuthContextType {
@@ -26,16 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-
-      // Set Sentry user context
-      if (currentUser) {
-        setUserContext(
-          currentUser.id,
-          currentUser.email,
-          currentUser.user_metadata?.username
-        );
-      }
-
       setLoading(false);
     });
 
@@ -45,18 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-
-      // Update Sentry user context
-      if (currentUser) {
-        setUserContext(
-          currentUser.id,
-          currentUser.email,
-          currentUser.user_metadata?.username
-        );
-      } else {
-        clearUserContext();
-      }
-
       setLoading(false);
     });
 
@@ -108,7 +85,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    clearUserContext(); // Clear Sentry user data on logout
     analytics.userLogout(); // Track logout
   };
 

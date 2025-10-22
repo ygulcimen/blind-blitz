@@ -14,47 +14,47 @@ const Footer: React.FC = () => {
   return (
     <footer className="relative bg-black border-t border-gray-800">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Brand Section */}
+      <div className="max-w-7xl mx-auto px-6 py-8 sm:py-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8">
+          {/* Brand Section - More compact */}
           <div className="lg:col-span-2">
             <button
               onClick={() => handleNavigation('/')}
-              className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-3 mb-4 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                 <span className="text-black font-black text-sm">BB</span>
               </div>
               <div>
-                <div className="text-xl font-bold text-white">{t('footer.brand.name')}</div>
-                <div className="text-sm text-gray-400">
+                <div className="text-lg font-bold text-white">{t('footer.brand.name')}</div>
+                <div className="text-xs text-gray-500">
                   {t('footer.brand.tagline')}
                 </div>
               </div>
             </button>
 
-            <p className="text-gray-400 leading-relaxed max-w-md mb-6">
+            <p className="text-gray-400 text-sm leading-relaxed max-w-md mb-4">
               {t('footer.brand.description')}
             </p>
 
-            {/* Social Links */}
-            <div className="flex items-center gap-4">
-              <button className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors">
-                <span className="text-gray-400 hover:text-white">📱</span>
+            {/* Social Links - Gaming style */}
+            <div className="flex items-center gap-3">
+              <button className="w-9 h-9 bg-gray-800/50 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-all hover:scale-110">
+                <span className="text-gray-400 hover:text-white text-sm">📱</span>
               </button>
-              <button className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors">
-                <span className="text-gray-400 hover:text-white">🐦</span>
+              <button className="w-9 h-9 bg-gray-800/50 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-all hover:scale-110">
+                <span className="text-gray-400 hover:text-white text-sm">🐦</span>
               </button>
-              <button className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors">
-                <span className="text-gray-400 hover:text-white">💬</span>
+              <button className="w-9 h-9 bg-gray-800/50 hover:bg-gray-700 rounded-lg flex items-center justify-center transition-all hover:scale-110">
+                <span className="text-gray-400 hover:text-white text-sm">💬</span>
               </button>
             </div>
           </div>
 
           {/* Game Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">{t('footer.game.title')}</h3>
-            <ul className="space-y-3">
+            <h3 className="text-white font-semibold text-sm mb-3">{t('footer.game.title')}</h3>
+            <ul className="space-y-2">
               <li>
                 <button
                   onClick={() => handleNavigation('/games?mode=classical')}
@@ -84,8 +84,8 @@ const Footer: React.FC = () => {
 
           {/* Learn Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">{t('footer.learn.title')}</h3>
-            <ul className="space-y-3">
+            <h3 className="text-white font-semibold text-sm mb-3">{t('footer.learn.title')}</h3>
+            <ul className="space-y-2">
               <li>
                 <button
                   onClick={() => handleNavigation('/how-to-play')}
@@ -125,8 +125,8 @@ const Footer: React.FC = () => {
 
           {/* Support Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">{t('footer.support.title')}</h3>
-            <ul className="space-y-3">
+            <h3 className="text-white font-semibold text-sm mb-3">{t('footer.support.title')}</h3>
+            <ul className="space-y-2">
               <li>
                 <button className="text-gray-400 hover:text-white transition-colors text-sm block">
                   {t('footer.support.contact')}
@@ -152,22 +152,24 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-gray-500 text-sm">
+      {/* Bottom Bar - Compact */}
+      <div className="border-t border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs">
+            <div className="text-gray-600">
               {t('footer.bottom.copyright')}
             </div>
 
-            <div className="flex items-center gap-6 text-sm">
-              <button className="text-gray-500 hover:text-gray-400 transition-colors">
+            <div className="flex items-center gap-4">
+              <button className="text-gray-600 hover:text-gray-400 transition-colors">
                 {t('footer.bottom.privacy')}
               </button>
-              <button className="text-gray-500 hover:text-gray-400 transition-colors">
+              <span className="text-gray-800">•</span>
+              <button className="text-gray-600 hover:text-gray-400 transition-colors">
                 {t('footer.bottom.terms')}
               </button>
-              <button className="text-gray-500 hover:text-gray-400 transition-colors">
+              <span className="text-gray-800">•</span>
+              <button className="text-gray-600 hover:text-gray-400 transition-colors">
                 {t('footer.bottom.cookies')}
               </button>
             </div>

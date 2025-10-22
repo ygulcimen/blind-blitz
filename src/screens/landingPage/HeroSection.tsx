@@ -141,18 +141,26 @@ const HeroSection: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             {/* Left - Live Status + Rotating Quotes + Live Games */}
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 flex-1 min-w-0">
-              {/* Live Status - Always Visible */}
+              {/* Live Status - Show EARLY ACCESS when < 10 players */}
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-bold text-xs sm:text-sm tracking-wide">
-                  {t('landing.hero.liveLabel')}
-                </span>
-                <span className="text-white font-bold text-sm sm:text-lg">
-                  {liveCount.toLocaleString()}
-                </span>
-                <span className="text-gray-400 text-xs sm:text-sm font-medium hidden xs:inline">
-                  {t('landing.hero.playersLabel')}
-                </span>
+                {liveCount >= 10 ? (
+                  <>
+                    <span className="text-green-400 font-bold text-xs sm:text-sm tracking-wide">
+                      {t('landing.hero.liveLabel')}
+                    </span>
+                    <span className="text-white font-bold text-sm sm:text-lg">
+                      {liveCount.toLocaleString()}
+                    </span>
+                    <span className="text-gray-400 text-xs sm:text-sm font-medium hidden xs:inline">
+                      {t('landing.hero.playersLabel')}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-green-400 font-bold text-xs sm:text-sm tracking-wide uppercase">
+                    EARLY ACCESS
+                  </span>
+                )}
               </div>
 
               {/* Divider - Hidden on mobile */}
@@ -174,19 +182,23 @@ const HeroSection: React.FC = () => {
                 </div>
               </div>
 
-              {/* Divider - Hidden on mobile */}
-              <div className="w-px h-5 bg-white/20 hidden md:block"></div>
+              {/* Divider - Only show if we have active games */}
+              {activeGamesCount > 0 && (
+                <div className="w-px h-5 bg-white/20 hidden md:block"></div>
+              )}
 
-              {/* Live Games Counter - Hidden on small mobile, shown on larger */}
-              <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                <span className="text-blue-400 text-sm sm:text-base">🎮</span>
-                <span className="text-white font-bold text-xs sm:text-sm">
-                  {activeGamesCount}
-                </span>
-                <span className="text-gray-400 text-xs sm:text-sm font-medium hidden lg:inline">
-                  {t('landing.hero.gamesLabel')}
-                </span>
-              </div>
+              {/* Live Games Counter - Only show when there are active games */}
+              {activeGamesCount > 0 && (
+                <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <span className="text-blue-400 text-sm sm:text-base">🎮</span>
+                  <span className="text-white font-bold text-xs sm:text-sm">
+                    {activeGamesCount}
+                  </span>
+                  <span className="text-gray-400 text-xs sm:text-sm font-medium hidden lg:inline">
+                    {t('landing.hero.gamesLabel')}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Right - Auth Buttons or User Stats */}
@@ -276,15 +288,6 @@ const HeroSection: React.FC = () => {
                 className="text-white"
               />
             </div>
-            <br />
-            <div className="text-gray-400 font-light tracking-wide mt-2 text-xl xs:text-2xl sm:text-3xl lg:text-4xl">
-              <TypewriterText
-                text={t('landing.hero.subheadline')}
-                speed={100}
-                delay={2000}
-                className="text-gray-400"
-              />
-            </div>
           </h1>
 
           {/* Short Stylish Subtitle - Responsive */}
@@ -292,8 +295,8 @@ const HeroSection: React.FC = () => {
             {t('landing.hero.description')}
           </p>
 
-          {/* Dual CTA Buttons - Better mobile sizing */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-10">
+          {/* Primary CTA Button - Better mobile sizing */}
+          <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-10">
             <button
               onClick={handleStartPlaying}
               className="group bg-white text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 transform relative overflow-hidden tracking-wide uppercase w-full sm:w-auto"
@@ -306,14 +309,14 @@ const HeroSection: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
 
+            {/* How to Play - Less prominent text link */}
             <button
               onClick={() => navigate('/how-to-play')}
-              className="group bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 text-white font-black px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg hover:border-blue-400 hover:bg-blue-600/30 transition-all duration-300 hover:scale-105 transform tracking-wide uppercase flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
+              className="group text-gray-400 hover:text-white text-sm font-medium transition-colors duration-300 flex items-center gap-2"
             >
-              <span className="text-xl sm:text-2xl">📖</span>
               <span>{t('landing.hero.ctaSecondary')}</span>
               <svg
-                className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1"
+                className="w-3 h-3 transition-transform group-hover:translate-x-1"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -356,28 +359,6 @@ const HeroSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Partner Logos with Gaming Style - Responsive */}
-      <div className="relative z-10 py-4 sm:py-6 border-t border-white/10 bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-center gap-4 sm:gap-8 lg:gap-16 opacity-40 flex-wrap">
-            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
-              CHESS.COM
-            </div>
-            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
-              LICHESS
-            </div>
-            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer">
-              FIDE
-            </div>
-            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer hidden xs:block">
-              CHESSCLUB
-            </div>
-            <div className="text-gray-400 font-bold text-xs sm:text-sm tracking-wider hover:text-white transition-colors cursor-pointer hidden sm:block">
-              CHESS24
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
   );
 };

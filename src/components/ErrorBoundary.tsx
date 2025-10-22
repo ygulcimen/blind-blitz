@@ -24,7 +24,16 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.props.onError?.(error, errorInfo);
+
+    // Auto-redirect to lobby after showing error briefly
+    setTimeout(() => {
+      window.location.href = '/games';
+    }, 3000);
   }
+
+  handleReturnToLobby = () => {
+    window.location.href = '/games';
+  };
 
   render() {
     if (this.state.hasError) {
@@ -33,30 +42,41 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-          <div className="bg-gray-800 border border-red-500/50 rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-red-400 mb-4">
-              ⚠️ Something went wrong
-            </h2>
-            <p className="text-gray-300 mb-4">
-              An unexpected error occurred. Please refresh the page to continue.
-            </p>
-            {this.state.error && (
-              <details className="text-sm text-gray-400 mb-4">
-                <summary className="cursor-pointer hover:text-gray-300">
-                  Error details
+        <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black flex items-center justify-center p-4">
+          <div className="bg-gray-800/80 backdrop-blur-sm border border-red-500/50 rounded-xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-red-400 mb-2">
+                Oops! Something went wrong
+              </h2>
+              <p className="text-gray-300 text-sm">
+                Don't worry, we're taking you back to safety
+              </p>
+            </div>
+
+            {this.state.error && import.meta.env.DEV && (
+              <details className="text-sm text-gray-400 mb-6 bg-gray-900/50 rounded p-3">
+                <summary className="cursor-pointer hover:text-gray-300 font-medium">
+                  Error details (dev mode)
                 </summary>
-                <pre className="mt-2 p-2 bg-gray-900 rounded overflow-auto">
+                <pre className="mt-2 text-xs overflow-auto">
                   {this.state.error.toString()}
                 </pre>
               </details>
             )}
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors"
-            >
-              Reload Page
-            </button>
+
+            <div className="space-y-3">
+              <button
+                onClick={this.handleReturnToLobby}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:scale-105 transform"
+              >
+                Return to Lobby
+              </button>
+
+              <p className="text-center text-gray-500 text-xs">
+                Redirecting automatically in 3 seconds...
+              </p>
+            </div>
           </div>
         </div>
       );

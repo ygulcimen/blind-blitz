@@ -11,7 +11,6 @@ import {
 import { WaitingRoomHeader } from './WaitingRoomHeader';
 import { WaitingRoomArena } from './WaitingRoomArena';
 import { PaymentProcessingScreen } from './PaymentProcessingScreen';
-import { PaymentFailedScreen } from './PaymentFailedScreen';
 import { GameStartingScreen } from './GameStartingScreen';
 import { LoadingScreen } from './LoadingScreen';
 import { ErrorScreen } from './ErrorScreen';
@@ -107,9 +106,14 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     return <PaymentProcessingScreen entryFee={roomData.entry_fee} />;
   }
 
-  if (!gameStarted && paymentPhase === 'payment_failed') {
-    return <PaymentFailedScreen error={paymentError} />;
-  }
+  // If payment failed, redirect to lobby with error message
+  useEffect(() => {
+    if (!gameStarted && paymentPhase === 'payment_failed') {
+      console.error('Payment failed:', paymentError);
+      // Navigate back to lobby
+      navigate('/games');
+    }
+  }, [paymentPhase, gameStarted, paymentError, navigate]);
 
   if (!gameStarted && paymentPhase === 'game_starting' && countdown > 0) {
     return <GameStartingScreen mode={roomData.mode} countdown={countdown} />;

@@ -60,25 +60,34 @@ const GameModes: React.FC = () => {
       </div>
 
       {/* Right Side - Live Tournaments */}
-      <div className="hidden xl:block absolute right-8 top-1/3 w-72 opacity-15 hover:opacity-25 transition-opacity duration-500">
-        <div className="bg-gray-900/40 border border-gray-700/40 rounded-2xl p-6 backdrop-blur-sm">
-          <div className="text-white font-medium mb-4">Live Tournaments</div>
+      <div className="hidden xl:block absolute right-8 top-1/3 w-72 opacity-40 hover:opacity-60 transition-opacity duration-500">
+        <div className="bg-gray-900/60 border border-gray-700/60 rounded-2xl p-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <div className="text-white font-semibold">Live Tournaments</div>
+          </div>
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center p-3 bg-gray-800/40 rounded-lg hover:bg-gray-800/60 transition-colors">
               <div>
-                <div className="text-sm text-white">Weekend Blitz</div>
-                <div className="text-xs text-gray-400">Prize: 🪙 50K</div>
+                <div className="text-sm text-white font-medium">Weekend Blitz</div>
+                <div className="text-xs text-gray-400">Prize: 🪙 50,000</div>
               </div>
-              <div className="text-green-400 text-xs">LIVE</div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="text-green-400 text-xs font-semibold">LIVE</div>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center p-3 bg-gray-800/40 rounded-lg hover:bg-gray-800/60 transition-colors">
               <div>
-                <div className="text-sm text-white">Chaos Masters</div>
-                <div className="text-xs text-gray-400">Prize: 🪙 100K</div>
+                <div className="text-sm text-white font-medium">Chaos Masters</div>
+                <div className="text-xs text-gray-400">Prize: 🪙 100,000</div>
               </div>
-              <div className="text-yellow-400 text-xs">2h left</div>
+              <div className="text-yellow-400 text-xs font-semibold">2h left</div>
             </div>
           </div>
+          <button className="w-full mt-4 text-center text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+            View All Tournaments →
+          </button>
         </div>
       </div>
 
@@ -132,13 +141,13 @@ const GameModes: React.FC = () => {
         {/* Mode Details - Mobile Responsive */}
         <div className="max-w-4xl mx-auto">
           {selectedMode === 'classical' && (
-            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-start">
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                     {t('landing.modes.classical.title')}
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed min-h-[60px]">
                     {t('landing.modes.classical.description')}
                   </p>
                 </div>
@@ -214,13 +223,13 @@ const GameModes: React.FC = () => {
           )}
 
           {selectedMode === 'robochaos' && (
-            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-start">
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                     {t('landing.modes.roboChaos.title')}
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
+                  <p className="text-sm sm:text-base text-gray-400 leading-relaxed min-h-[60px]">
                     {t('landing.modes.roboChaos.description')}
                   </p>
                 </div>
