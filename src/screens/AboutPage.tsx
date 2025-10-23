@@ -29,29 +29,6 @@ const AboutPage: React.FC = () => {
     },
   ];
 
-  const team = [
-    {
-      name: 'Alex Chen',
-      role: 'Founder & Game Designer',
-      description:
-        'Former chess master turned game designer. Created the BlindBlitz concept after losing too many traditional games.',
-      emoji: '👨‍💻',
-    },
-    {
-      name: 'Sarah Williams',
-      role: 'AI & Strategy Director',
-      description:
-        'PhD in AI from MIT. Designed the RoboChaos engine that makes experienced players question everything.',
-      emoji: '🧠',
-    },
-    {
-      name: 'Marcus Rodriguez',
-      role: 'Economy Systems Lead',
-      description:
-        'Former financial analyst. Built the gold economy system that makes every move meaningful.',
-      emoji: '💰',
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-black text-white pt-8">
@@ -94,54 +71,30 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* How It Started */}
-        <div className="grid lg:grid-cols-2 gap-16 mb-16">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-6">
+        <div className="mb-16">
+          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8">
+            <h2 className="text-3xl font-bold text-white mb-6 text-center">
               How It Started
             </h2>
-            <div className="space-y-6 text-gray-400 leading-relaxed">
+            <div className="space-y-6 text-gray-400 leading-relaxed max-w-3xl mx-auto">
               <p>
-                The idea for BlindBlitz came from a simple frustration:
-                traditional chess felt too predictable. Opening theory dominated
-                games, and the economic stakes were purely psychological.
+                BlindBlitz was born from a simple question: What if chess
+                required true strategic thinking instead of memorized opening
+                sequences? What if every move had real consequences?
               </p>
               <p>
-                Our founder, Alex Chen, was a competitive chess player who grew
-                tired of memorizing endless opening variations. "What if," he
-                thought, "players had to commit to moves without seeing their
-                opponent's strategy? What if every move had a real cost?"
+                We combined the ancient game of chess with modern game theory,
+                creating a unique experience where players commit to their first
+                moves blind, manage an in-game economy, and face completely
+                unpredictable scenarios in RoboChaos mode.
               </p>
               <p>
-                That simple question evolved into BlindBlitz – a game where
-                intuition matters more than memorization, where resource
-                management is as important as tactics, and where every game
-                tells a unique story.
+                The result is a game where intuition matters more than
+                memorization, resource management is as crucial as tactics,
+                and every match tells a unique story. BlindBlitz isn't just
+                another chess variant – it's chess reimagined for the strategic
+                minds of today.
               </p>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8">
-            <div className="text-center mb-6">
-              <div className="text-5xl mb-4">📈</div>
-              <h3 className="text-xl font-bold text-white">Growing Fast</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Active Players</span>
-                <span className="text-white font-semibold">50,000+</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Games Played</span>
-                <span className="text-white font-semibold">2.5M+</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Gold Earned</span>
-                <span className="text-yellow-400 font-semibold">100M+ 🪙</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Countries</span>
-                <span className="text-white font-semibold">150+</span>
-              </div>
             </div>
           </div>
         </div>
@@ -176,36 +129,50 @@ const AboutPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Team Section */}
+        {/* Core Values */}
         <div className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-white mb-4">
-              Meet the Team
+              Our Core Values
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              The minds behind BlindBlitz are passionate about innovation,
-              strategy, and creating the future of competitive gaming.
+              The principles that guide every decision we make at BlindBlitz
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div
-                key={index}
-                className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 text-center"
-              >
-                <div className="text-6xl mb-4">{member.emoji}</div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {member.name}
-                </h3>
-                <div className="text-blue-400 font-semibold mb-4">
-                  {member.role}
-                </div>
-                <p className="text-gray-400 leading-relaxed">
-                  {member.description}
-                </p>
-              </div>
-            ))}
+            <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 text-center">
+              <div className="text-6xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Innovation First
+              </h3>
+              <p className="text-gray-400 leading-relaxed">
+                We're not afraid to challenge thousand-year-old traditions.
+                Every feature is designed to push chess into the modern era.
+              </p>
+            </div>
+
+            <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 text-center">
+              <div className="text-6xl mb-4">🎮</div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Fair Competition
+              </h3>
+              <p className="text-gray-400 leading-relaxed">
+                Skill should determine victory, not pay-to-win mechanics.
+                Everyone starts equal, everyone can succeed.
+              </p>
+            </div>
+
+            <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-8 text-center">
+              <div className="text-6xl mb-4">🌍</div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Global Community
+              </h3>
+              <p className="text-gray-400 leading-relaxed">
+                Chess is universal, and so is BlindBlitz. We're building a
+                platform where players worldwide compete and connect.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -18,86 +18,86 @@ const FAQPage: React.FC = () => {
     {
       id: 1,
       category: 'gameplay',
-      question: 'What is the blind phase in BlindChess?',
+      question: 'What is the blind phase in BlindBlitz?',
       answer:
-        "The blind phase is the opening part of every game where both players make their first 5 moves without seeing their opponent's moves. This tests strategic planning and intuition rather than memorized opening theory. After 5 moves, the board is revealed and the game continues as normal chess.",
+        "The blind phase is the opening part of every game where both players commit their first 5 moves without seeing their opponent's moves. This tests strategic planning and intuition rather than memorized opening theory. After 5 moves, the board reveals all moves simultaneously and the game continues as standard chess.",
     },
     {
       id: 2,
       category: 'economy',
       question: 'How does the gold system work?',
       answer:
-        "Every move in BlindChess costs gold from your balance. Different game modes have different move costs. You start with 1000 gold as a new player and earn more by winning games. Managing your gold effectively is crucial - if you run out, you can't make moves!",
+        "You earn and spend gold (🪙) to play games. Each game has an entry fee that goes into the prize pool. Winners take the pot! You start with 1000 gold as a new player. Earn more by winning matches, daily login bonuses, and achievements. Different stake levels (Pawn to King arenas) have different entry fees and rewards.",
     },
     {
       id: 3,
       category: 'gameplay',
       question: "What's the difference between Classical and RoboChaos modes?",
       answer:
-        'Classical mode follows traditional chess rules after the blind phase. RoboChaos mode has our AI generate chaotic opening positions that destroy traditional opening theory, forcing players to adapt quickly to unexpected situations.',
+        'Classical mode: Both players start from the standard chess position and play through the blind phase, then continue normally. RoboChaos mode: An AI bot makes the first 5 moves for BOTH players randomly during the blind phase, creating completely chaotic positions. You take over after the chaos and must adapt to whatever situation you inherit. It destroys opening theory!',
     },
     {
       id: 4,
       category: 'economy',
-      question: 'Can I lose all my gold?',
+      question: 'What happens if I run out of gold?',
       answer:
-        "Yes, it's possible to lose all your gold if you're not careful with your moves. However, we provide daily login bonuses, achievement rewards, and free practice modes to help players rebuild their gold reserves. You can also purchase gold if needed.",
+        "Don't worry! We never leave players stranded. If your balance runs low, you can claim daily bonuses, complete achievements for rewards, or start fresh with our welcome-back bonus. Your account never gets locked - you always have a path back to playing.",
     },
     {
       id: 5,
       category: 'tournaments',
       question: 'How do tournaments work?',
       answer:
-        'Tournaments are competitive events with entry fees and prize pools. They can be Classical-only, RoboChaos-only, or mixed format. Players compete in multiple rounds, and winners share the prize pool based on their final ranking.',
+        'Tournaments are special competitive events (coming soon!) with larger prize pools. Entry requires a tournament ticket or higher entry fee. Players compete in multiple rounds, and winners share massive gold rewards. Watch for Weekend Blitz and Chaos Masters tournaments!',
     },
     {
       id: 6,
       category: 'gameplay',
-      question: 'Do I need to be a chess expert to play BlindChess?',
+      question: 'Do I need to be a chess expert to play BlindBlitz?',
       answer:
-        'Not at all! While chess knowledge helps, BlindChess rewards strategic thinking and adaptation over memorization. Many traditional chess masters struggle with the blind phase and economy management. We have beginner-friendly modes and tutorials.',
+        'Not at all! While chess knowledge helps, BlindBlitz rewards strategic thinking and adaptation over memorization. The blind phase levels the playing field - even grandmasters can\'t rely on their opening repertoire. If you know how pieces move and basic tactics, you can compete!',
     },
     {
       id: 7,
       category: 'economy',
-      question: 'How much does each move cost?',
+      question: 'How do stake levels work?',
       answer:
-        'Move costs vary by game mode: Classical mode typically costs 10-20 gold per move, while RoboChaos can cost 25-50 gold per move due to higher stakes. Tournament games may have different cost structures.',
+        'We have 6 stake levels (arenas): Pawn (10-24🪙), Knight (25-49🪙), Bishop (50-99🪙), Rook (100-249🪙), Queen (250-499🪙), and King (500+🪙). Higher stakes = higher risks and rewards. Winners in each arena earn rewards based on the entry fee. Choose your comfort level!',
     },
     {
       id: 8,
       category: 'technical',
       question: 'What devices can I play on?',
       answer:
-        'BlindChess is a web-based game that works on any modern browser. You can play on desktop, laptop, tablet, or mobile phone. We also have dedicated mobile apps coming soon.',
+        'BlindBlitz is a web-based game that works on any modern browser (Chrome, Firefox, Safari, Edge). Play on desktop, laptop, tablet, or mobile phone - your account syncs everywhere. No downloads required!',
     },
     {
       id: 9,
-      category: 'tournaments',
-      question: 'When are tournaments held?',
+      category: 'gameplay',
+      question: 'How long does a typical game take?',
       answer:
-        'We run tournaments continuously! There are daily tournaments, weekend specials, and monthly championships. Check the tournaments page for current and upcoming events.',
+        'Games are fast-paced! The blind phase (5 moves each) takes 2-5 minutes depending on your thinking time. The live phase varies based on the position but typically 5-15 minutes. Total game time: 10-20 minutes on average. Perfect for quick strategic battles!',
     },
     {
       id: 10,
       category: 'technical',
       question: 'Is my progress saved across devices?',
       answer:
-        'Yes! Your account, gold balance, game history, and statistics are saved to our servers and sync across all your devices when you log in.',
+        'Absolutely! Your account, gold balance, game history, rating, and all statistics are stored securely on our servers. Log in from any device and pick up right where you left off. Your data is always backed up and synced in real-time.',
     },
     {
       id: 11,
-      category: 'economy',
+      category: 'technical',
       question: 'What happens if I disconnect during a game?',
       answer:
-        "If you disconnect, the game will pause for up to 5 minutes. You can reconnect and continue. If you don't reconnect in time, it counts as a forfeit and you lose your entry fee, but no additional gold penalties apply.",
+        "If you disconnect, you have a grace period to reconnect. During the blind phase, you'll have time to rejoin. In the live phase, your clock keeps running. If you're gone too long, the game may be forfeited. Always play on a stable connection!",
     },
     {
       id: 12,
       category: 'gameplay',
-      question: 'Can I practice without spending gold?',
+      question: 'Can I watch other players\' games?',
       answer:
-        'Yes! We offer free practice modes against AI opponents where you can learn the rules, test strategies, and get comfortable with the interface without risking any gold.',
+        'Spectator mode is coming soon! You\'ll be able to watch high-stakes games in real-time, learn from top players, and follow tournament action. For now, focus on your own battles and climb the leaderboard!',
     },
   ];
 
@@ -131,7 +131,7 @@ const FAQPage: React.FC = () => {
           </h1>
 
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Everything you need to know about BlindChess. Can't find what you're
+            Everything you need to know about BlindBlitz. Can't find what you're
             looking for? Contact our support team.
           </p>
         </div>
