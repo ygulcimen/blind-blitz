@@ -8,12 +8,16 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import { trackPageView } from './lib/analytics';
 
-// Analytics tracker component
+// Analytics tracker and scroll-to-top component
 const AnalyticsTracker = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Track page view
     trackPageView(location.pathname + location.search);
+
+    // Scroll to top on route change
+    window.scrollTo(0, 0);
   }, [location]);
 
   return null;
