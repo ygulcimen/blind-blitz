@@ -55,9 +55,16 @@ export const GameStartingScreen: React.FC<GameStartingScreenProps> = ({
       </div>
 
       <div className="relative z-10 text-center">
-        <div className="text-6xl mb-6 animate-bounce drop-shadow-2xl">
-          {modeConfig.icon}
+        {/* Branded Logo with Glow */}
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 w-24 h-24 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+          <img
+            src="/logo.png"
+            alt="BlindBlitz"
+            className="relative w-24 h-24 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+          />
         </div>
+
         <h1 className="text-5xl font-black mb-3 tracking-wider">
           <span
             className={`bg-gradient-to-r ${modeConfig.gradient} bg-clip-text text-transparent animate-pulse`}
@@ -65,6 +72,7 @@ export const GameStartingScreen: React.FC<GameStartingScreenProps> = ({
             {modeConfig.message}
           </span>
         </h1>
+        <div className="text-3xl mb-4">{modeConfig.icon}</div>
         <p className="text-lg text-gray-300 mb-2">
           💰 Entry fees charged successfully!
         </p>

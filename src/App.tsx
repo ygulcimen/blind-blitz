@@ -46,8 +46,15 @@ const ForgotPasswordPage = lazy(() => import('./screens/auth/ForgotPasswordPage'
 
 // Loading fallback component
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  <div className="flex items-center justify-center min-h-screen bg-black">
+    <div className="relative">
+      <div className="absolute inset-0 w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-md animate-pulse" />
+      <img
+        src="/logo.png"
+        alt="BlindBlitz"
+        className="relative w-12 h-12 rounded-lg animate-pulse"
+      />
+    </div>
   </div>
 );
 

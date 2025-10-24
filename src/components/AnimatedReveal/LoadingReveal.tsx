@@ -27,13 +27,18 @@ export const LoadingReveal: React.FC<LoadingRevealProps> = ({
       </div>
 
       <div className="relative z-10 text-center">
-        {/* Animated Icon */}
-        <div className="relative mb-6">
-          <div className="text-8xl animate-spin-slow">{modeInfo.icon}</div>
-          <div className="absolute inset-0 text-8xl animate-ping opacity-20">
-            {modeInfo.icon}
-          </div>
+        {/* Branded Logo with Glow */}
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 w-24 h-24 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+          <img
+            src="/logo.png"
+            alt="BlindBlitz"
+            className="relative w-24 h-24 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+          />
         </div>
+
+        {/* Mode Icon */}
+        <div className="text-4xl mb-4">{modeInfo.icon}</div>
 
         {/* Loading Title */}
         <h1

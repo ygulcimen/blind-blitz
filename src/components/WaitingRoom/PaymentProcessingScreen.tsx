@@ -15,7 +15,17 @@ export const PaymentProcessingScreen: React.FC<
       </div>
 
       <div className="relative z-10 text-center">
-        <div className="text-6xl mb-6 animate-bounce">💰</div>
+        {/* Branded Logo with Golden Glow */}
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 w-24 h-24 mx-auto rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 blur-xl animate-pulse" />
+          <img
+            src="/logo.png"
+            alt="BlindBlitz"
+            className="relative w-24 h-24 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+          />
+        </div>
+
+        <div className="text-4xl mb-4">💰</div>
         <h1 className="text-4xl font-black mb-3 text-yellow-400">
           PROCESSING PAYMENTS
         </h1>
