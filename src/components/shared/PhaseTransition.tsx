@@ -66,9 +66,16 @@ export const PhaseTransition: React.FC<PhaseTransitionProps> = ({
       }}
     >
       <div className="text-center">
-        <div className="text-6xl mb-4 animate-pulse">
-          {getPhaseIcon(toPhase)}
+        {/* Branded Logo with Glow */}
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 w-24 h-24 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+          <img
+            src="/logo.png"
+            alt="BlindBlitz"
+            className="relative w-24 h-24 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+          />
         </div>
+        <div className="text-4xl mb-4">{getPhaseIcon(toPhase)}</div>
         <div
           className={`text-2xl font-bold bg-gradient-to-r ${getPhaseColor(
             toPhase

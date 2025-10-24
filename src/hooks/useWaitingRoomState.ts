@@ -1,5 +1,5 @@
 // src/hooks/useWaitingRoomState.ts - Complete Implementation
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { lobbyService } from '../services/lobbyService';
 import { matchmakingService } from '../services/matchmakingService';
@@ -144,18 +144,18 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
   };
 
   // Process payments
-  const processPayments = async () => {
+  const processPayments = useCallback(async () => {
     if (!gameId) return;
 
     try {
-      console.log('Payment processing started');
+      console.log('💰 Payment processing started for room:', gameId);
 
       const result = await matchmakingService.processPaymentAndStartGame(
         gameId
       );
 
       if (result.success) {
-        console.log('Payment successful - game starting');
+        console.log('✅ Payment successful - game starting');
         setPaymentPhase('game_starting');
 
         // Start countdown
@@ -167,14 +167,14 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
                 clearInterval(countdownIntervalRef.current);
                 countdownIntervalRef.current = null;
               }
-              console.log('Game started');
+              console.log('🎮 Game started');
               return 0;
             }
             return prev - 1;
           });
         }, 1000);
       } else {
-        console.error('Payment failed:', result.message);
+        console.error('❌ Payment failed:', result.message);
         setPaymentError(result.message);
         setPaymentPhase('payment_failed');
 
@@ -186,7 +186,7 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
         }, 5000);
       }
     } catch (error) {
-      console.error('Payment processing error:', error);
+      console.error('💥 Payment processing error:', error);
       setPaymentError('Network error during payment processing');
       setPaymentPhase('payment_failed');
 
@@ -195,7 +195,7 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
         setPaymentError(null);
       }, 5000);
     }
-  };
+  }, [gameId]);
 
   // Setup real-time subscriptions
   useEffect(() => {
@@ -223,11 +223,10 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
         },
         (payload) => {
           const newRoom = payload.new as RoomData;
-          // If game has started (status changed to 'blind'), clear payment phase
+          // If game has started (status changed to 'blind'), just reload data
+          // DON'T reset payment phase - this would re-trigger payment processing
           if (newRoom?.status === 'blind') {
-            console.log('🎮 Game started, clearing payment phase');
-            setPaymentPhase('waiting');
-            setPaymentError(null);
+            console.log('🎮 Game started (blind phase)');
           }
           loadRoomData();
         }
@@ -306,11 +305,30 @@ export const useWaitingRoomState = (gameId: string | undefined) => {
   const allPlayersReady = players.length === 2 && players.every((p) => p.ready);
 
   useEffect(() => {
-    if (allPlayersReady && paymentPhase === 'waiting' && roomData) {
+    console.log('💡 Payment check:', {
+      playersCount: players.length,
+      playersReady: players.map(p => ({ username: p.username, ready: p.ready })),
+      allPlayersReady,
+      paymentPhase,
+      roomStatus: roomData?.status
+    });
+
+    // Only process payments if:
+    // 1. All players are ready
+    // 2. Payment phase is still 'waiting' (not already processing)
+    // 3. Room status is 'waiting' or 'starting' (NOT 'blind' or 'live')
+    const canProcessPayment =
+      allPlayersReady &&
+      paymentPhase === 'waiting' &&
+      roomData?.status &&
+      (roomData.status === 'waiting' || roomData.status === 'starting');
+
+    if (canProcessPayment) {
+      console.log('🎯 Triggering payment processing - all conditions met');
       setPaymentPhase('processing_payment');
       processPayments();
     }
-  }, [allPlayersReady, paymentPhase, roomData]);
+  }, [allPlayersReady, paymentPhase, roomData?.status, processPayments, players]);
 
   return {
     // State

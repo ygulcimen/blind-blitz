@@ -168,7 +168,14 @@ export const StakeCard: React.FC<StakeCardProps> = ({
         {isSearching && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
             <div className="text-center">
-              <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mb-2 mx-auto" />
+              <div className="relative inline-block mb-2">
+                <div className="absolute inset-0 w-8 h-8 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-md animate-pulse" />
+                <img
+                  src="/logo.png"
+                  alt="BlindBlitz"
+                  className="relative w-8 h-8 mx-auto rounded-lg animate-pulse"
+                />
+              </div>
               <div className="text-white text-sm font-semibold">
                 Searching...
               </div>

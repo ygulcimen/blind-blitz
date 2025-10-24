@@ -201,8 +201,14 @@ const LobbyPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-4 animate-pulse">
-            <Swords className="w-6 h-6 text-white" />
+          {/* Branded Logo with Glow */}
+          <div className="relative inline-block mb-4">
+            <div className="absolute inset-0 w-16 h-16 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+            <img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="relative w-16 h-16 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+            />
           </div>
           <div className="text-white text-xl font-bold">{t('lobby.loadingArena')}</div>
           <div className="text-gray-400 text-sm mt-2">
@@ -526,12 +532,14 @@ const LobbyPage: React.FC = () => {
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              {/* Loading animation */}
+              {/* Branded Loading animation */}
               <div className="relative mb-4 sm:mb-6">
-                <div className="animate-spin w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Swords className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                </div>
+                <div className="absolute inset-0 w-16 h-16 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+                <img
+                  src="/logo.png"
+                  alt="BlindBlitz"
+                  className="relative w-16 h-16 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+                />
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">

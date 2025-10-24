@@ -71,7 +71,15 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = memo(({
     return (
       <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-4xl sm:text-5xl lg:text-6xl mb-4 animate-spin">⚔️</div>
+          {/* Branded Logo with Glow */}
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 w-24 h-24 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+            <img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="relative w-24 h-24 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+            />
+          </div>
           <div className="text-lg sm:text-xl lg:text-2xl font-bold mb-2">
             {!playerDataLoaded ? 'Loading Player Data...' : 'Preparing Battle Reveal...'}
           </div>

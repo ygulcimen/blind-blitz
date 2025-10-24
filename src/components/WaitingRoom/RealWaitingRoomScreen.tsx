@@ -86,6 +86,19 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
     };
   }, [gameId, roomData?.mode, onGameStart]);
 
+  // If payment failed, redirect to lobby with error message
+  // IMPORTANT: This hook must be called before any conditional returns
+  useEffect(() => {
+    if (roomData && paymentPhase === 'payment_failed') {
+      const gameStarted = roomData.status === 'blind' || roomData.status === 'live';
+      if (!gameStarted) {
+        console.error('Payment failed:', paymentError);
+        // Navigate back to lobby
+        navigate('/games');
+      }
+    }
+  }, [paymentPhase, roomData, paymentError, navigate]);
+
   // Loading state
   if (loading) {
     return <LoadingScreen />;
@@ -105,15 +118,6 @@ const RealWaitingRoomScreen: React.FC<RealWaitingRoomScreenProps> = ({
   if (!gameStarted && paymentPhase === 'processing_payment') {
     return <PaymentProcessingScreen entryFee={roomData.entry_fee} />;
   }
-
-  // If payment failed, redirect to lobby with error message
-  useEffect(() => {
-    if (!gameStarted && paymentPhase === 'payment_failed') {
-      console.error('Payment failed:', paymentError);
-      // Navigate back to lobby
-      navigate('/games');
-    }
-  }, [paymentPhase, gameStarted, paymentError, navigate]);
 
   if (!gameStarted && paymentPhase === 'game_starting' && countdown > 0) {
     return <GameStartingScreen mode={roomData.mode} countdown={countdown} />;

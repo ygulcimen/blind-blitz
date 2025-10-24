@@ -105,7 +105,14 @@ const AdminBugReportsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin text-6xl mb-4">⏳</div>
+          <div className="relative inline-block mb-4">
+            <div className="absolute inset-0 w-16 h-16 mx-auto rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur-xl animate-pulse" />
+            <img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="relative w-16 h-16 mx-auto rounded-lg animate-pulse drop-shadow-2xl"
+            />
+          </div>
           <p className="text-gray-400">Loading bug reports...</p>
         </div>
       </div>
