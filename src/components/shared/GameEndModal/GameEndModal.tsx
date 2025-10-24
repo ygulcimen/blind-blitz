@@ -256,6 +256,15 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
         <Card className="relative bg-black/40 backdrop-blur-xl border border-white/15 shadow-2xl overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
+          {/* Top-left logo watermark */}
+          <div className="absolute top-4 left-4 z-10">
+            <img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="w-8 h-8 rounded-lg opacity-40 hover:opacity-60 transition-opacity"
+            />
+          </div>
+
           {/* Top-right close button */}
           <motion.button
             onClick={onClose}

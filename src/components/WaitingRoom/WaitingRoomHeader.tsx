@@ -165,6 +165,13 @@ export const WaitingRoomHeader: React.FC<WaitingRoomHeaderProps> = ({
 
           {/* Center: Arena Title */}
           <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-center">
+            {/* BlindBlitz Logo - Subtle Branding */}
+            <img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg opacity-90 hover:opacity-100 transition-opacity"
+            />
+
             {/* Arena Icon */}
             <motion.div
               animate={isRoboChaos ? {
