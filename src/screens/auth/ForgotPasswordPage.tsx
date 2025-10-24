@@ -81,14 +81,14 @@ const ForgotPasswordPage: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <motion.div
-                className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-lg"
+              <motion.img
+                src="/logo.png"
+                alt="BlindBlitz"
+                className="w-10 h-10 rounded-lg shadow-lg"
                 whileHover={{
                   boxShadow: "0 0 20px rgba(251, 191, 36, 0.4)"
                 }}
-              >
-                <span className="text-black font-black text-lg">BB</span>
-              </motion.div>
+              />
               <span className="text-transparent bg-gradient-to-r from-white via-amber-100 to-amber-200 bg-clip-text font-bold text-xl">
                 BLINDBLITZ
               </span>
@@ -189,16 +189,16 @@ const ForgotPasswordPage: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <motion.div
-              className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-lg"
+            <motion.img
+              src="/logo.png"
+              alt="BlindBlitz"
+              className="w-10 h-10 rounded-lg shadow-lg"
               whileHover={{
                 boxShadow: "0 0 20px rgba(251, 191, 36, 0.4)"
               }}
-            >
-              <span className="text-black font-black text-lg">BC</span>
-            </motion.div>
+            />
             <span className="text-transparent bg-gradient-to-r from-white via-amber-100 to-amber-200 bg-clip-text font-bold text-xl">
-              BLINDCHESS
+              BLINDBLITZ
             </span>
           </motion.button>
           <motion.h1

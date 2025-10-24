@@ -38,6 +38,8 @@ const RewardsPage = lazy(() => import('./screens/RewardsPage').then(m => ({ defa
 const AboutPage = lazy(() => import('./screens/AboutPage'));
 const FAQPage = lazy(() => import('./screens/FAQPage'));
 const HowToPlayPage = lazy(() => import('./screens/HowToPlayPage'));
+const BugReportPage = lazy(() => import('./screens/BugReportPage'));
+const AdminBugReportsPage = lazy(() => import('./screens/AdminBugReportsPage'));
 const LoginPage = lazy(() => import('./screens/auth/LoginPage'));
 const SignUpPage = lazy(() => import('./screens/auth/SignUpPage'));
 const ForgotPasswordPage = lazy(() => import('./screens/auth/ForgotPasswordPage'));
@@ -136,6 +138,24 @@ function App() {
                     <AppLayout>
                       <HowToPlayPage />
                     </AppLayout>
+                  }
+                />
+                <Route
+                  path="/bug-report"
+                  element={
+                    <AppLayout>
+                      <BugReportPage />
+                    </AppLayout>
+                  }
+                />
+                <Route
+                  path="/admin/bug-reports"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <AdminBugReportsPage />
+                      </AppLayout>
+                    </ProtectedRoute>
                   }
                 />
                 <Route

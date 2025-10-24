@@ -136,31 +136,6 @@ const FAQPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-6 text-center">
-            <div className="text-3xl mb-2">❓</div>
-            <div className="text-2xl font-bold text-blue-400 mb-1">
-              {faqs.length}
-            </div>
-            <div className="text-gray-400 text-sm">Total Questions</div>
-          </div>
-
-          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-6 text-center">
-            <div className="text-3xl mb-2">⚡</div>
-            <div className="text-2xl font-bold text-green-400 mb-1">
-              &lt;5min
-            </div>
-            <div className="text-gray-400 text-sm">Average Response</div>
-          </div>
-
-          <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-6 text-center">
-            <div className="text-3xl mb-2">📞</div>
-            <div className="text-2xl font-bold text-yellow-400 mb-1">24/7</div>
-            <div className="text-gray-400 text-sm">Support Available</div>
-          </div>
-        </div>
-
         {/* Category Filter */}
         <div className="flex justify-center mb-8">
           <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-1 backdrop-blur-sm overflow-x-auto">

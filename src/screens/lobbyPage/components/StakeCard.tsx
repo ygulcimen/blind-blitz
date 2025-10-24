@@ -20,6 +20,7 @@ interface StakeCardProps {
   tier: 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
   playerCount: number;
   canAfford: boolean;
+  requiredGold: number;
   isSearching?: boolean;
   onQuickMatch: () => void;
   gameMode?: 'classic' | 'robochaos';
@@ -113,6 +114,7 @@ export const StakeCard: React.FC<StakeCardProps> = ({
   tier,
   playerCount,
   canAfford,
+  requiredGold,
   isSearching = false,
   onQuickMatch,
   gameMode = 'classic',
@@ -279,9 +281,13 @@ export const StakeCard: React.FC<StakeCardProps> = ({
 
         {/* Disabled overlay */}
         {!canAfford && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <div className="bg-red-500/90 text-white text-xs font-bold px-2 py-1 rounded-full">
-              Need {minStake} 🪙
+          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
+            <div className="bg-red-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg mb-2 shadow-lg">
+              🔒 Locked
+            </div>
+            <div className="text-center">
+              <div className="text-yellow-400 text-xs font-semibold">Need {requiredGold} 🪙</div>
+              <div className="text-gray-400 text-[10px] mt-0.5">(2x avg stake)</div>
             </div>
           </div>
         )}

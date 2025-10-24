@@ -26,20 +26,20 @@ const HowToPlayPage: React.FC = () => {
       details: [
         'Submit moves one at a time or all at once',
         'You can undo moves before submitting',
-        'Invalid moves lose you gold rewards',
-        'Valid moves earn you gold bonuses',
+        'Legal moves only - no takebacks after submission',
+        'Plan carefully to maximize your advantage',
       ],
     },
     {
       number: '3',
       title: 'Reveal & Rewards',
-      description: 'Watch the blind moves play out simultaneously. Earn gold based on move quality!',
+      description: 'Watch the blind moves play out simultaneously. See how both strategies clash!',
       icon: '🎬',
       details: [
-        'Valid move: +5 gold',
-        'Capture bonus: +15 gold',
-        'Invalid move: -5 gold penalty',
-        'Opponent invalid move: +10 gold bonus',
+        'All 5 moves from both players execute',
+        'Board position reveals after blind phase',
+        'Bonus rewards awarded for strong moves',
+        'Invalid moves result in penalties',
       ],
     },
     {
@@ -109,32 +109,32 @@ const HowToPlayPage: React.FC = () => {
 
   const rewardSystem = [
     {
-      icon: '✅',
-      title: 'Valid Move',
-      gold: '+5 Gold',
-      color: 'from-green-600 to-emerald-600',
-      description: 'Earn gold for each legal move you make',
-    },
-    {
       icon: '🎯',
-      title: 'Capture Bonus',
-      gold: '+15 Gold',
+      title: 'Entry Fee',
+      gold: 'Stake Level',
       color: 'from-blue-600 to-indigo-600',
-      description: 'Extra reward for capturing opponent pieces',
-    },
-    {
-      icon: '❌',
-      title: 'Invalid Move',
-      gold: '-5 Gold',
-      color: 'from-red-600 to-rose-600',
-      description: 'Penalty for illegal moves (refunded to opponent)',
+      description: 'Each player pays entry fee (10-500🪙) to join the match',
     },
     {
       icon: '💰',
-      title: 'Opponent Error',
-      gold: '+10 Gold',
+      title: 'Prize Pool',
+      gold: '2x Entry Fee',
       color: 'from-yellow-600 to-amber-600',
-      description: 'Bonus when opponent makes invalid move',
+      description: 'Both entry fees create the total pot to win',
+    },
+    {
+      icon: '⚡',
+      title: 'Blind Rewards',
+      gold: 'During Reveal',
+      color: 'from-purple-600 to-pink-600',
+      description: 'Bonus rewards based on move quality in blind phase',
+    },
+    {
+      icon: '🏆',
+      title: 'Winner Takes All',
+      gold: 'Pot + Rewards',
+      color: 'from-green-600 to-emerald-600',
+      description: 'Win the match to claim the full prize pool',
     },
   ];
 
@@ -320,8 +320,8 @@ const HowToPlayPage: React.FC = () => {
 
             <div className="mt-8 bg-gradient-to-r from-yellow-900/20 to-amber-900/20 border border-yellow-500/30 rounded-2xl p-6">
               <p className="text-center text-yellow-200/90 leading-relaxed">
-                <span className="font-bold">💡 Pro Tip:</span> The total pot is split based on blind phase performance.
-                Winner gets their blind rewards + remaining pot. Loser keeps their blind rewards!
+                <span className="font-bold">💡 Pro Tip:</span> Winner takes the entire prize pool (2x entry fee) plus any blind phase bonuses earned.
+                Choose your stake level wisely - higher stakes = bigger rewards!
               </p>
             </div>
           </motion.div>

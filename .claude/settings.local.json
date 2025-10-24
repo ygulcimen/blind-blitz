@@ -26,7 +26,9 @@
       "Bash(curl -L -o stockfish-16.1.zip \"https://github.com/niklasf/stockfish.wasm/releases/download/sf_16.1/stockfish-16.1.zip\")",
       "Bash(npm uninstall stockfish.wasm)",
       "Bash(del nul)",
-      "Bash(npm uninstall @sentry/react)"
+      "Bash(npm uninstall @sentry/react)",
+      "Read(//c/Users/Deniz Nuran/OneDrive/Masaüstü/BlindChess/Project/logo/**)",
+      "Bash(copy:*)"
     ],
     "deny": [],
     "ask": []

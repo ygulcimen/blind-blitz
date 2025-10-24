@@ -64,9 +64,7 @@ const Navigation: React.FC = () => {
               onClick={() => handleNavClick('/')}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-black font-black text-sm">BB</span>
-              </div>
+              <img src="/logo.png" alt="BlindBlitz" className="w-8 h-8 rounded-lg" />
               <span className="text-white font-bold text-lg">BLINDBLITZ</span>
             </button>
 

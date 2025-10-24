@@ -32,7 +32,7 @@ export const DailyRewardNotification: React.FC = () => {
     const result = await dailyRewardService.claimDailyReward(user.id);
 
     if (result?.success) {
-      setRewardAmount(result.reward || 100);
+      setRewardAmount(result.reward || 50);
       setShowSuccess(true);
       setCanClaim(false);
       setShowNotification(false);
@@ -71,7 +71,7 @@ export const DailyRewardNotification: React.FC = () => {
                   Daily Reward Available!
                 </h3>
                 <p className="text-white/90 text-sm mt-1">
-                  Claim your free 100 gold bonus
+                  Claim your free 50 gold bonus
                 </p>
 
                 <button

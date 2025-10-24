@@ -6,6 +6,7 @@ import { matchmakingService } from '../../services/matchmakingService';
 import { statsService } from '../../services/statsService';
 import { Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { canEnterArena, getRequiredGold } from '../../utils/arenaRequirements';
 
 // Import components
 import { ModeToggle } from './components/ModeToggle';
@@ -107,9 +108,13 @@ const LobbyPage: React.FC = () => {
   }, [searchTimer]);
 
   const handleQuickMatch = async (minStake: number, maxStake: number) => {
-    if (!playerData || playerData.gold_balance < minStake) {
+    if (!playerData) return;
+
+    // Check if player meets the 2x average requirement
+    if (!canEnterArena(playerData.gold_balance, minStake, maxStake)) {
+      const requiredGold = getRequiredGold(minStake, maxStake);
       alert(
-        `${t('lobby.insufficientGold')} ${minStake} 🪙 ${t('lobby.toEnterArena')}`
+        `You need at least ${requiredGold} 🪙 to enter this arena (2x average stake). This prevents losing all your gold in one match.`
       );
       return;
     }
@@ -180,15 +185,15 @@ const LobbyPage: React.FC = () => {
 
   // Quick join function for the bottom button
   const handleQuickJoin = () => {
-    // Find the first affordable option
+    // Find the first option that meets the 2x average requirement
     const affordableOption = stakeOptions.find(
-      (option) => playerData && playerData.gold_balance >= option.minStake
+      (option) => playerData && canEnterArena(playerData.gold_balance, option.minStake, option.maxStake)
     );
 
     if (affordableOption) {
       handleQuickMatch(affordableOption.minStake, affordableOption.maxStake);
     } else {
-      alert(t('lobby.insufficientForAny'));
+      alert('You need more gold to enter any arena. Each arena requires 2x the average stake to prevent going broke.');
     }
   };
 
@@ -485,7 +490,8 @@ const LobbyPage: React.FC = () => {
                 displayRange={option.displayRange}
                 tier={option.tier}
                 playerCount={playerCounts[option.minStake] ?? 0}
-                canAfford={playerData.gold_balance >= option.minStake}
+                canAfford={canEnterArena(playerData.gold_balance, option.minStake, option.maxStake)}
+                requiredGold={getRequiredGold(option.minStake, option.maxStake)}
                 isSearching={searchingStake === option.minStake}
                 onQuickMatch={() =>
                   handleQuickMatch(option.minStake, option.maxStake)

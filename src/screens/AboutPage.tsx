@@ -176,6 +176,66 @@ const AboutPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Credits & Development */}
+        <div className="mb-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Built with Collaboration
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              BlindBlitz is a unique collaboration between human creativity and AI assistance
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-900/60 to-gray-800/60 border border-gray-700 rounded-2xl p-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-4 gap-6 text-center">
+              <div>
+                <div className="text-5xl mb-3">👨‍💻</div>
+                <h3 className="text-lg font-bold text-white mb-2">Creator</h3>
+                <p className="text-blue-400 font-semibold mb-1">Yasin Gülçimen</p>
+                <p className="text-sm text-gray-400">
+                  Vision, Design & Development
+                </p>
+              </div>
+
+              <div>
+                <div className="text-5xl mb-3">💝</div>
+                <h3 className="text-lg font-bold text-white mb-2">Biggest Supporter</h3>
+                <p className="text-pink-400 font-semibold mb-1">Deniz Nuran</p>
+                <p className="text-sm text-gray-400">
+                  Unwavering Support & Motivation
+                </p>
+              </div>
+
+              <div>
+                <div className="text-5xl mb-3">🤖</div>
+                <h3 className="text-lg font-bold text-white mb-2">AI Assistant</h3>
+                <p className="text-purple-400 font-semibold mb-1">Claude (Anthropic)</p>
+                <p className="text-sm text-gray-400">
+                  Code Architecture & Implementation
+                </p>
+              </div>
+
+              <div>
+                <div className="text-5xl mb-3">💬</div>
+                <h3 className="text-lg font-bold text-white mb-2">AI Advisor</h3>
+                <p className="text-green-400 font-semibold mb-1">ChatGPT (OpenAI)</p>
+                <p className="text-sm text-gray-400">
+                  Features & Problem Solving
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-700">
+              <p className="text-center text-gray-400 text-sm leading-relaxed">
+                Every feature was developed through collaborative iteration between human intuition
+                and AI capabilities. This project showcases what's possible when humans and AI work together,
+                supported by unwavering belief and encouragement.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Call to Action */}
         <div className="text-center">
           <div className="bg-gray-900/40 border border-gray-700 rounded-2xl p-12 inline-block">
@@ -184,8 +244,7 @@ const AboutPage: React.FC = () => {
               Ready to Experience BlindBlitz?
             </h3>
             <p className="text-gray-400 mb-8 max-w-md">
-              Join thousands of players who have discovered the future of
-              strategic gaming. Every move matters, every game tells a story.
+              Every move matters, every game tells a story.
             </p>
             <div className="flex gap-4 justify-center">
               <button
