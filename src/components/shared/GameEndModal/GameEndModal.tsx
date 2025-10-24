@@ -269,38 +269,38 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
             <X size={16} color="white" />
           </motion.button>
 
-          <div className="relative p-6">
+          <div className="relative p-4">
             {/* Header */}
-            <div className="text-center mb-6">
-              <div className="text-5xl mb-3 drop-shadow-lg animate-bounce">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2 drop-shadow-lg animate-bounce">
                 {resultInfo.icon}
               </div>
-              <h1 className={`text-3xl font-black mb-2 tracking-wide ${resultInfo.textColor} drop-shadow-sm`}>
+              <h1 className={`text-2xl font-black mb-1 tracking-wide ${resultInfo.textColor} drop-shadow-sm`}>
                 {resultInfo.title}
               </h1>
-              <p className="text-gray-200 text-lg font-medium">{resultInfo.subtitle}</p>
+              <p className="text-gray-200 text-sm font-medium">{resultInfo.subtitle}</p>
             </div>
 
             {/* Gold Breakdown */}
             {loading ? (
-              <div className="bg-white/8 backdrop-blur-xl rounded-xl p-4 mb-6 border border-white/15">
+              <div className="bg-white/8 backdrop-blur-xl rounded-xl p-3 mb-4 border border-white/15">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-500/30 rounded mb-3"></div>
-                  <div className="h-6 bg-gray-500/30 rounded"></div>
+                  <div className="h-3 bg-gray-500/30 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-500/30 rounded"></div>
                 </div>
               </div>
             ) : (
-              <div className="bg-white/8 backdrop-blur-xl rounded-xl p-4 mb-6 border border-white/15 shadow-lg">
-                <h3 className="text-lg font-bold text-white mb-4 text-center tracking-wide">
+              <div className="bg-white/8 backdrop-blur-xl rounded-xl p-3 mb-4 border border-white/15 shadow-lg">
+                <h3 className="text-base font-bold text-white mb-3 text-center tracking-wide">
                   💰 Gold Summary
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {blindResults?.game_mode === 'classic' && (
-                    <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-white/5">
-                      <span className="text-gray-200 font-medium">🧠 Blind Phase Strategy:</span>
+                    <div className="flex justify-between items-center py-1.5 px-2 rounded-lg bg-white/5">
+                      <span className="text-gray-200 text-sm font-medium">🧠 Blind Phase:</span>
                       <span
-                        className={`font-bold text-lg ${
+                        className={`font-bold text-base ${
                           goldEarned.blindPhase >= 0
                             ? 'text-green-400'
                             : 'text-red-400'
@@ -312,16 +312,16 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-white/5">
-                    <span className="text-gray-200 font-medium">
+                  <div className="flex justify-between items-center py-1.5 px-2 rounded-lg bg-white/5">
+                    <span className="text-gray-200 text-sm font-medium">
                       ⚔️ {gameResult.winner === 'draw'
                         ? 'Draw Split:'
                         : isWinner
-                        ? 'Victory Reward:'
-                        : 'Battle Result:'}
+                        ? 'Victory:'
+                        : 'Battle:'}
                     </span>
                     <span
-                      className={`font-bold text-lg ${
+                      className={`font-bold text-base ${
                         goldEarned.livePhase > 0
                           ? 'text-yellow-400'
                           : 'text-gray-400'
@@ -332,12 +332,12 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="border-t border-white/20 pt-4 mt-4">
-                    <div className="flex justify-between items-center py-3 px-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-400/20">
-                      <span className="text-white font-bold text-xl">
-                        💰 Total Earned:
+                  <div className="border-t border-white/20 pt-2 mt-2">
+                    <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-400/20">
+                      <span className="text-white font-bold text-base">
+                        💰 Total:
                       </span>
-                      <span className="text-3xl font-black text-yellow-400 drop-shadow-sm">
+                      <span className="text-2xl font-black text-yellow-400 drop-shadow-sm">
                         +{goldEarned.total} 💰
                       </span>
                     </div>
@@ -347,7 +347,7 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
           )}
 
             {/* Modern Animated Action Buttons */}
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-2 justify-center">
               {onRematch && gameResult.type !== 'abandonment' && (
                 <motion.button
                   onClick={() => {}} // Disabled functionality
@@ -357,9 +357,9 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
                   whileHover="hover"
                   whileTap="tap"
                   disabled={true}
-                  className="w-16 h-16 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold rounded-xl backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200 opacity-50 cursor-not-allowed"
+                  className="w-14 h-14 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold rounded-xl backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200 opacity-50 cursor-not-allowed"
                 >
-                  <RotateCcw size={24} color="white" />
+                  <RotateCcw size={20} color="white" />
                 </motion.button>
               )}
 
@@ -370,9 +370,9 @@ export const GameEndModal: React.FC<GameEndModalProps> = ({
                 initial="initial"
                 whileHover="hover"
                 whileTap="tap"
-                className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200"
+                className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200"
               >
-                <Home size={24} color="white" />
+                <Home size={20} color="white" />
               </motion.button>
             </div>
           </div>
