@@ -5,6 +5,9 @@ import type { BlindSequence } from '../../types/BlindTypes';
 import RobotAnimator from './RobotAnimator';
 import RobotMoveLog from './RobotMoveLog';
 import RobotStatusPanel from './RobotStatusPanel';
+import { useCelestialBot } from '../../hooks/useCelestialBot';
+import { celestialBotAI } from '../../services/celestialBotAI';
+import { supabase } from '../../lib/supabase';
 
 interface RobotChaosBlindPhaseProps {
   gameState: any;
@@ -74,7 +77,12 @@ const generateRobotMoves = (color: 'w' | 'b'): BlindSequence => {
 
 const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
   gameState,
+  gameId,
 }) => {
+  // Bot detection for bot games in robochaos mode
+  const { isBotGame, bot, botColor } = useCelestialBot(gameId);
+  const botSubmittedRef = useRef<boolean>(false);
+
   // Safety check for gameState structure
   if (!gameState?.gameState?.blind) {
     return (
@@ -206,6 +214,110 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
       animateMoves(playerMoves);
     }, 1000);
   }, [isBlackPlayer]);
+
+  // Bot auto-submission for robochaos mode - Submit bot's random moves
+  useEffect(() => {
+    const submitBotRandomMoves = async () => {
+      // Only proceed if:
+      // 1. This is a bot game
+      // 2. Bot hasn't submitted yet
+      // 3. We have the bot config and gameId
+      // 4. Human has submitted (check mySubmitted from gameState)
+      if (!isBotGame || !bot || !botColor || botSubmittedRef.current || !gameId) {
+        return;
+      }
+
+      const mySubmitted = gameState?.gameState?.blind?.mySubmitted;
+      if (!mySubmitted) {
+        return;
+      }
+
+      // Check if bot has already submitted (double-check from DB)
+      try {
+        const { data: botMoves, error } = await supabase
+          .from('game_blind_moves')
+          .select('is_submitted')
+          .eq('game_id', gameId)
+          .eq('player_color', botColor)
+          .limit(1);
+
+        if (error) {
+          console.error('🤖 Error checking bot submission status:', error);
+          return;
+        }
+
+        if (botMoves && botMoves.length > 0 && botMoves[0].is_submitted) {
+          console.log('✅ Bot already submitted random moves');
+          botSubmittedRef.current = true;
+          return;
+        }
+
+        console.log(`🤖 RoboChaos: ${bot.config.name} generating random blind phase moves...`);
+        botSubmittedRef.current = true; // Prevent double submission
+
+        // Generate bot's 5 random blind moves (same as generateRobotMoves function)
+        const botRandomMoves = generateRobotMoves(botColor === 'white' ? 'w' : 'b');
+
+        console.log(`✅ Bot generated random moves: ${botRandomMoves.map(m => m.san).join(', ')}`);
+
+        // Submit bot moves to database
+        const botGame = new Chess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+
+        for (let i = 0; i < botRandomMoves.length; i++) {
+          const move = botRandomMoves[i];
+
+          // Save each bot move to database using RLS-bypassing function
+          const { data: insertResult, error: saveError } = await supabase.rpc(
+            'insert_bot_blind_move',
+            {
+              p_game_id: gameId,
+              p_player_color: botColor,
+              p_move_number: i + 1,
+              p_move_from: move.from,
+              p_move_to: move.to,
+              p_move_san: move.san,
+              p_is_submitted: false,
+            }
+          );
+
+          if (saveError || !insertResult?.success) {
+            console.error(`❌ Error saving bot random move ${i + 1}:`, {
+              error: saveError,
+              result: insertResult,
+              moveData: {
+                game_id: gameId,
+                color: botColor,
+                move_number: i + 1,
+                move: move.san,
+                from: move.from,
+                to: move.to,
+              }
+            });
+          }
+        }
+
+        // Mark bot moves as submitted using RLS-bypassing function
+        const { data: submitResult, error: submitError } = await supabase.rpc(
+          'mark_bot_moves_submitted',
+          {
+            p_game_id: gameId,
+            p_player_color: botColor,
+          }
+        );
+
+        if (submitError || !submitResult?.success) {
+          console.error('❌ Error marking bot random moves as submitted:', submitError || submitResult);
+        } else {
+          console.log(`✅ ${bot.config.name} submitted all random blind moves in robochaos mode!`);
+        }
+      } catch (error) {
+        console.error('❌ Error in bot random move auto-submission:', error);
+        botSubmittedRef.current = false; // Allow retry
+      }
+    };
+
+    submitBotRandomMoves();
+  }, [isBotGame, bot, botColor, gameId, gameState?.gameState?.blind?.mySubmitted]);
 
   const animateMoves = (moves: BlindSequence) => {
     let index = 0;
