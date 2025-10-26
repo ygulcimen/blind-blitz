@@ -80,8 +80,7 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
   gameId,
 }) => {
   // Bot detection for bot games in robochaos mode
-  const { isBotGame, bot, botColor } = useCelestialBot(gameId);
-  const botSubmittedRef = useRef<boolean>(false);
+  const { isBotGame, bot, botColor, loading: botLoading } = useCelestialBot(gameId);
 
   // Safety check for gameState structure
   if (!gameState?.gameState?.blind) {
@@ -163,25 +162,124 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
     // Submit moves immediately
     setTimeout(async () => {
       console.log('🤖 Submitting moves after skip');
-      if (gameState.submitBlindMoves) {
-        console.log('🤖 White moves:', whiteMoveRef.current);
-        console.log('🤖 Black moves:', blackMoveRef.current);
 
-        try {
-          await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
-          await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
-          console.log('🤖 Both players moves submitted');
+      if (!gameState.submitBlindMoves || !gameId) {
+        console.error('❌ gameState.submitBlindMoves or gameId not available (skip)');
+        return;
+      }
 
-          // Manually trigger reveal transition for RobotChaos
-          if (gameState.proceedToReveal) {
-            console.log('🤖 Triggering reveal phase');
-            setTimeout(() => {
-              gameState.proceedToReveal();
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('🤖 Error submitting moves:', error);
+      console.log('🤖 White moves:', whiteMoveRef.current);
+      console.log('🤖 Black moves:', blackMoveRef.current);
+
+      try {
+        // Submit human player's moves (P1 - white)
+        await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
+        console.log('✅ White (P1) moves submitted (skip)');
+
+        // Check if P2 (black) is a bot by querying game_room_players
+        const { data: blackPlayer } = await supabase
+          .from('game_room_players')
+          .select('player_id')
+          .eq('room_id', gameId)
+          .eq('color', 'black')
+          .single();
+
+        if (!blackPlayer) {
+          console.error('❌ Black player not found (skip)');
+          return;
         }
+
+        // Check if black player is a bot (UUID starts with 00000000-0000-0000-0001)
+        const isBlackPlayerBot = blackPlayer.player_id.startsWith('00000000-0000-0000-0001');
+        console.log('🔍 Black player check (skip):', { playerId: blackPlayer.player_id, isBot: isBlackPlayerBot });
+
+        if (isBlackPlayerBot) {
+          console.log('🤖 Bot detected as black player (skip) - generating AI moves');
+
+          // Get bot config
+          const { celestialBotMatchmaking } = await import('../../services/celestialBotMatchmaking');
+          const botDetails = await celestialBotMatchmaking.getBotPlayerDetails(blackPlayer.player_id);
+
+          if (!botDetails) {
+            console.error('❌ Bot details not found (skip)');
+            await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+            return;
+          }
+
+          console.log(`🤖 Generating AI moves for ${botDetails.config.name} (skip)`);
+
+          // Generate bot's intelligent moves
+          const botBlindMoves = await celestialBotAI.generateBlindPhaseMoves(
+            botDetails.config,
+            'black'
+          );
+
+          console.log(`✅ Bot AI moves (skip): ${botBlindMoves.join(', ')}`);
+
+          // Convert bot moves from SAN to from/to format and save directly to DB
+          const botGame = new Chess(INITIAL_FEN);
+
+          for (let i = 0; i < botBlindMoves.length; i++) {
+            const currentFen = botGame.fen().split(' ');
+            currentFen[1] = 'b';
+            botGame.load(currentFen.join(' '));
+
+            const moveResult = botGame.move(botBlindMoves[i]);
+            if (!moveResult) {
+              console.error(`❌ Bot move ${i + 1} is invalid (skip): ${botBlindMoves[i]}`);
+              continue;
+            }
+
+            // Save each bot move using RLS-bypassing function
+            const { data: insertResult, error: saveError } = await supabase.rpc(
+              'insert_bot_blind_move',
+              {
+                p_game_id: gameId,
+                p_player_color: 'black',
+                p_move_number: i + 1,
+                p_move_from: moveResult.from,
+                p_move_to: moveResult.to,
+                p_move_san: moveResult.san,
+                p_is_submitted: false,
+              }
+            );
+
+            if (saveError || !insertResult?.success) {
+              console.error(`❌ Error saving bot move ${i + 1} (skip):`, saveError);
+            }
+          }
+
+          // Mark bot moves as submitted using RLS-bypassing function
+          const { data: submitResult, error: submitError } = await supabase.rpc(
+            'mark_bot_moves_submitted',
+            {
+              p_game_id: gameId,
+              p_player_color: 'black',
+            }
+          );
+
+          if (submitError || !submitResult?.success) {
+            console.error('❌ Error marking bot moves as submitted (skip):', submitError);
+          } else {
+            console.log('✅ Bot AI moves submitted successfully (skip)');
+          }
+        } else {
+          // Human vs human - submit random moves for P2
+          console.log('👤 Human vs human (skip) - submitting P2 random moves');
+          await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+        }
+
+        console.log('🤖 Both players moves submitted');
+
+        // Manually trigger reveal transition for RobotChaos
+        if (gameState.proceedToReveal) {
+          console.log('🤖 Triggering reveal phase');
+          setTimeout(() => {
+            gameState.proceedToReveal();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('🤖 Error submitting moves:', error);
       }
     }, 500);
   };
@@ -215,128 +313,6 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
     }, 1000);
   }, [isBlackPlayer]);
 
-  // Bot auto-submission for robochaos mode - Submit bot's random moves
-  useEffect(() => {
-    const submitBotRandomMoves = async () => {
-      // Only proceed if:
-      // 1. This is a bot game
-      // 2. Bot hasn't submitted yet
-      // 3. We have the bot config and gameId
-      // 4. Human has submitted (check mySubmitted from gameState)
-      if (!isBotGame || !bot || !botColor || botSubmittedRef.current || !gameId) {
-        return;
-      }
-
-      const mySubmitted = gameState?.gameState?.blind?.mySubmitted;
-      if (!mySubmitted) {
-        return;
-      }
-
-      // Check if bot has already submitted (double-check from DB)
-      try {
-        const { data: botMoves, error } = await supabase
-          .from('game_blind_moves')
-          .select('is_submitted')
-          .eq('game_id', gameId)
-          .eq('player_color', botColor)
-          .limit(1);
-
-        if (error) {
-          console.error('🤖 Error checking bot submission status:', error);
-          return;
-        }
-
-        if (botMoves && botMoves.length > 0 && botMoves[0].is_submitted) {
-          console.log('✅ Bot already submitted random moves');
-          botSubmittedRef.current = true;
-          return;
-        }
-
-        console.log(`🤖 RoboChaos: ${bot.config.name} generating blind phase moves...`);
-        botSubmittedRef.current = true; // Prevent double submission
-
-        // Use the same AI logic as classic mode (intelligent moves, not random)
-        const botBlindMoves = await celestialBotAI.generateBlindPhaseMoves(
-          bot.config,
-          botColor
-        );
-
-        console.log(`✅ Bot generated moves: ${botBlindMoves.join(', ')}`);
-
-        // Submit bot moves to database
-        // NOTE: Moves are already in SAN format from the AI, so we need to parse them
-        const botGame = new Chess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-
-        for (let i = 0; i < botBlindMoves.length; i++) {
-          // Set the correct turn before making the move
-          const currentFen = botGame.fen().split(' ');
-          currentFen[1] = botColor === 'white' ? 'w' : 'b';
-          botGame.load(currentFen.join(' '));
-
-          const moveResult = botGame.move(botBlindMoves[i]);
-          if (!moveResult) {
-            console.error(`❌ Bot move ${i + 1} is invalid: ${botBlindMoves[i]}`);
-            console.error(`Current FEN: ${botGame.fen()}`);
-            console.error(`Attempted move: ${botBlindMoves[i]}`);
-            continue;
-          }
-
-          const move = { from: moveResult.from, to: moveResult.to, san: moveResult.san };
-
-          // Save each bot move to database using RLS-bypassing function
-          const { data: insertResult, error: saveError } = await supabase.rpc(
-            'insert_bot_blind_move',
-            {
-              p_game_id: gameId,
-              p_player_color: botColor,
-              p_move_number: i + 1,
-              p_move_from: move.from,
-              p_move_to: move.to,
-              p_move_san: move.san,
-              p_is_submitted: false,
-            }
-          );
-
-          if (saveError || !insertResult?.success) {
-            console.error(`❌ Error saving bot move ${i + 1}:`, {
-              error: saveError,
-              result: insertResult,
-              moveData: {
-                game_id: gameId,
-                color: botColor,
-                move_number: i + 1,
-                move: botBlindMoves[i],
-                from: moveResult.from,
-                to: moveResult.to,
-                san: moveResult.san
-              }
-            });
-          }
-        }
-
-        // Mark bot moves as submitted using RLS-bypassing function
-        const { data: submitResult, error: submitError } = await supabase.rpc(
-          'mark_bot_moves_submitted',
-          {
-            p_game_id: gameId,
-            p_player_color: botColor,
-          }
-        );
-
-        if (submitError || !submitResult?.success) {
-          console.error('❌ Error marking bot moves as submitted:', submitError || submitResult);
-        } else {
-          console.log(`✅ ${bot.config.name} submitted all blind moves in robochaos mode!`);
-        }
-      } catch (error) {
-        console.error('❌ Error in bot random move auto-submission:', error);
-        botSubmittedRef.current = false; // Allow retry
-      }
-    };
-
-    submitBotRandomMoves();
-  }, [isBotGame, bot, botColor, gameId, gameState?.gameState?.blind?.mySubmitted]);
-
   const animateMoves = (moves: BlindSequence) => {
     let index = 0;
     const game = new Chess(INITIAL_FEN); // Single instance that accumulates moves
@@ -363,25 +339,124 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
         // Submit both players' moves after 2 seconds
         setTimeout(async () => {
           console.log('🤖 Submitting moves for both players');
-          if (gameState.submitBlindMoves) {
-            console.log('🤖 White moves:', whiteMoveRef.current);
-            console.log('🤖 Black moves:', blackMoveRef.current);
 
-            try {
-              await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
-              await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
-              console.log('🤖 Both players moves submitted');
+          if (!gameState.submitBlindMoves || !gameId) {
+            console.error('❌ gameState.submitBlindMoves or gameId not available');
+            return;
+          }
 
-              // Manually trigger reveal transition for RobotChaos
-              if (gameState.proceedToReveal) {
-                console.log('🤖 Triggering reveal phase');
-                setTimeout(() => {
-                  gameState.proceedToReveal();
-                }, 1000);
-              }
-            } catch (error) {
-              console.error('🤖 Error submitting moves:', error);
+          console.log('🤖 White moves:', whiteMoveRef.current);
+          console.log('🤖 Black moves:', blackMoveRef.current);
+
+          try {
+            // Submit human player's moves (P1 - white)
+            await gameState.submitBlindMoves(whiteMoveRef.current, 'P1');
+            console.log('✅ White (P1) moves submitted');
+
+            // Check if P2 (black) is a bot by querying game_room_players
+            const { data: blackPlayer } = await supabase
+              .from('game_room_players')
+              .select('player_id')
+              .eq('room_id', gameId)
+              .eq('color', 'black')
+              .single();
+
+            if (!blackPlayer) {
+              console.error('❌ Black player not found');
+              return;
             }
+
+            // Check if black player is a bot (UUID starts with 00000000-0000-0000-0001)
+            const isBlackPlayerBot = blackPlayer.player_id.startsWith('00000000-0000-0000-0001');
+            console.log('🔍 Black player check:', { playerId: blackPlayer.player_id, isBot: isBlackPlayerBot });
+
+            if (isBlackPlayerBot) {
+              console.log('🤖 Bot detected as black player - generating AI moves');
+
+              // Get bot config
+              const { celestialBotMatchmaking } = await import('../../services/celestialBotMatchmaking');
+              const botDetails = await celestialBotMatchmaking.getBotPlayerDetails(blackPlayer.player_id);
+
+              if (!botDetails) {
+                console.error('❌ Bot details not found');
+                await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+                return;
+              }
+
+              console.log(`🤖 Generating AI moves for ${botDetails.config.name}`);
+
+              // Generate bot's intelligent moves
+              const botBlindMoves = await celestialBotAI.generateBlindPhaseMoves(
+                botDetails.config,
+                'black'
+              );
+
+              console.log(`✅ Bot AI moves: ${botBlindMoves.join(', ')}`);
+
+              // Convert bot moves from SAN to from/to format and save directly to DB
+              const botGame = new Chess(INITIAL_FEN);
+
+              for (let i = 0; i < botBlindMoves.length; i++) {
+                const currentFen = botGame.fen().split(' ');
+                currentFen[1] = 'b';
+                botGame.load(currentFen.join(' '));
+
+                const moveResult = botGame.move(botBlindMoves[i]);
+                if (!moveResult) {
+                  console.error(`❌ Bot move ${i + 1} is invalid: ${botBlindMoves[i]}`);
+                  continue;
+                }
+
+                // Save each bot move using RLS-bypassing function
+                const { data: insertResult, error: saveError } = await supabase.rpc(
+                  'insert_bot_blind_move',
+                  {
+                    p_game_id: gameId,
+                    p_player_color: 'black',
+                    p_move_number: i + 1,
+                    p_move_from: moveResult.from,
+                    p_move_to: moveResult.to,
+                    p_move_san: moveResult.san,
+                    p_is_submitted: false,
+                  }
+                );
+
+                if (saveError || !insertResult?.success) {
+                  console.error(`❌ Error saving bot move ${i + 1}:`, saveError);
+                }
+              }
+
+              // Mark bot moves as submitted using RLS-bypassing function
+              const { data: submitResult, error: submitError } = await supabase.rpc(
+                'mark_bot_moves_submitted',
+                {
+                  p_game_id: gameId,
+                  p_player_color: 'black',
+                }
+              );
+
+              if (submitError || !submitResult?.success) {
+                console.error('❌ Error marking bot moves as submitted:', submitError);
+              } else {
+                console.log('✅ Bot AI moves submitted successfully');
+              }
+            } else {
+              // Human vs human - submit random moves for P2
+              console.log('👤 Human vs human - submitting P2 random moves');
+              await gameState.submitBlindMoves(blackMoveRef.current, 'P2');
+            }
+
+            console.log('🤖 Both players moves submitted');
+
+            // Manually trigger reveal transition for RobotChaos
+            if (gameState.proceedToReveal) {
+              console.log('🤖 Triggering reveal phase');
+              setTimeout(() => {
+                gameState.proceedToReveal();
+              }, 1000);
+            }
+          } catch (error) {
+            console.error('🤖 Error submitting moves:', error);
           }
         }, 2000);
         return;
