@@ -252,19 +252,36 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
           return;
         }
 
-        console.log(`🤖 RoboChaos: ${bot.config.name} generating random blind phase moves...`);
+        console.log(`🤖 RoboChaos: ${bot.config.name} generating blind phase moves...`);
         botSubmittedRef.current = true; // Prevent double submission
 
-        // Generate bot's 5 random blind moves (same as generateRobotMoves function)
-        const botRandomMoves = generateRobotMoves(botColor === 'white' ? 'w' : 'b');
+        // Use the same AI logic as classic mode (intelligent moves, not random)
+        const botBlindMoves = await celestialBotAI.generateBlindPhaseMoves(
+          bot.config,
+          botColor
+        );
 
-        console.log(`✅ Bot generated random moves: ${botRandomMoves.map(m => m.san).join(', ')}`);
+        console.log(`✅ Bot generated moves: ${botBlindMoves.join(', ')}`);
 
         // Submit bot moves to database
+        // NOTE: Moves are already in SAN format from the AI, so we need to parse them
         const botGame = new Chess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
-        for (let i = 0; i < botRandomMoves.length; i++) {
-          const move = botRandomMoves[i];
+        for (let i = 0; i < botBlindMoves.length; i++) {
+          // Set the correct turn before making the move
+          const currentFen = botGame.fen().split(' ');
+          currentFen[1] = botColor === 'white' ? 'w' : 'b';
+          botGame.load(currentFen.join(' '));
+
+          const moveResult = botGame.move(botBlindMoves[i]);
+          if (!moveResult) {
+            console.error(`❌ Bot move ${i + 1} is invalid: ${botBlindMoves[i]}`);
+            console.error(`Current FEN: ${botGame.fen()}`);
+            console.error(`Attempted move: ${botBlindMoves[i]}`);
+            continue;
+          }
+
+          const move = { from: moveResult.from, to: moveResult.to, san: moveResult.san };
 
           // Save each bot move to database using RLS-bypassing function
           const { data: insertResult, error: saveError } = await supabase.rpc(
@@ -281,16 +298,17 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
           );
 
           if (saveError || !insertResult?.success) {
-            console.error(`❌ Error saving bot random move ${i + 1}:`, {
+            console.error(`❌ Error saving bot move ${i + 1}:`, {
               error: saveError,
               result: insertResult,
               moveData: {
                 game_id: gameId,
                 color: botColor,
                 move_number: i + 1,
-                move: move.san,
-                from: move.from,
-                to: move.to,
+                move: botBlindMoves[i],
+                from: moveResult.from,
+                to: moveResult.to,
+                san: moveResult.san
               }
             });
           }
@@ -306,9 +324,9 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
         );
 
         if (submitError || !submitResult?.success) {
-          console.error('❌ Error marking bot random moves as submitted:', submitError || submitResult);
+          console.error('❌ Error marking bot moves as submitted:', submitError || submitResult);
         } else {
-          console.log(`✅ ${bot.config.name} submitted all random blind moves in robochaos mode!`);
+          console.log(`✅ ${bot.config.name} submitted all blind moves in robochaos mode!`);
         }
       } catch (error) {
         console.error('❌ Error in bot random move auto-submission:', error);
