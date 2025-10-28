@@ -173,17 +173,16 @@ const GameModes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.classical.entryFee')}</div>
-                      <div className="text-white text-sm sm:text-base font-semibold">100 🪙</div>
+                <div className="bg-gradient-to-br from-gray-900/60 to-gray-800/40 border border-gray-700 rounded-lg p-4">
+                  <div className="text-center">
+                    <div className="text-gray-400 text-xs sm:text-sm mb-2">
+                      Flexible Stakes System
                     </div>
-                    <div className="text-right">
-                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.classical.winReward')}</div>
-                      <div className="text-green-400 text-sm sm:text-base font-semibold">
-                        300 🪙
-                      </div>
+                    <div className="text-white text-base sm:text-lg font-semibold mb-1">
+                      Choose Your Stake
+                    </div>
+                    <div className="text-gray-300 text-xs sm:text-sm">
+                      Winner takes pot - 5% platform fee
                     </div>
                   </div>
                 </div>
@@ -255,17 +254,16 @@ const GameModes: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-3 sm:p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.roboChaos.entryFee')}</div>
-                      <div className="text-white text-sm sm:text-base font-semibold">200 🪙</div>
+                <div className="bg-gradient-to-br from-purple-900/30 to-gray-800/40 border border-purple-700/50 rounded-lg p-4">
+                  <div className="text-center">
+                    <div className="text-purple-300 text-xs sm:text-sm mb-2">
+                      High Risk, High Reward
                     </div>
-                    <div className="text-right">
-                      <div className="text-gray-400 text-xs sm:text-sm">{t('landing.modes.roboChaos.winReward')}</div>
-                      <div className="text-yellow-400 text-sm sm:text-base font-semibold">
-                        {t('landing.modes.roboChaos.winRewardValue')}
-                      </div>
+                    <div className="text-white text-base sm:text-lg font-semibold mb-1">
+                      Dynamic Stakes
+                    </div>
+                    <div className="text-gray-300 text-xs sm:text-sm">
+                      Chaos brings opportunity - Winner takes all
                     </div>
                   </div>
                 </div>

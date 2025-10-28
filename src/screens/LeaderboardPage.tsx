@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Crown, Medal, TrendingUp } from 'lucide-react';
+import { Trophy, Crown, Medal, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LeaderboardEntry {
   rank: number;
@@ -22,12 +22,16 @@ interface PlayerRank {
   percentile?: number;
 }
 
+const ITEMS_PER_PAGE = 50;
+
 export const LeaderboardPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const [allPlayers, setAllPlayers] = useState<LeaderboardEntry[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [playerRank, setPlayerRank] = useState<PlayerRank | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -35,6 +39,13 @@ export const LeaderboardPage: React.FC = () => {
       fetchPlayerRank();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Update displayed leaderboard when page changes
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    setLeaderboard(allPlayers.slice(startIndex, endIndex));
+  }, [currentPage, allPlayers]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -45,7 +56,8 @@ export const LeaderboardPage: React.FC = () => {
         return;
       }
 
-      setLeaderboard(data || []);
+      setAllPlayers(data || []);
+      setLeaderboard((data || []).slice(0, ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Exception fetching leaderboard:', error);
     } finally {
@@ -104,7 +116,12 @@ export const LeaderboardPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-white">{t('leaderboard.title')}</h1>
           </div>
           <div className="text-gray-400 text-xs sm:text-sm">
-            {t('leaderboard.topPlayers')} {leaderboard.length} {t('leaderboard.playersLabel')}
+            {allPlayers.length > 0 && (
+              <>
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+                {Math.min(currentPage * ITEMS_PER_PAGE, allPlayers.length)} of {allPlayers.length}
+              </>
+            )}
           </div>
         </div>
 
@@ -199,6 +216,50 @@ export const LeaderboardPage: React.FC = () => {
         {leaderboard.length === 0 && (
           <div className="text-center text-gray-500 py-12">
             {t('leaderboard.noPlayers')}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {allPlayers.length > ITEMS_PER_PAGE && (
+          <div className="mt-6 flex items-center justify-between px-2 sm:px-4 py-3 bg-gray-900/30 border border-gray-800 rounded-lg">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                currentPage === 1
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-white bg-gray-800 hover:bg-gray-700'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+              <span className="text-white font-medium">
+                Page {currentPage} of {Math.ceil(allPlayers.length / ITEMS_PER_PAGE)}
+              </span>
+              <span className="hidden sm:inline text-gray-500">
+                ({allPlayers.length} total players)
+              </span>
+            </div>
+
+            <button
+              onClick={() =>
+                setCurrentPage((p) =>
+                  Math.min(Math.ceil(allPlayers.length / ITEMS_PER_PAGE), p + 1)
+                )
+              }
+              disabled={currentPage === Math.ceil(allPlayers.length / ITEMS_PER_PAGE)}
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                currentPage === Math.ceil(allPlayers.length / ITEMS_PER_PAGE)
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-white bg-gray-800 hover:bg-gray-700'
+              }`}
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         )}
       </div>
