@@ -22,7 +22,7 @@ interface PlayerRank {
   percentile?: number;
 }
 
-const ITEMS_PER_PAGE = 50;
+const ITEMS_PER_PAGE = 10;
 
 export const LeaderboardPage: React.FC = () => {
   const { t } = useTranslation();
