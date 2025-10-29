@@ -199,14 +199,18 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 7. Update RLS policies to allow guest players
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Guests can view their own profile" ON players;
+DROP POLICY IF EXISTS "Guests can update their own profile" ON players;
+
 -- Allow guests to read their own data
-CREATE POLICY IF NOT EXISTS "Guests can view their own profile"
+CREATE POLICY "Guests can view their own profile"
 ON players FOR SELECT
 TO anon
 USING (guest_token IS NOT NULL);
 
 -- Allow guests to update their own profile (within limits)
-CREATE POLICY IF NOT EXISTS "Guests can update their own profile"
+CREATE POLICY "Guests can update their own profile"
 ON players FOR UPDATE
 TO anon
 USING (guest_token IS NOT NULL)
