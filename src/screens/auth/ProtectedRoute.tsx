@@ -14,6 +14,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, guestPlayer, isGuest, loading } = useAuth();
   const location = useLocation();
 
+  // Debug logging
+  console.log('🔒 ProtectedRoute check:', {
+    path: location.pathname,
+    loading,
+    hasUser: !!user,
+    hasGuest: !!guestPlayer,
+    isGuest,
+  });
+
   // Show loading spinner while checking auth
   if (loading) {
     return (
@@ -38,9 +47,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to login if not authenticated and not a guest
   if (!hasAccess) {
+    console.log('❌ Access denied, redirecting to', redirectTo);
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   // User or guest is authenticated, show the protected content
+  console.log('✅ Access granted');
   return <>{children}</>;
 };

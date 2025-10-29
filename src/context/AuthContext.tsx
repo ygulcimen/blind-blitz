@@ -25,19 +25,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for guest session first
-    const currentGuestPlayer = guestAuthService.getCurrentGuestPlayer();
-    if (currentGuestPlayer) {
-      console.log('🎮 Guest player found in localStorage:', currentGuestPlayer);
-      setGuestPlayer(currentGuestPlayer);
-      setLoading(false);
-      return;
-    }
-
-    // Get initial session
+    // IMPORTANT: Check for real auth session FIRST
+    // Guest mode should only be used if no authenticated user exists
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+
+      // Only check for guest session if no authenticated user
+      if (!currentUser) {
+        const currentGuestPlayer = guestAuthService.getCurrentGuestPlayer();
+        if (currentGuestPlayer) {
+          console.log('🎮 Guest player found in localStorage:', currentGuestPlayer);
+          setGuestPlayer(currentGuestPlayer);
+        }
+      } else {
+        // Clear guest session if authenticated user exists
+        console.log('✅ Authenticated user found, clearing guest session');
+        guestAuthService.clearGuestSession();
+        setGuestPlayer(null);
+      }
+
       setLoading(false);
     });
 
@@ -51,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Clear guest session if user logs in
       if (currentUser) {
+        console.log('🔄 User logged in, clearing guest session');
+        guestAuthService.clearGuestSession();
         setGuestPlayer(null);
       }
     });
@@ -91,11 +100,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signIn = async (email: string, password: string) => {
+    // Clear any existing guest session before login
+    guestAuthService.clearGuestSession();
+    setGuestPlayer(null);
+
     const result = await supabase.auth.signInWithPassword({ email, password });
 
-    // Track login
+    // Explicitly set user state after successful login
     if (result.data.user) {
+      console.log('✅ Login successful, setting user:', result.data.user.id);
+      setUser(result.data.user);
       analytics.userLogin('email');
+    } else if (result.error) {
+      console.error('❌ Login failed:', result.error.message);
     }
 
     return result;
