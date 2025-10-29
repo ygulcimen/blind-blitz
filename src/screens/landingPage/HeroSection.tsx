@@ -333,16 +333,24 @@ const HeroSection: React.FC = () => {
             {!isLoggedIn && (
               <button
                 onClick={handleGuestMode}
-                className="group bg-gray-800/60 border border-gray-600 text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-sm sm:text-base hover:bg-gray-700/60 hover:border-gray-500 transition-all duration-300 hover:scale-105 transform relative overflow-hidden w-full sm:w-auto"
+                className="group relative bg-gradient-to-r from-purple-600/90 to-blue-600/90 border-2 border-purple-400/50 text-white font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-sm sm:text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transform overflow-hidden w-full sm:w-auto"
               >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                     style={{ backgroundSize: '200% 100%' }}></div>
+
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000"></div>
+                </div>
+
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <span>🎮</span>
-                  <span>Try as Guest</span>
-                  <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
-                    No signup needed
+                  <span className="text-lg">🎮</span>
+                  <span className="font-black tracking-wide">TRY AS GUEST</span>
+                  <span className="text-[10px] sm:text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold border border-white/30">
+                    Instant Play
                   </span>
                 </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             )}
 

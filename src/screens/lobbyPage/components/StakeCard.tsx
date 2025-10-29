@@ -149,9 +149,6 @@ export const StakeCard: React.FC<StakeCardProps> = ({
             <div className="text-[10px] text-gray-300">
               Need <span className="text-yellow-400 font-bold">{requiredGold} 🪙</span> to enter
             </div>
-            <div className="text-[9px] text-gray-500 mt-0.5">
-              (2x average stake)
-            </div>
           </div>
         </div>
       )}
