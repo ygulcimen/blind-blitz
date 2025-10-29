@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { statsService } from '../../services/statsService';
+import { guestAuthService } from '../../services/guestAuthService';
 import FloatingGoldAnimation from './FloatingGoldAnimation';
 // Add this before your HeroSection component
 const TypewriterText: React.FC<{
@@ -127,6 +128,25 @@ const HeroSection: React.FC = () => {
     } else {
       // Unauthenticated users go to signup to create account
       navigate('/signup');
+    }
+  };
+
+  const handleGuestMode = async () => {
+    try {
+      console.log('🎮 Starting guest mode...');
+      const result = await guestAuthService.createGuestSession();
+
+      if (result.success && result.player) {
+        console.log('✅ Guest session created, navigating to games...');
+        // Navigate to games page - guest restrictions will be handled there
+        navigate('/games');
+      } else {
+        console.error('❌ Failed to create guest session:', result.error);
+        alert('Failed to start guest mode. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Error starting guest mode:', error);
+      alert('Something went wrong. Please try again.');
     }
   };
   return (
@@ -308,6 +328,23 @@ const HeroSection: React.FC = () => {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
+
+            {/* Guest Mode Button - Only show if not logged in */}
+            {!isLoggedIn && (
+              <button
+                onClick={handleGuestMode}
+                className="group bg-gray-800/60 border border-gray-600 text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-sm sm:text-base hover:bg-gray-700/60 hover:border-gray-500 transition-all duration-300 hover:scale-105 transform relative overflow-hidden w-full sm:w-auto"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <span>🎮</span>
+                  <span>Try as Guest</span>
+                  <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
+                    No signup needed
+                  </span>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            )}
 
             {/* How to Play - Less prominent text link */}
             <button
