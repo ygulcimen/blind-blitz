@@ -14,12 +14,30 @@ interface PlayerData {
 }
 
 export const useCurrentUser = () => {
-  const { user } = useAuth();
+  const { user, guestPlayer, isGuest } = useAuth();
   const [playerData, setPlayerData] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPlayerData = async () => {
+      // Handle guest players
+      if (isGuest && guestPlayer) {
+        console.log('🎮 Loading guest player data:', guestPlayer);
+        setPlayerData({
+          id: guestPlayer.id,
+          username: guestPlayer.username,
+          email: '', // Guests don't have email
+          gold_balance: guestPlayer.goldBalance,
+          rating: 1200, // Default guest rating
+          games_played: 0,
+          wins: 0,
+          losses: 0,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Handle regular authenticated users
       if (!user) {
         setPlayerData(null);
         setLoading(false);
@@ -46,7 +64,7 @@ export const useCurrentUser = () => {
     };
 
     fetchPlayerData();
-  }, [user]);
+  }, [user, guestPlayer, isGuest]);
 
   return { playerData, loading, user };
 };
