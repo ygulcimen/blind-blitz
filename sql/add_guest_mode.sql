@@ -95,31 +95,37 @@ RETURNS TABLE(
     is_new BOOLEAN
 ) AS $$
 DECLARE
-    v_player RECORD;
+    v_player_id UUID;
+    v_username TEXT;
+    v_guest_token TEXT;
+    v_gold_balance INTEGER;
     v_is_new BOOLEAN := FALSE;
 BEGIN
     -- Try to find existing guest player
     SELECT id, players.username, players.guest_token, players.gold_balance
-    INTO v_player
+    INTO v_player_id, v_username, v_guest_token, v_gold_balance
     FROM players
     WHERE players.guest_token = p_guest_token
         AND players.is_guest = TRUE
         AND players.guest_expires_at > NOW();
 
     -- If not found, create new guest player
-    IF NOT FOUND THEN
+    IF v_player_id IS NULL THEN
         v_is_new := TRUE;
-        SELECT * INTO v_player
-        FROM create_guest_player(p_guest_token);
+
+        -- Call create_guest_player and get the result
+        SELECT cp.player_id, cp.username, cp.guest_token, cp.gold_balance
+        INTO v_player_id, v_username, v_guest_token, v_gold_balance
+        FROM create_guest_player(p_guest_token) AS cp;
     END IF;
 
     -- Return player info
     RETURN QUERY
     SELECT
-        v_player.id,
-        v_player.username,
-        v_player.guest_token,
-        v_player.gold_balance,
+        v_player_id,
+        v_username,
+        v_guest_token,
+        v_gold_balance,
         v_is_new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
