@@ -2,9 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { analytics, setUserProperties } from '../lib/analytics';
+import { guestAuthService, type GuestPlayer } from '../services/guestAuthService';
 
 interface AuthContextType {
   user: User | null;
+  guestPlayer: GuestPlayer | null;
+  isGuest: boolean;
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
@@ -18,9 +21,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [guestPlayer, setGuestPlayer] = useState<GuestPlayer | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for guest session first
+    const currentGuestPlayer = guestAuthService.getCurrentGuestPlayer();
+    if (currentGuestPlayer) {
+      console.log('🎮 Guest player found in localStorage:', currentGuestPlayer);
+      setGuestPlayer(currentGuestPlayer);
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
@@ -35,6 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setLoading(false);
+
+      // Clear guest session if user logs in
+      if (currentUser) {
+        setGuestPlayer(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -85,6 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signOut = async () => {
     await supabase.auth.signOut();
+
+    // Clear guest session if exists
+    if (guestPlayer) {
+      guestAuthService.clearGuestSession();
+      setGuestPlayer(null);
+    }
+
     analytics.userLogout(); // Track logout
   };
 
@@ -94,8 +119,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const isGuest = guestPlayer !== null && user === null;
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{
+      user,
+      guestPlayer,
+      isGuest,
+      loading,
+      signUp,
+      signIn,
+      signOut,
+      resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );
