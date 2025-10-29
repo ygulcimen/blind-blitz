@@ -132,15 +132,39 @@ export const StakeCard: React.FC<StakeCardProps> = ({
     ? 'hover:-translate-y-2 hover:scale-105 hover:rotate-1'
     : 'hover:-translate-y-1 hover:scale-[1.02]';
 
+  // Locked card styling
+  const lockedClass = !canAfford
+    ? 'opacity-40 saturate-50 cursor-not-allowed'
+    : '';
+
   return (
     <div className="group relative">
+      {/* Tooltip for locked arenas */}
+      {!canAfford && (
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <div className="bg-gray-900/95 border border-red-500/50 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+            <div className="text-xs font-semibold text-red-400 mb-0.5">
+              🔒 Insufficient Gold
+            </div>
+            <div className="text-[10px] text-gray-300">
+              Need <span className="text-yellow-400 font-bold">{requiredGold} 🪙</span> to enter
+            </div>
+            <div className="text-[9px] text-gray-500 mt-0.5">
+              (2x average stake)
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => canAfford && !isSearching && onQuickMatch()}
         disabled={!canAfford || isSearching}
-        className={`relative w-full h-64 rounded-2xl overflow-hidden transition-all ${isRoboChaos ? 'duration-200' : 'duration-300'} ${borderGlowClass} ${
+        className={`relative w-full h-64 rounded-2xl overflow-hidden transition-all ${isRoboChaos ? 'duration-200' : 'duration-300'} ${
+          canAfford && !isSearching ? borderGlowClass : 'border border-gray-700/50'
+        } ${
           canAfford && !isSearching
             ? `${hoverTransform} cursor-pointer`
-            : 'cursor-not-allowed'
+            : lockedClass
         }`}
       >
         {/* Background gradient - MODE SPECIFIC */}
@@ -286,15 +310,11 @@ export const StakeCard: React.FC<StakeCardProps> = ({
           </div>
         </div>
 
-        {/* Disabled overlay */}
+        {/* Lock icon indicator for locked arenas */}
         {!canAfford && (
-          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4">
-            <div className="bg-red-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg mb-2 shadow-lg">
-              🔒 Locked
-            </div>
-            <div className="text-center">
-              <div className="text-yellow-400 text-xs font-semibold">Need {requiredGold} 🪙</div>
-              <div className="text-gray-400 text-[10px] mt-0.5">(2x avg stake)</div>
+          <div className="absolute top-4 left-4 z-10">
+            <div className="w-8 h-8 rounded-lg bg-gray-900/90 border border-red-500/30 flex items-center justify-center">
+              <Lock className="w-4 h-4 text-red-400" />
             </div>
           </div>
         )}
