@@ -345,7 +345,6 @@ const HeroSection: React.FC = () => {
                 </div>
 
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <span className="text-lg">🎮</span>
                   <span className="font-black tracking-wide">TRY AS GUEST</span>
                   <span className="text-[10px] sm:text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-semibold border border-white/30">
                     Instant Play
