@@ -1,9 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import viteCompression from 'vite-plugin-compression'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import viteCompression from 'vite-plugin-compression';
 
 // https://vite.dev/config/
 export default defineConfig({
+  worker: {
+    format: 'es',
+  },
   plugins: [
     react(),
     // Brotli compression (better than gzip - 20-25% smaller!)
@@ -30,13 +33,13 @@ export default defineConfig({
           // Split icons library
           'ui-icons': ['lucide-react'],
           // Split Supabase SDK
-          'supabase': ['@supabase/supabase-js'],
+          supabase: ['@supabase/supabase-js'],
           // Split React ecosystem
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           // Split Analytics
-          'analytics': ['react-ga4'],
-        }
-      }
+          analytics: ['react-ga4'],
+        },
+      },
     },
     chunkSizeWarningLimit: 600,
     minify: 'terser',
@@ -63,4 +66,4 @@ export default defineConfig({
     // Report compressed size
     reportCompressedSize: true,
   },
-})
+});

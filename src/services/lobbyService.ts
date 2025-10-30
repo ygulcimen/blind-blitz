@@ -1,5 +1,6 @@
 // src/services/lobbyService.ts - Updated for 5+0 Signature
 import { supabase } from '../lib/supabase';
+import { guestAuthService } from './guestAuthService';
 import type {
   GameRoom,
   GameMode,
@@ -13,6 +14,18 @@ const BLINDCHESS_SIGNATURE = {
   TIME_INCREMENT: 0,
   DESCRIPTION: '5 Blind Moves • 5 Minutes Live • Pure Strategy',
 } as const;
+
+// Helper function to get current player ID (authenticated or guest)
+async function getCurrentPlayerId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    return user.id;
+  }
+
+  const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+  return guestPlayer?.id || null;
+}
 
 type CreateRoomConfig = Partial<GameRoom> & {
   host?: string;
@@ -150,20 +163,17 @@ async function getAvailableRoomsForQuickMatch(
 // Create a new room - ALWAYS 5+0
 async function createRoom(config: CreateRoomConfig): Promise<string> {
   try {
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get current player ID (authenticated or guest)
+    const playerId = await getCurrentPlayerId();
+    if (!playerId) {
       throw new Error('You must be logged in to create a room');
     }
 
-    // Get user's player data
+    // Get player data
     const { data: playerData, error: playerError } = await supabase
       .from('players')
       .select('username, gold_balance, rating')
-      .eq('id', user.id)
+      .eq('id', playerId)
       .single();
 
     if (playerError || !playerData) {
@@ -207,7 +217,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
         rated: true,
         private: false,
         password: null,
-        host_id: user.id,
+        host_id: playerId,
         host_username: playerData.username,
         region: 'global',
       })
@@ -226,7 +236,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
       .from('game_room_players')
       .insert({
         room_id: roomData.id,
-        player_id: user.id,
+        player_id: playerId,
         player_username: playerData.username,
         player_rating: Number(playerData.rating) || 1200,
         ready: false,
@@ -250,20 +260,17 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
 // Join an existing room - verify 5+0
 async function joinRoom(roomId: string): Promise<void> {
   try {
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get current player ID (authenticated or guest)
+    const playerId = await getCurrentPlayerId();
+    if (!playerId) {
       throw new Error('You must be logged in to join a room');
     }
 
-    // Get user's player data
+    // Get player data
     const { data: playerData, error: playerError } = await supabase
       .from('players')
       .select('username, gold_balance, rating')
-      .eq('id', user.id)
+      .eq('id', playerId)
       .single();
 
     if (playerError || !playerData) {
@@ -308,7 +315,7 @@ async function joinRoom(roomId: string): Promise<void> {
       .from('game_room_players')
       .select('id')
       .eq('room_id', roomId)
-      .eq('player_id', user.id)
+      .eq('player_id', playerId)
       .single();
 
     if (existingPlayer) {
@@ -322,7 +329,7 @@ async function joinRoom(roomId: string): Promise<void> {
       .from('game_room_players')
       .insert({
         room_id: roomId,
-        player_id: user.id,
+        player_id: playerId,
         player_username: playerData.username,
         player_rating: Number(playerData.rating) || 1200,
         ready: false,
@@ -344,11 +351,8 @@ async function joinRoom(roomId: string): Promise<void> {
 // Leave a room
 async function leaveRoom(roomId: string): Promise<void> {
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const playerId = await getCurrentPlayerId();
+    if (!playerId) {
       throw new Error('You must be logged in');
     }
 
@@ -376,7 +380,7 @@ async function leaveRoom(roomId: string): Promise<void> {
       const { data: currentPlayer } = await supabase
         .from('players')
         .select('gold_balance')
-        .eq('id', user.id)
+        .eq('id', playerId)
         .single();
 
       if (currentPlayer) {
@@ -386,12 +390,12 @@ async function leaveRoom(roomId: string): Promise<void> {
         const { error: refundError } = await supabase
           .from('players')
           .update({ gold_balance: newBalance })
-          .eq('id', user.id);
+          .eq('id', playerId);
 
         if (!refundError) {
           // Record refund transaction
           await supabase.from('gold_transactions').insert({
-            player_id: user.id,
+            player_id: playerId,
             amount: roomData.entry_fee,
             transaction_type: 'refund',
             description: 'Left BlindChess 5+0 room before game started',
@@ -407,7 +411,7 @@ async function leaveRoom(roomId: string): Promise<void> {
       .from('game_room_players')
       .delete()
       .eq('room_id', roomId)
-      .eq('player_id', user.id);
+      .eq('player_id', playerId);
 
     if (leaveError) {
       console.error('Error leaving BlindChess room:', leaveError);
@@ -424,11 +428,8 @@ async function leaveRoom(roomId: string): Promise<void> {
 // Check if player is in a specific room
 async function isPlayerInRoom(roomId: string): Promise<boolean> {
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const playerId = await getCurrentPlayerId();
+    if (!playerId) {
       return false;
     }
 
@@ -436,7 +437,7 @@ async function isPlayerInRoom(roomId: string): Promise<boolean> {
       .from('game_room_players')
       .select('id')
       .eq('room_id', roomId)
-      .eq('player_id', user.id)
+      .eq('player_id', playerId)
       .single();
 
     return !error && !!data;
@@ -448,11 +449,8 @@ async function isPlayerInRoom(roomId: string): Promise<boolean> {
 // Get current user's active room - must be 5+0
 async function getCurrentUserRoom(): Promise<GameRoom | null> {
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const playerId = await getCurrentPlayerId();
+    if (!playerId) {
       return null;
     }
 
@@ -478,7 +476,7 @@ async function getCurrentUserRoom(): Promise<GameRoom | null> {
         )
       `
       )
-      .eq('player_id', user.id)
+      .eq('player_id', playerId)
       .eq('game_rooms.time_control', '5+0') // 🎯 FILTER BY SIGNATURE TIME CONTROL
       .not('game_rooms.status', 'eq', 'finished')
       .single();

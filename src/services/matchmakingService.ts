@@ -1,5 +1,6 @@
 // src/services/matchmakingService.ts - NEW Pure Matchmaking System
 import { supabase } from '../lib/supabase';
+import { guestAuthService } from './guestAuthService';
 
 interface MatchmakingPreferences {
   mode: 'classic' | 'robochaos';
@@ -43,12 +44,27 @@ class MatchmakingService {
     preferences: MatchmakingPreferences
   ): Promise<MatchmakingResult> {
     try {
-      // Get current user
+      // Get current user (authenticated or guest)
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      if (authError || !user) {
+
+      // Check for guest player if no authenticated user
+      let playerId: string | null = null;
+
+      if (user) {
+        playerId = user.id;
+      } else {
+        // Check for guest session
+        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+        if (guestPlayer) {
+          playerId = guestPlayer.id;
+          console.log('🎮 Guest player joining matchmaking:', guestPlayer.username);
+        }
+      }
+
+      if (!playerId) {
         return {
           success: false,
           action: 'error',
@@ -59,7 +75,7 @@ class MatchmakingService {
 
       // Call our backend matchmaking function
       const { data, error } = await supabase.rpc('start_matchmaking', {
-        player_uuid: user.id,
+        player_uuid: playerId,
         p_mode: preferences.mode,
         p_min_entry_fee: preferences.minEntryFee,
         p_max_entry_fee: preferences.maxEntryFee,
@@ -172,14 +188,27 @@ class MatchmakingService {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      if (authError || !user) {
+
+      // Get player ID (authenticated or guest)
+      let playerId: string | null = null;
+
+      if (user) {
+        playerId = user.id;
+      } else {
+        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+        if (guestPlayer) {
+          playerId = guestPlayer.id;
+        }
+      }
+
+      if (!playerId) {
         return { status: 'not_in_game' };
       }
 
       const { data, error } = await supabase.rpc(
         'get_player_matchmaking_status',
         {
-          player_uuid: user.id,
+          player_uuid: playerId,
         }
       );
 
@@ -213,12 +242,24 @@ class MatchmakingService {
         return { success: true, message: 'Not in any matchmaking room' };
       }
 
-      // Get current user
+      // Get current user (authenticated or guest)
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      if (authError || !user) {
+
+      let playerId: string | null = null;
+
+      if (user) {
+        playerId = user.id;
+      } else {
+        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+        if (guestPlayer) {
+          playerId = guestPlayer.id;
+        }
+      }
+
+      if (!playerId) {
         return { success: false, message: 'Authentication required' };
       }
 
@@ -227,7 +268,7 @@ class MatchmakingService {
         .from('game_room_players')
         .delete()
         .eq('room_id', status.roomId)
-        .eq('player_id', user.id);
+        .eq('player_id', playerId);
 
       if (error) {
         console.error('Error leaving matchmaking room:', error);

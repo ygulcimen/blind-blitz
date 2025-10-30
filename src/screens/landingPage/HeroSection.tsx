@@ -52,7 +52,7 @@ const HeroSection: React.FC = () => {
   const navigate = useNavigate();
 
   // Mock user data - in real app this would come from auth context
-  const { user } = useAuth();
+  const { user, setGuestPlayer } = useAuth();
   const { playerData } = useCurrentUser();
   const isLoggedIn = !!user; // Change this to test logged in state
   const userData = playerData
@@ -137,7 +137,10 @@ const HeroSection: React.FC = () => {
       const result = await guestAuthService.createGuestSession();
 
       if (result.success && result.player) {
-        console.log('✅ Guest session created, navigating to games...');
+        console.log('✅ Guest session created, updating context...');
+        // Update AuthContext with guest player data
+        setGuestPlayer(result.player);
+        console.log('✅ Context updated, navigating to games...');
         // Navigate to games page - guest restrictions will be handled there
         navigate('/games');
       } else {
