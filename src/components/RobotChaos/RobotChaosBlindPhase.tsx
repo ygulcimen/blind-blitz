@@ -505,7 +505,7 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-violet-950 text-white overflow-hidden relative">
+    <div className="h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-violet-950 text-white overflow-hidden relative flex flex-col lg:flex-row">
       {/* Cyberpunk animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
@@ -530,53 +530,91 @@ const RobotChaosBlindPhase: React.FC<RobotChaosBlindPhaseProps> = ({
         </div>
       </div>
 
-      <div className="relative z-10 h-screen flex overflow-hidden">
-        {/* Left: Robot Animator */}
-        <div className="w-72 bg-black/40 backdrop-blur-xl border-r border-purple-500/20 p-4 flex items-center justify-center relative">
-          {/* Panel glow */}
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 via-cyan-500/5 to-transparent pointer-events-none" />
+      {/* Left: Robot Animator - Hidden on mobile */}
+      <div className="hidden lg:block lg:w-72 bg-black/40 backdrop-blur-xl border-r border-purple-500/20 p-4 relative z-10">
+        {/* Panel glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 via-cyan-500/5 to-transparent pointer-events-none" />
 
-          <div className="relative z-10">
-            <RobotAnimator status={status} dialogue={dialogue} />
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <RobotAnimator status={status} dialogue={dialogue} />
+        </div>
+      </div>
+
+      {/* Center: Board - Main focus on mobile */}
+      <div className="flex-1 flex items-center justify-center relative z-10 pb-32 lg:pb-0">
+        <UnifiedChessBoard
+          fen={displayFen}
+          game={new Chess(displayFen)}
+          isFlipped={isBlackPlayer}
+          onPieceDrop={() => false}
+          customSquareStyles={{}}
+          phase="blind"
+          boardWidth={Math.min(500, typeof window !== 'undefined' ? window.innerWidth - 32 : 500)}
+        />
+      </div>
+
+      {/* Right: Move Log & Controls - Hidden on mobile */}
+      <div className="hidden lg:block lg:w-72 bg-black/40 backdrop-blur-xl border-l border-purple-500/20 p-4 relative z-10">
+        {/* Panel glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex-1">
+            <RobotMoveLog
+              moves={(isBlackPlayer ? blackMoves : whiteMoves).slice(
+                0,
+                currentMoveIndex
+              )}
+              maxMoves={MAX_MOVES}
+            />
+          </div>
+
+          <div className="mt-4">
+            <RobotStatusPanel
+              status={status}
+              moveCount={currentMoveIndex}
+              onSkip={status !== 'finished' ? handleSkipAnimation : undefined}
+            />
           </div>
         </div>
+      </div>
 
-        {/* Center: Board */}
-        <div className="flex-1 flex items-center justify-center">
-          <UnifiedChessBoard
-            fen={displayFen}
-            game={new Chess(displayFen)}
-            isFlipped={isBlackPlayer}
-            onPieceDrop={() => false}
-            customSquareStyles={{}}
-            phase="blind"
-            boardWidth={Math.min(500, window.innerWidth - 600)}
-          />
-        </div>
-
-        {/* Right: Move Log & Controls */}
-        <div className="w-72 bg-black/40 backdrop-blur-xl border-l border-purple-500/20 p-4 flex flex-col relative">
-          {/* Panel glow */}
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="flex-1">
-              <RobotMoveLog
-                moves={(isBlackPlayer ? blackMoves : whiteMoves).slice(
-                  0,
-                  currentMoveIndex
-                )}
-                maxMoves={MAX_MOVES}
-              />
+      {/* Mobile Bottom Panel - Robot dialogue and status */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-purple-500/30 z-50">
+        <div className="p-4">
+          {/* Robot Status */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🤖</span>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider">
+                  {status === 'preparing' && 'Initializing'}
+                  {status === 'thinking' && 'Calculating'}
+                  {status === 'moving' && 'Executing'}
+                  {status === 'finished' && 'Complete'}
+                </div>
+                <div className="text-white font-bold text-sm">
+                  Move {currentMoveIndex}/{MAX_MOVES}
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4">
-              <RobotStatusPanel
-                status={status}
-                moveCount={currentMoveIndex}
-                onSkip={status !== 'finished' ? handleSkipAnimation : undefined}
-              />
-            </div>
+            {/* Skip button */}
+            {status !== 'finished' && (
+              <button
+                onClick={handleSkipAnimation}
+                className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-bold rounded border border-purple-500/30 transition-all"
+              >
+                Skip ⏭️
+              </button>
+            )}
+          </div>
+
+          {/* Robot Dialogue */}
+          <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-lg p-3">
+            <p className="text-sm text-cyan-300 italic leading-relaxed">
+              "{dialogue}"
+            </p>
           </div>
         </div>
       </div>
