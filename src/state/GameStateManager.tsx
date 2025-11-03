@@ -16,6 +16,7 @@ import {
 } from '../services/liveMovesService';
 import { supabase } from '../lib/supabase';
 import { goldRewardsService } from '../services/goldRewardsService';
+import { guestAuthService } from '../services/guestAuthService';
 
 export type GamePhase =
   | 'WAITING'
@@ -145,12 +146,27 @@ export const useGameStateManager = (gameId?: string) => {
   const deriveMyColor = useCallback(
     async (bs: BlindGameState): Promise<'white' | 'black' | null> => {
       try {
+        // Try authenticated user first
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
-        const myId = user?.id;
-        if (!myId) return null;
+        let myId = user?.id;
+
+        // If no authenticated user, check for guest player
+        if (!myId) {
+          const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+          if (guestPlayer) {
+            myId = guestPlayer.id;
+            console.log('🎮 Guest player detected in GameStateManager:', guestPlayer.username);
+          }
+        }
+
+        if (!myId) {
+          console.warn('No player ID found (neither authenticated nor guest)');
+          return null;
+        }
+
         if (bs.whitePlayerId === myId) return 'white';
         if (bs.blackPlayerId === myId) return 'black';
         return null;
