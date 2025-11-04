@@ -10,6 +10,7 @@ interface MoveLogItem {
   player: 'P1' | 'P2';
   san: string;
   isInvalid: boolean;
+  isCapture?: boolean; // Detect captures for special effects
   from?: string;
   to?: string;
   moveNumber?: number;
@@ -182,19 +183,32 @@ export const useAnimatedReveal = ({
     };
   }, [roomPlayers, gameMode]); // Add gameMode to dependencies
 
+  // Enrich moveLog with capture detection (if not already present)
+  const enrichedMoveLog = useMemo(() => {
+    return moveLog.map(move => {
+      // If isCapture already set, use it
+      if (move.isCapture !== undefined) {
+        return move;
+      }
+      // Otherwise, detect from SAN notation (contains 'x' for captures)
+      const isCapture = move.san.includes('x');
+      return { ...move, isCapture };
+    });
+  }, [moveLog]);
+
   // Move statistics
   const moveStats: MoveStats = useMemo(() => {
-    const p1Moves = moveLog.filter((m) => m.player === 'P1').length;
-    const p2Moves = moveLog.filter((m) => m.player === 'P2').length;
-    const validMoves = moveLog.filter((m) => !m.isInvalid).length;
-    const invalidMoves = moveLog.filter((m) => m.isInvalid).length;
+    const p1Moves = enrichedMoveLog.filter((m) => m.player === 'P1').length;
+    const p2Moves = enrichedMoveLog.filter((m) => m.player === 'P2').length;
+    const validMoves = enrichedMoveLog.filter((m) => !m.isInvalid).length;
+    const invalidMoves = enrichedMoveLog.filter((m) => m.isInvalid).length;
     return { p1Moves, p2Moves, validMoves, invalidMoves };
-  }, [moveLog]);
+  }, [enrichedMoveLog]);
 
   // Board states generation
   const boardStates = useMemo(() => {
-    const p1Moves = moveLog.filter((m) => m.player === 'P1');
-    const p2Moves = moveLog.filter((m) => m.player === 'P2');
+    const p1Moves = enrichedMoveLog.filter((m) => m.player === 'P1');
+    const p2Moves = enrichedMoveLog.filter((m) => m.player === 'P2');
     const sequenced = [];
 
     const maxMoves = Math.max(p1Moves.length, p2Moves.length);
@@ -246,7 +260,7 @@ export const useAnimatedReveal = ({
     });
 
     return states;
-  }, [initialFen, moveLog]);
+  }, [initialFen, enrichedMoveLog]);
 
   // Play next move animation
   const playNextMove = () => {
@@ -260,7 +274,7 @@ export const useAnimatedReveal = ({
     setShowMoveEffect(true);
     setTimeout(() => setShowMoveEffect(false), 600);
 
-    setCurrentMove(moveLog[nextIndex]);
+    setCurrentMove(enrichedMoveLog[nextIndex]);
 
     if (nextIndex + 1 < boardStates.length) {
       setDisplayFen(boardStates[nextIndex + 1]);

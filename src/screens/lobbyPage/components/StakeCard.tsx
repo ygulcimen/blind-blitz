@@ -1,7 +1,6 @@
 // src/screens/LobbyPage/components/StakeCard.tsx - Refined Version
 import React from 'react';
 import {
-  Users,
   Play,
   Shield,
   Swords,
@@ -240,10 +239,7 @@ export const StakeCard: React.FC<StakeCardProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <Users className="w-3 h-3" />
-              <span>{playerCount}</span>
-            </div>
+            {/* Player count removed for early access - showing low counts may discourage users */}
           </div>
 
           {/* Main content */}

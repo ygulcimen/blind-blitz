@@ -99,6 +99,95 @@ ON gold_transactions FOR INSERT
 TO anon
 WITH CHECK (true);
 
+-- Allow anonymous users (guests) to view blind moves
+-- Needed to see opponent's move count and submission status
+DROP POLICY IF EXISTS "Allow anon to view blind moves" ON game_blind_moves;
+CREATE POLICY "Allow anon to view blind moves"
+ON game_blind_moves FOR SELECT
+TO anon
+USING (true);
+
+-- Allow anonymous users (guests) to insert blind moves
+-- CRITICAL for guest players to make moves in blind phase
+DROP POLICY IF EXISTS "Allow anon to insert blind moves" ON game_blind_moves;
+CREATE POLICY "Allow anon to insert blind moves"
+ON game_blind_moves FOR INSERT
+TO anon
+WITH CHECK (true);
+
+-- Allow anonymous users (guests) to update blind moves
+-- Needed to submit moves and undo moves
+DROP POLICY IF EXISTS "Allow anon to update blind moves" ON game_blind_moves;
+CREATE POLICY "Allow anon to update blind moves"
+ON game_blind_moves FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- Allow anonymous users (guests) to delete blind moves
+-- Needed for undo functionality
+DROP POLICY IF EXISTS "Allow anon to delete blind moves" ON game_blind_moves;
+CREATE POLICY "Allow anon to delete blind moves"
+ON game_blind_moves FOR DELETE
+TO anon
+USING (true);
+
+-- Allow anonymous users (guests) to view live game state
+-- Needed to see current board position and game status
+DROP POLICY IF EXISTS "Allow anon to view live game state" ON game_live_state;
+CREATE POLICY "Allow anon to view live game state"
+ON game_live_state FOR SELECT
+TO anon
+USING (true);
+
+-- Allow anonymous users (guests) to insert live game state
+-- CRITICAL for transitioning from blind phase to live phase
+DROP POLICY IF EXISTS "Allow anon to insert live game state" ON game_live_state;
+CREATE POLICY "Allow anon to insert live game state"
+ON game_live_state FOR INSERT
+TO anon
+WITH CHECK (true);
+
+-- Allow anonymous users (guests) to update live game state
+-- Needed for making moves and updating clock
+DROP POLICY IF EXISTS "Allow anon to update live game state" ON game_live_state;
+CREATE POLICY "Allow anon to update live game state"
+ON game_live_state FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
+-- Allow anonymous users (guests) to view live moves
+-- Needed to see move history
+DROP POLICY IF EXISTS "Allow anon to view live moves" ON game_live_moves;
+CREATE POLICY "Allow anon to view live moves"
+ON game_live_moves FOR SELECT
+TO anon
+USING (true);
+
+-- Allow anonymous users (guests) to insert live moves
+-- CRITICAL for making moves in live phase
+DROP POLICY IF EXISTS "Allow anon to insert live moves" ON game_live_moves;
+CREATE POLICY "Allow anon to insert live moves"
+ON game_live_moves FOR INSERT
+TO anon
+WITH CHECK (true);
+
+-- Allow anonymous users (guests) to upsert player presence
+-- Needed for heartbeat/online status tracking
+DROP POLICY IF EXISTS "Allow anon to upsert player presence" ON player_presence;
+CREATE POLICY "Allow anon to upsert player presence"
+ON player_presence FOR INSERT
+TO anon
+WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow anon to update player presence" ON player_presence;
+CREATE POLICY "Allow anon to update player presence"
+ON player_presence FOR UPDATE
+TO anon
+USING (true)
+WITH CHECK (true);
+
 -- ============================================
 -- STEP 4: Verify inject_bot_into_room function
 -- ============================================
@@ -474,6 +563,15 @@ BEGIN
     RAISE NOTICE '   ✅ SELECT on players (for payment to check gold)';
     RAISE NOTICE '   ✅ UPDATE on players (for payment to deduct gold)';
     RAISE NOTICE '   ✅ INSERT on gold_transactions (for payment logging)';
+    RAISE NOTICE '   ✅ SELECT on game_blind_moves (to view blind moves)';
+    RAISE NOTICE '   ✅ INSERT on game_blind_moves (to make moves in blind phase)';
+    RAISE NOTICE '   ✅ UPDATE on game_blind_moves (to submit moves)';
+    RAISE NOTICE '   ✅ DELETE on game_blind_moves (to undo moves)';
+    RAISE NOTICE '   ✅ SELECT on game_live_state (to view live game)';
+    RAISE NOTICE '   ✅ INSERT on game_live_state (to create live game after blind phase)';
+    RAISE NOTICE '   ✅ UPDATE on game_live_state (to update board and clock)';
+    RAISE NOTICE '   ✅ SELECT on game_live_moves (to view move history)';
+    RAISE NOTICE '   ✅ INSERT on game_live_moves (to make moves in live phase)';
     RAISE NOTICE '';
     RAISE NOTICE '🤖 inject_bot_into_room function updated:';
     RAISE NOTICE '   - Better error messages';

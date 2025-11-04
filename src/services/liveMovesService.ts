@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Chess } from 'chess.js';
 import type { GameResult } from '../types/GameTypes';
 import { withErrorHandling, handleServiceError } from '../utils/errorHandling';
+import { getCurrentPlayerId } from '../utils/getCurrentPlayerId';
 
 export interface LiveMove {
   id: string;
@@ -74,15 +75,13 @@ class LiveMovesService {
    */
   private async sendHeartbeat(gameId: string): Promise<void> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return;
 
       // Only update player_presence table, not game_live_state
       await supabase.from('player_presence').upsert(
         {
-          player_id: user.id,
+          player_id: userId,
           game_id: gameId,
           last_ping: new Date().toISOString(),
           is_online: true,
@@ -154,15 +153,13 @@ class LiveMovesService {
    */
   async leaveGame(gameId: string): Promise<void> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return;
 
       await supabase
         .from('player_presence')
         .update({ is_online: false })
-        .eq('player_id', user.id)
+        .eq('player_id', userId)
         .eq('game_id', gameId);
 
       this.stopHeartbeatMonitoring(gameId);
@@ -360,12 +357,8 @@ class LiveMovesService {
     promotion?: string
   ): Promise<{ success: boolean; move?: LiveMove; error?: string }> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      const userId = await getCurrentPlayerId();
+      if (!userId) {
         return { success: false, error: 'Not authenticated' };
       }
 
@@ -381,7 +374,7 @@ class LiveMovesService {
 
       // Check if it's the player's turn
       const playerColor =
-        gameState.white_player_id === user.id ? 'white' : 'black';
+        gameState.white_player_id === userId ? 'white' : 'black';
       const chess = new Chess(gameState.current_fen);
       const actualTurn = chess.turn() === 'w' ? 'white' : 'black';
 
@@ -454,7 +447,7 @@ class LiveMovesService {
           game_id: gameId,
           move_number: nextMoveNumber,
           player_color: playerColor,
-          player_id: user.id,
+          player_id: userId,
           move_from: from,
           move_to: to,
           move_san: moveResult.san,
@@ -626,12 +619,8 @@ class LiveMovesService {
    */
   async resignGame(gameId: string): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      const userId = await getCurrentPlayerId();
+      if (!userId) {
         return false;
       }
 
@@ -641,7 +630,7 @@ class LiveMovesService {
       }
 
       const playerColor =
-        gameState.white_player_id === user.id ? 'white' : 'black';
+        gameState.white_player_id === userId ? 'white' : 'black';
       const winner = playerColor === 'white' ? 'black' : 'white';
 
       const gameResult: GameResult = {
@@ -676,12 +665,8 @@ class LiveMovesService {
    */
   async offerDraw(gameId: string): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      const userId = await getCurrentPlayerId();
+      if (!userId) {
         return false;
       }
 
@@ -691,7 +676,7 @@ class LiveMovesService {
       }
 
       const playerColor =
-        gameState.white_player_id === user.id ? 'white' : 'black';
+        gameState.white_player_id === userId ? 'white' : 'black';
 
       // Cancel any existing active draw offers
       await supabase
@@ -729,20 +714,13 @@ class LiveMovesService {
     });
 
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        console.log('❌ DRAW RESPONSE: Auth error or no user', {
-          authError,
-          user: !!user,
-        });
+      const userId = await getCurrentPlayerId();
+      if (!userId) {
+        console.log('❌ DRAW RESPONSE: No user ID found');
         return false;
       }
 
-      console.log('🤝 DRAW RESPONSE: User authenticated', { userId: user.id });
+      console.log('🤝 DRAW RESPONSE: User authenticated', { userId });
 
       // Get active draw offer
       console.log(
@@ -1078,12 +1056,8 @@ class LiveMovesService {
    */
   async getPlayerColor(gameId: string): Promise<'white' | 'black' | null> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      const userId = await getCurrentPlayerId();
+      if (!userId) {
         return null;
       }
 
@@ -1092,9 +1066,9 @@ class LiveMovesService {
         return null;
       }
 
-      if (gameState.white_player_id === user.id) {
+      if (gameState.white_player_id === userId) {
         return 'white';
-      } else if (gameState.black_player_id === user.id) {
+      } else if (gameState.black_player_id === userId) {
         return 'black';
       }
 

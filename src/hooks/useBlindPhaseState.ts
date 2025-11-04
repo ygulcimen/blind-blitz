@@ -156,8 +156,7 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
 
   // Rebuild game state from saved moves
   useEffect(() => {
-    if (myMoves.length === 0) return;
-
+    // Always reset to initial state
     const freshGame = new Chess(INITIAL_FEN);
     const fenParts = freshGame.fen().split(' ');
     fenParts[1] = isWhite ? 'w' : 'b';
@@ -166,29 +165,31 @@ export const useBlindPhaseState = (gameState: any, gameId?: string) => {
     pieceTracker.reset();
     ruleEngine.reset();
 
-    // Replay all moves
-    myMoves.forEach(
-      (move: { from: string; to: string; san: string }, index: number) => {
-        const tempMove = freshGame.move({
-          from: move.from,
-          to: move.to,
-          promotion: 'q',
-        });
-        if (tempMove) {
-          const fenParts = freshGame.fen().split(' ');
-          fenParts[1] = colourLetter;
-          freshGame.load(fenParts.join(' '));
-          pieceTracker.recordMove(
-            freshGame,
-            move.from,
-            move.to,
-            move.san,
-            index + 1
-          );
-          ruleEngine.processMove(freshGame, move, index + 1);
+    // If there are moves, replay them
+    if (myMoves.length > 0) {
+      myMoves.forEach(
+        (move: { from: string; to: string; san: string }, index: number) => {
+          const tempMove = freshGame.move({
+            from: move.from,
+            to: move.to,
+            promotion: 'q',
+          });
+          if (tempMove) {
+            const fenParts = freshGame.fen().split(' ');
+            fenParts[1] = colourLetter;
+            freshGame.load(fenParts.join(' '));
+            pieceTracker.recordMove(
+              freshGame,
+              move.from,
+              move.to,
+              move.san,
+              index + 1
+            );
+            ruleEngine.processMove(freshGame, move, index + 1);
+          }
         }
-      }
-    );
+      );
+    }
 
     setGame(freshGame);
   }, [myMoves, isWhite, colourLetter, pieceTracker, ruleEngine]);

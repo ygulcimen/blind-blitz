@@ -339,8 +339,11 @@ export const useGameStateManager = (gameId?: string) => {
       !gameState.blind.myColor ||
       gameState.blind.myMoves.length === 0
     ) {
+      console.log('❌ Cannot undo: no moves or no color');
       return false;
     }
+
+    console.log('♻️ Undoing last move...');
 
     const success = await blindMovesService.removeLastMove(
       gameId,
@@ -348,6 +351,7 @@ export const useGameStateManager = (gameId?: string) => {
     );
 
     if (success) {
+      console.log('✅ Last move removed from database');
       setGameState((prev) => ({
         ...prev,
         blind: {
@@ -355,16 +359,37 @@ export const useGameStateManager = (gameId?: string) => {
           myMoves: prev.blind.myMoves.slice(0, -1),
         },
       }));
+    } else {
+      console.error('❌ Failed to remove last move from database');
     }
 
     return success;
   }, [gameId, gameState.blind.myColor, gameState.blind.myMoves.length]);
 
-  // This method isn't in cleanBlindMovesService, so we'll remove it or implement differently
   const clearBlindMoves = useCallback(async () => {
-    if (!gameId || !gameState.blind.myColor) return false;
+    if (!gameId || !gameState.blind.myColor) {
+      console.log('❌ Cannot reset: no gameId or color');
+      return false;
+    }
 
-    // For now, just clear local state since cleanBlindMovesService doesn't have this method
+    console.log('🗑️ Resetting all moves...');
+
+    // Delete all moves from database
+    const { error } = await supabase
+      .from('game_blind_moves')
+      .delete()
+      .eq('game_id', gameId)
+      .eq('player_color', gameState.blind.myColor)
+      .eq('is_submitted', false); // Only delete unsubmitted moves
+
+    if (error) {
+      console.error('❌ Failed to delete moves from database:', error);
+      return false;
+    }
+
+    console.log('✅ All moves cleared from database');
+
+    // Clear local state
     setGameState((prev) => ({
       ...prev,
       blind: {
@@ -386,6 +411,64 @@ export const useGameStateManager = (gameId?: string) => {
       },
     }));
   }, []);
+
+  // Helper function to check if both players submitted and trigger reveal
+  const checkBothSubmittedAndTransition = useCallback(
+    async (gameId: string) => {
+      try {
+        console.log('🔍 Checking if both players submitted for game:', gameId);
+
+        // First, let's check what's in the database
+        const { data: allMoves } = await supabase
+          .from('game_blind_moves')
+          .select('*')
+          .eq('game_id', gameId)
+          .order('move_number');
+
+        console.log('📋 All blind moves in database:', allMoves);
+
+        // Get blind game state to check submission status
+        const blindState = await blindMovesService.getBlindGameState(gameId);
+
+        if (!blindState) {
+          console.log('❌ Could not get blind game state');
+          return;
+        }
+
+        console.log('📊 Blind state:', {
+          whiteSubmitted: blindState.whiteSubmitted,
+          blackSubmitted: blindState.blackSubmitted,
+          bothSubmitted: blindState.bothSubmitted,
+          whiteMoves: blindState.whiteMoves.length,
+          blackMoves: blindState.blackMoves.length,
+        });
+
+        if (blindState.bothSubmitted) {
+          console.log('✅ Both players submitted! Updating room status to revealing...');
+
+          // Update room status to 'revealing' to trigger phase transition
+          const { error } = await supabase
+            .from('game_rooms')
+            .update({ status: 'revealing' })
+            .eq('id', gameId);
+
+          if (error) {
+            console.error('❌ Failed to update room status:', error);
+          } else {
+            console.log('✅ Room status updated to revealing - phase transition will happen automatically');
+          }
+        } else {
+          console.log('⏳ Waiting for other player to submit...', {
+            whiteSubmitted: blindState.whiteSubmitted,
+            blackSubmitted: blindState.blackSubmitted,
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error checking both submitted:', error);
+      }
+    },
+    []
+  );
 
   // Updated to directly insert moves into game_blind_moves table
   const submitBlindMoves = useCallback(
@@ -439,6 +522,52 @@ export const useGameStateManager = (gameId?: string) => {
 
       // If player has 0 moves, still mark as submitted (time expired or chose not to move)
       if (gameState.blind.myMoves.length === 0) {
+        console.log('📤 Player has 0 moves - inserting submission marker in database');
+
+        // Get current player ID (auth or guest)
+        const { data: { user } } = await supabase.auth.getUser();
+        let playerId = user?.id;
+
+        if (!playerId) {
+          const guestPlayer = guestAuthService.getCurrentGuestPlayer();
+          if (guestPlayer) {
+            playerId = guestPlayer.id;
+          }
+        }
+
+        if (playerId) {
+          // Insert a marker move with is_submitted = true to signal submission with 0 moves
+          // This allows the database trigger to detect that both players submitted
+          console.log('📝 Inserting 0-move marker:', {
+            gameId,
+            playerId,
+            playerColor: gameState.blind.myColor,
+          });
+
+          const { data, error } = await supabase
+            .from('game_blind_moves')
+            .insert({
+              game_id: gameId,
+              player_id: playerId,
+              player_color: gameState.blind.myColor,
+              move_number: 0, // Special marker for "no moves"
+              move_from: 'none',
+              move_to: 'none',
+              move_san: '--', // Indicates no move
+              is_submitted: true,
+              phase_completed_at: new Date().toISOString(),
+            })
+            .select();
+
+          if (error) {
+            console.error('❌ Failed to insert 0-move submission marker:', error);
+          } else {
+            console.log('✅ 0-move submission marker inserted successfully:', data);
+          }
+        } else {
+          console.error('❌ No playerId found - cannot insert marker move');
+        }
+
         setGameState((prev) => ({
           ...prev,
           blind: {
@@ -447,6 +576,12 @@ export const useGameStateManager = (gameId?: string) => {
           },
           timer: { ...prev.timer, isRunning: false },
         }));
+
+        // Check if both players have now submitted
+        setTimeout(async () => {
+          await checkBothSubmittedAndTransition(gameId);
+        }, 500);
+
         return true;
       }
 
@@ -464,6 +599,11 @@ export const useGameStateManager = (gameId?: string) => {
           },
           timer: { ...prev.timer, isRunning: false },
         }));
+
+        // Check if both players have now submitted
+        setTimeout(async () => {
+          await checkBothSubmittedAndTransition(gameId);
+        }, 500);
       }
 
       return success;

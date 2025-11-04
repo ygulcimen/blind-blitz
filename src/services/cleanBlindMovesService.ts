@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Chess } from 'chess.js';
 import type { BlindSequence, MoveLogItem } from '../types/BlindTypes';
 import { withErrorHandling, handleServiceError } from '../utils/errorHandling';
+import { getCurrentPlayerId } from '../utils/getCurrentPlayerId';
 
 export interface BlindGameState {
   gameId: string;
@@ -84,17 +85,15 @@ class CleanBlindMovesService {
     move: { from: string; to: string; san: string }
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return false;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return false;
 
       // Get current move count
       const { data: existingMoves } = await supabase
         .from('game_blind_moves')
         .select('move_number')
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', userId)
         .order('move_number', { ascending: false })
         .limit(1);
 
@@ -112,7 +111,7 @@ class CleanBlindMovesService {
       // Insert move
       const { error } = await supabase.from('game_blind_moves').insert({
         game_id: gameId,
-        player_id: user.id,
+        player_id: userId,
         player_color: playerColor,
         move_number: nextMoveNumber,
         move_from: move.from,
@@ -141,17 +140,15 @@ class CleanBlindMovesService {
     playerColor: 'white' | 'black'
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return false;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return false;
 
       // Get last move
       const { data: lastMove } = await supabase
         .from('game_blind_moves')
         .select('id, move_number')
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', userId)
         .eq('is_submitted', false)
         .order('move_number', { ascending: false })
         .limit(1);
@@ -179,17 +176,15 @@ class CleanBlindMovesService {
     playerColor: 'white' | 'black'
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return false;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return false;
 
       // First, check what moves exist
       const { data: existingMoves } = await supabase
         .from('game_blind_moves')
         .select('*')
         .eq('game_id', gameId)
-        .eq('player_id', user.id);
+        .eq('player_id', userId);
 
       console.log('Existing moves before submit:', existingMoves);
 
@@ -201,7 +196,7 @@ class CleanBlindMovesService {
           phase_completed_at: new Date().toISOString(),
         })
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', userId)
         .eq('is_submitted', false);
 
       if (error) {
@@ -262,24 +257,28 @@ class CleanBlindMovesService {
           (m) => m.player_id === blackPlayerId
         );
 
-        // Build move sequences
+        // Build move sequences - filter out marker moves (move_number = 0)
         whiteMoves.push(
-          ...whitePlayerMoves.map((m) => ({
-            from: m.move_from,
-            to: m.move_to,
-            san: m.move_san,
-          }))
+          ...whitePlayerMoves
+            .filter((m) => m.move_number > 0) // Exclude marker moves
+            .map((m) => ({
+              from: m.move_from,
+              to: m.move_to,
+              san: m.move_san,
+            }))
         );
 
         blackMoves.push(
-          ...blackPlayerMoves.map((m) => ({
-            from: m.move_from,
-            to: m.move_to,
-            san: m.move_san,
-          }))
+          ...blackPlayerMoves
+            .filter((m) => m.move_number > 0) // Exclude marker moves
+            .map((m) => ({
+              from: m.move_from,
+              to: m.move_to,
+              san: m.move_san,
+            }))
         );
 
-        // Check submission status
+        // Check submission status - include marker moves in submission check
         whiteSubmitted =
           whitePlayerMoves.length > 0 &&
           whitePlayerMoves.every((m) => m.is_submitted);
@@ -468,10 +467,8 @@ class CleanBlindMovesService {
    */
   async getPlayerColor(gameId: string): Promise<'white' | 'black' | null> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return null;
+      const userId = await getCurrentPlayerId();
+      if (!userId) return null;
 
       const { data: players } = await supabase
         .from('game_room_players')
@@ -481,7 +478,7 @@ class CleanBlindMovesService {
 
       if (!players || players.length !== 2) return null;
 
-      return user.id === players[0].player_id ? 'white' : 'black';
+      return userId === players[0].player_id ? 'white' : 'black';
     } catch (error) {
       console.error('Failed to get player color:', error);
       return null;

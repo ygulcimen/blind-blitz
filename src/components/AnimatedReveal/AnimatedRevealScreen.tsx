@@ -14,6 +14,7 @@ interface MoveLogItem {
   player: 'P1' | 'P2';
   san: string;
   isInvalid: boolean;
+  isCapture?: boolean;
   from?: string;
   to?: string;
   moveNumber?: number;
@@ -131,6 +132,7 @@ const AnimatedRevealScreen: React.FC<AnimatedRevealScreenProps> = memo(({
         myColor={myColor}
         showMoveEffect={showMoveEffect}
         modeInfo={modeInfo}
+        currentMove={currentMove}
       />
 
       {/* Right: Controls - Hidden on mobile */}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { matchmakingService } from '../../services/matchmakingService';
-import { statsService } from '../../services/statsService';
+// import { statsService } from '../../services/statsService'; // Unused - player counts hidden during early access
 import { Coins, Star, Swords, Crown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canEnterArena, getRequiredGold } from '../../utils/arenaRequirements';
@@ -27,8 +27,8 @@ const LobbyPage: React.FC = () => {
   // Search timer ref
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Player counts per stake range
-  const [playerCounts, setPlayerCounts] = useState<Record<number, number>>({});
+  // Player counts per stake range - DISABLED for early access (not showing counts to users)
+  // const [playerCounts, setPlayerCounts] = useState<Record<number, number>>({});
 
   const stakeOptions = [
     {
@@ -75,28 +75,28 @@ const LobbyPage: React.FC = () => {
     },
   ];
 
-  // Fetch real-time player counts for each stake range
-  useEffect(() => {
-    const fetchPlayerCounts = async () => {
-      const counts: Record<number, number> = {};
-      for (const option of stakeOptions) {
-        const count = await statsService.getPlayerCountForStake(
-          option.minStake,
-          option.maxStake
-        );
-        counts[option.minStake] = count;
-      }
-      setPlayerCounts(counts);
-    };
+  // Fetch real-time player counts for each stake range - DISABLED for early access
+  // useEffect(() => {
+  //   const fetchPlayerCounts = async () => {
+  //     const counts: Record<number, number> = {};
+  //     for (const option of stakeOptions) {
+  //       const count = await statsService.getPlayerCountForStake(
+  //         option.minStake,
+  //         option.maxStake
+  //       );
+  //       counts[option.minStake] = count;
+  //     }
+  //     setPlayerCounts(counts);
+  //   };
 
-    // Fetch immediately
-    fetchPlayerCounts();
+  //   // Fetch immediately
+  //   fetchPlayerCounts();
 
-    // Refresh every 15 seconds
-    const interval = setInterval(fetchPlayerCounts, 15000);
+  //   // Refresh every 15 seconds
+  //   const interval = setInterval(fetchPlayerCounts, 15000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Cleanup search timer on unmount
   useEffect(() => {
@@ -495,7 +495,7 @@ const LobbyPage: React.FC = () => {
                 maxStake={option.maxStake}
                 displayRange={option.displayRange}
                 tier={option.tier}
-                playerCount={playerCounts[option.minStake] ?? 0}
+                playerCount={0} // Hidden during early access
                 canAfford={canEnterArena(playerData.gold_balance, option.minStake, option.maxStake)}
                 requiredGold={getRequiredGold(option.minStake, option.maxStake)}
                 isSearching={searchingStake === option.minStake}

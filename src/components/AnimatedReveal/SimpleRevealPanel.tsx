@@ -11,6 +11,7 @@ interface CurrentMove {
   player: 'P1' | 'P2';
   san: string;
   isInvalid: boolean;
+  isCapture?: boolean;
 }
 
 interface ModeInfo {
@@ -179,6 +180,8 @@ export const SimpleRevealPanel: React.FC<SimpleRevealPanelProps> = ({
                   className={`text-2xl font-black mb-1 ${
                     currentMove.isInvalid
                       ? 'text-red-400 line-through'
+                      : currentMove.isCapture
+                      ? 'text-yellow-400'
                       : 'text-orange-300'
                   }`}
                 >
@@ -191,6 +194,12 @@ export const SimpleRevealPanel: React.FC<SimpleRevealPanelProps> = ({
                   <div className="flex items-center justify-center gap-1 text-red-400 text-xs mt-1">
                     <XCircle className="w-2 h-2" />
                     <span>INVALID</span>
+                  </div>
+                )}
+                {currentMove.isCapture && !currentMove.isInvalid && (
+                  <div className="flex items-center justify-center gap-1 text-yellow-400 text-xs mt-1">
+                    <span className="text-base">💥</span>
+                    <span>CAPTURE!</span>
                   </div>
                 )}
               </div>

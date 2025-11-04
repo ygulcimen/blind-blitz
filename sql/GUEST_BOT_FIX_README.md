@@ -52,9 +52,10 @@ This will:
 5. ✅ Add RLS policies allowing guests to SELECT players (for payment)
 6. ✅ Add RLS policies allowing guests to UPDATE players (for payment)
 7. ✅ Add RLS policies allowing guests to INSERT gold_transactions (for payment)
-8. ✅ Update `inject_bot_into_room` with better error messages
-9. ✅ Update `charge_entry_fees_and_start_game` with debug logging
-10. ✅ Grant execute permissions to anonymous users
+8. ✅ Add RLS policies allowing guests to SELECT/INSERT/UPDATE/DELETE game_blind_moves (for making moves)
+9. ✅ Update `inject_bot_into_room` with better error messages
+10. ✅ Update `charge_entry_fees_and_start_game` with debug logging
+11. ✅ Grant execute permissions to anonymous users
 
 ### Step 2: Test It Works
 
@@ -137,6 +138,16 @@ CREATE POLICY "Allow anon to update players"
 -- Gold Transactions
 CREATE POLICY "Allow anon to insert gold transactions"
   ON gold_transactions FOR INSERT TO anon WITH CHECK (true);
+
+-- Blind Moves
+CREATE POLICY "Allow anon to view blind moves"
+  ON game_blind_moves FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow anon to insert blind moves"
+  ON game_blind_moves FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow anon to update blind moves"
+  ON game_blind_moves FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon to delete blind moves"
+  ON game_blind_moves FOR DELETE TO anon USING (true);
 ```
 
 ### Function Updates
@@ -238,6 +249,7 @@ After running the fix, verify:
 - UPDATE `game_rooms` (for payment to change status to 'blind')
 - SELECT/UPDATE `players` (for payment to check and deduct gold)
 - INSERT `gold_transactions` (for payment logging)
+- SELECT/INSERT/UPDATE/DELETE `game_blind_moves` (for making moves in blind phase)
 
 **Result**: Guests can now play against bots just like authenticated users! Full flow works:
 - Bot joins → Bot marks ready → Guest marks ready → Payment succeeds → Game starts → Routes to blind phase 🎉

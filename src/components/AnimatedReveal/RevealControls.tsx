@@ -11,6 +11,7 @@ interface MoveLogItem {
   player: 'P1' | 'P2';
   san: string;
   isInvalid: boolean;
+  isCapture?: boolean;
   moveNumber?: number;
 }
 
