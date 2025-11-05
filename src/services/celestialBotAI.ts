@@ -2,6 +2,8 @@
 // AI engine for Marvel Celestial bots - handles both blind and live phases
 
 import { Chess } from 'chess.js';
+import { BlindChessRuleEngine } from './chess/BlindChessRuleEngine';
+import { EnhancedPieceTracker } from './chess/EnhancedPieceTracker';
 
 // Bot configuration from database
 export interface BotConfig {
@@ -132,6 +134,7 @@ function minimax(
 /**
  * Generate blind phase moves (5 moves without seeing the board)
  * Based on bot's strategy and personality
+ * NOW ENFORCES: Max 2 moves per piece rule!
  */
 export async function generateBlindPhaseMoves(
   config: BotConfig,
@@ -142,6 +145,10 @@ export async function generateBlindPhaseMoves(
   const chess = new Chess();
   const moves: string[] = [];
   const { strategy, move_quality, blunder_chance } = config.blind_phase;
+
+  // 🔥 CREATE RULE ENGINE AND PIECE TRACKER (max 2 moves per piece, max 5 total moves)
+  const ruleEngine = new BlindChessRuleEngine(2, 5);
+  const pieceTracker = ruleEngine.getPieceTracker();
 
   // Set the board to the bot's color turn
   // In blind phase, each player makes their own 5 moves independently
@@ -159,8 +166,20 @@ export async function generateBlindPhaseMoves(
     currentFen[1] = color === 'white' ? 'w' : 'b';
     chess.load(currentFen.join(' '));
 
-    const legalMoves = chess.moves({ verbose: true });
-    if (legalMoves.length === 0) break;
+    // 🔥 FILTER LEGAL MOVES: Only moves from pieces that haven't exhausted their move limit
+    const allLegalMoves = chess.moves({ verbose: true });
+    const legalMoves = allLegalMoves.filter((move) => {
+      const piece = chess.get(move.from as any);
+      if (!piece) return false;
+
+      // Check if this piece can still move (hasn't used up its 2 moves)
+      return pieceTracker.canPieceMove(piece, move.from);
+    });
+
+    if (legalMoves.length === 0) {
+      console.log(`  Move ${i + 1}: No legal moves available (all pieces exhausted or no moves)`);
+      break;
+    }
 
     let selectedMove;
 
@@ -203,11 +222,45 @@ export async function generateBlindPhaseMoves(
       console.log(`  Move ${i + 1}: ${selectedMove.san} (score: ${evaluatedMoves[randomIndex].score})`);
     }
 
+    // 🔥 VALIDATE MOVE WITH RULE ENGINE
+    const validation = ruleEngine.validateMove(chess, {
+      from: selectedMove.from,
+      to: selectedMove.to,
+      promotion: selectedMove.promotion,
+    });
+
+    if (!validation.isValid) {
+      console.error(`  ❌ Move ${i + 1} validation failed:`, validation.violations);
+      // Skip this move and try to continue (shouldn't happen due to filtering above)
+      continue;
+    }
+
+    // Make the move on the board
+    const moveResult = chess.move(selectedMove);
+    if (!moveResult) {
+      console.error(`  ❌ Move ${i + 1} failed to execute: ${selectedMove.san}`);
+      continue;
+    }
+
+    // 🔥 RECORD MOVE IN PIECE TRACKER
+    ruleEngine.processMove(chess, {
+      from: selectedMove.from,
+      to: selectedMove.to,
+      san: moveResult.san,
+    }, i + 1);
+
     moves.push(selectedMove.san);
-    chess.move(selectedMove);
+
+    // 🔥 LOG PIECE TRACKER STATE
+    const piece = chess.get(selectedMove.to as any);
+    if (piece) {
+      const moveCount = pieceTracker.getPieceMoveCount(piece, selectedMove.to);
+      console.log(`    ↳ ${piece.type.toUpperCase()} at ${selectedMove.to}: ${moveCount}/2 moves used`);
+    }
   }
 
   console.log(`✅ ${config.name} completed blind phase: ${moves.join(', ')}`);
+  console.log(`📊 Final tracker state: ${pieceTracker.getTotalMoves()} total moves, ${pieceTracker.getMovementSummary().exhaustedPieces} exhausted pieces`);
   return moves;
 }
 
