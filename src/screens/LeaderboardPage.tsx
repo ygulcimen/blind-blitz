@@ -159,7 +159,7 @@ export const LeaderboardPage: React.FC = () => {
         {/* Compact Leaderboard Rows - Mobile Responsive */}
         <div className="space-y-0.5 sm:space-y-1">
           {leaderboard.map((entry) => {
-            const isCurrentPlayer = user?.id === entry.player_id;
+            const isCurrentPlayer = playerData?.id === entry.player_id;
             const isTopThree = entry.rank <= 3;
 
             return (

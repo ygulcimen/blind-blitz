@@ -46,7 +46,11 @@ const ProfilePage: React.FC = () => {
 
     try {
       // We already have player data from useCurrentUser
-      setStats(currentUser as PlayerStats);
+      // Add created_at for PlayerStats
+      setStats({
+        ...currentUser,
+        created_at: new Date().toISOString(),
+      } as PlayerStats);
 
       // Fetch recent games (mock data for now - you can implement actual query)
       // This would need a proper games history table
