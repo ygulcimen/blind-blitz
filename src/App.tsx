@@ -28,7 +28,8 @@ import BlindBlitzLanding from './screens/LandingPage';
 import LobbyPage from './screens/lobbyPage/LobbyPage';
 import GameScreen from './screens/GameScreen';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './screens/auth/ProtectedRoute';
+import { SimpleAuthProvider } from './context/SimpleAuthContext';
+import { SimpleProtectedRoute } from './screens/auth/SimpleProtectedRoute';
 import { AuthRedirect } from './screens/auth/AuthRedirect';
 
 // Non-critical screens - lazy load (saves ~300-400kb initial bundle)
@@ -40,8 +41,9 @@ const FAQPage = lazy(() => import('./screens/FAQPage'));
 const HowToPlayPage = lazy(() => import('./screens/HowToPlayPage'));
 const BugReportPage = lazy(() => import('./screens/BugReportPage'));
 const AdminBugReportsPage = lazy(() => import('./screens/AdminBugReportsPage'));
-const LoginPage = lazy(() => import('./screens/auth/LoginPage'));
-const SignUpPage = lazy(() => import('./screens/auth/SignUpPage'));
+// Use simple auth pages (username + password only, no email!)
+const LoginPage = lazy(() => import('./screens/auth/SimpleLoginPage'));
+const SignUpPage = lazy(() => import('./screens/auth/SimpleSignUpPage'));
 const ForgotPasswordPage = lazy(() => import('./screens/auth/ForgotPasswordPage'));
 
 // Loading fallback component
@@ -62,13 +64,14 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <PlayerEconomyProvider>
-          <ViolationProvider>
-            <ModalProvider>
-              <Router>
-                <AnalyticsTracker />
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
+        <SimpleAuthProvider>
+          <PlayerEconomyProvider>
+            <ViolationProvider>
+              <ModalProvider>
+                <Router>
+                  <AnalyticsTracker />
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
                 <Route
                   path="/"
                   element={
@@ -80,11 +83,11 @@ function App() {
                 <Route
                   path="/games"
                   element={
-                    <ProtectedRoute>
+                    <SimpleProtectedRoute>
                       <AppLayout>
                         <LobbyPage />
                       </AppLayout>
-                    </ProtectedRoute>
+                    </SimpleProtectedRoute>
                   }
                 />
                 <Route
@@ -98,11 +101,11 @@ function App() {
                 <Route
                   path="/game/:gameId"
                   element={
-                    <ProtectedRoute>
+                    <SimpleProtectedRoute>
                       <AppLayout hideNavigation={true} hideFooter={true}>
                         <GameScreen />
                       </AppLayout>
-                    </ProtectedRoute>
+                    </SimpleProtectedRoute>
                   }
                 />
                 <Route
@@ -116,11 +119,11 @@ function App() {
                 <Route
                   path="/rewards"
                   element={
-                    <ProtectedRoute>
+                    <SimpleProtectedRoute>
                       <AppLayout>
                         <RewardsPage />
                       </AppLayout>
-                    </ProtectedRoute>
+                    </SimpleProtectedRoute>
                   }
                 />
                 <Route
@@ -158,11 +161,11 @@ function App() {
                 <Route
                   path="/admin/bug-reports"
                   element={
-                    <ProtectedRoute>
+                    <SimpleProtectedRoute>
                       <AppLayout>
                         <AdminBugReportsPage />
                       </AppLayout>
-                    </ProtectedRoute>
+                    </SimpleProtectedRoute>
                   }
                 />
                 <Route
@@ -198,11 +201,11 @@ function App() {
                 <Route
                   path="/profile"
                   element={
-                    <ProtectedRoute>
+                    <SimpleProtectedRoute>
                       <AppLayout>
                         <ProfilePage />
                       </AppLayout>
-                    </ProtectedRoute>
+                    </SimpleProtectedRoute>
                   }
                 />
               </Routes>
@@ -211,6 +214,7 @@ function App() {
             </ModalProvider>
           </ViolationProvider>
         </PlayerEconomyProvider>
+        </SimpleAuthProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

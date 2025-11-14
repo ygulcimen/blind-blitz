@@ -1,6 +1,6 @@
 // src/services/lobbyService.ts - Updated for 5+0 Signature
 import { supabase } from '../lib/supabase';
-import { guestAuthService } from './guestAuthService';
+import { getCurrentPlayerId } from './authHelpers';
 import type {
   GameRoom,
   GameMode,
@@ -14,18 +14,6 @@ const BLINDCHESS_SIGNATURE = {
   TIME_INCREMENT: 0,
   DESCRIPTION: '5 Blind Moves • 5 Minutes Live • Pure Strategy',
 } as const;
-
-// Helper function to get current player ID (authenticated or guest)
-async function getCurrentPlayerId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (user) {
-    return user.id;
-  }
-
-  const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-  return guestPlayer?.id || null;
-}
 
 type CreateRoomConfig = Partial<GameRoom> & {
   host?: string;
@@ -231,7 +219,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
 
     console.log('✅ BlindChess 5+0 room created successfully:', roomData.id);
 
-    // Add creator as first player - this will trigger entry fee deduction
+    // Add creator as first player - color will be randomized when second player joins
     const { error: joinError } = await supabase
       .from('game_room_players')
       .insert({
@@ -240,7 +228,7 @@ async function createRoom(config: CreateRoomConfig): Promise<string> {
         player_username: playerData.username,
         player_rating: Number(playerData.rating) || 1200,
         ready: false,
-        color: 'white', // Host gets white by default
+        color: 'white', // Temporary - will be randomized by trigger when 2nd player joins
       });
 
     if (joinError) {
@@ -324,7 +312,7 @@ async function joinRoom(roomId: string): Promise<void> {
 
     console.log('🎯 Joining BlindChess 5+0 battle:', roomId);
 
-    // Add player to room - trigger will handle entry fee deduction
+    // Add player to room - trigger will randomize colors and handle entry fee deduction
     const { error: joinError } = await supabase
       .from('game_room_players')
       .insert({
@@ -333,7 +321,7 @@ async function joinRoom(roomId: string): Promise<void> {
         player_username: playerData.username,
         player_rating: Number(playerData.rating) || 1200,
         ready: false,
-        color: 'black', // Second player gets black
+        color: 'black', // Temporary - will be randomized by trigger (both players get random colors)
       });
 
     if (joinError) {

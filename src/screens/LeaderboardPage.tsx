@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Trophy, Crown, Medal, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LeaderboardEntry {
@@ -26,7 +26,7 @@ const ITEMS_PER_PAGE = 10;
 
 export const LeaderboardPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { playerData } = useCurrentUser();
   const [allPlayers, setAllPlayers] = useState<LeaderboardEntry[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [playerRank, setPlayerRank] = useState<PlayerRank | null>(null);
@@ -35,10 +35,10 @@ export const LeaderboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchLeaderboard();
-    if (user) {
+    if (playerData) {
       fetchPlayerRank();
     }
-  }, [user]);
+  }, [playerData]);
 
   useEffect(() => {
     // Update displayed leaderboard when page changes
@@ -66,11 +66,11 @@ export const LeaderboardPage: React.FC = () => {
   };
 
   const fetchPlayerRank = async () => {
-    if (!user) return;
+    if (!playerData) return;
 
     try {
       const { data, error } = await supabase.rpc('get_player_gold_rank', {
-        p_player_id: user.id,
+        p_player_id: playerData.id,
       });
 
       if (error) {

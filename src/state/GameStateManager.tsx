@@ -16,7 +16,7 @@ import {
 } from '../services/liveMovesService';
 import { supabase } from '../lib/supabase';
 import { goldRewardsService } from '../services/goldRewardsService';
-import { guestAuthService } from '../services/guestAuthService';
+import { getCurrentPlayerId } from '../services/authHelpers';
 
 export type GamePhase =
   | 'WAITING'
@@ -146,21 +146,8 @@ export const useGameStateManager = (gameId?: string) => {
   const deriveMyColor = useCallback(
     async (bs: BlindGameState): Promise<'white' | 'black' | null> => {
       try {
-        // Try authenticated user first
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        let myId = user?.id;
-
-        // If no authenticated user, check for guest player
-        if (!myId) {
-          const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-          if (guestPlayer) {
-            myId = guestPlayer.id;
-            console.log('🎮 Guest player detected in GameStateManager:', guestPlayer.username);
-          }
-        }
+        // Get player ID from any auth system (SimpleAuth, Supabase Auth, or Guest)
+        const myId = await getCurrentPlayerId();
 
         if (!myId) {
           console.warn('No player ID found (neither authenticated nor guest)');
@@ -524,16 +511,8 @@ export const useGameStateManager = (gameId?: string) => {
       if (gameState.blind.myMoves.length === 0) {
         console.log('📤 Player has 0 moves - inserting submission marker in database');
 
-        // Get current player ID (auth or guest)
-        const { data: { user } } = await supabase.auth.getUser();
-        let playerId = user?.id;
-
-        if (!playerId) {
-          const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-          if (guestPlayer) {
-            playerId = guestPlayer.id;
-          }
-        }
+        // Get current player ID from any auth system (SimpleAuth, Supabase Auth, or Guest)
+        const playerId = await getCurrentPlayerId();
 
         if (playerId) {
           // Insert a marker move with is_submitted = true to signal submission with 0 moves

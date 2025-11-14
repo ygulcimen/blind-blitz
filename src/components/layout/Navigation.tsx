@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { useSimpleAuth } from '../../context/SimpleAuthContext';
 
 const Navigation: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -11,7 +12,11 @@ const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { sessionData, isAuthenticated } = useSimpleAuth();
   const { t, i18n } = useTranslation();
+
+  // Check if user is authenticated with either old or new auth
+  const isUserAuthenticated = user || sessionData || isAuthenticated;
 
   const currentLanguage = i18n.language;
 
@@ -148,7 +153,7 @@ const Navigation: React.FC = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
+            {isUserAuthenticated ? (
               <button
                 onClick={() => handleNavClick('/profile')}
                 className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
@@ -312,7 +317,7 @@ const Navigation: React.FC = () => {
             <div className="border-t border-white/10 my-4"></div>
 
             {/* Auth Buttons */}
-            {user ? (
+            {isUserAuthenticated ? (
               <div className="space-y-3">
                 <button
                   onClick={() => handleNavClick('/profile')}

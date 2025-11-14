@@ -1,6 +1,6 @@
 // src/services/matchmakingService.ts - NEW Pure Matchmaking System
 import { supabase } from '../lib/supabase';
-import { guestAuthService } from './guestAuthService';
+import { getCurrentPlayerId } from './authHelpers';
 
 interface MatchmakingPreferences {
   mode: 'classic' | 'robochaos';
@@ -44,25 +44,8 @@ class MatchmakingService {
     preferences: MatchmakingPreferences
   ): Promise<MatchmakingResult> {
     try {
-      // Get current user (authenticated or guest)
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      // Check for guest player if no authenticated user
-      let playerId: string | null = null;
-
-      if (user) {
-        playerId = user.id;
-      } else {
-        // Check for guest session
-        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-        if (guestPlayer) {
-          playerId = guestPlayer.id;
-          console.log('🎮 Guest player joining matchmaking:', guestPlayer.username);
-        }
-      }
+      // Get current player ID (works with both auth systems)
+      const playerId = await getCurrentPlayerId();
 
       if (!playerId) {
         return {
@@ -184,22 +167,8 @@ class MatchmakingService {
    */
   async getMatchmakingStatus(): Promise<MatchmakingStatus> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      // Get player ID (authenticated or guest)
-      let playerId: string | null = null;
-
-      if (user) {
-        playerId = user.id;
-      } else {
-        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-        if (guestPlayer) {
-          playerId = guestPlayer.id;
-        }
-      }
+      // Get current player ID (works with both auth systems)
+      const playerId = await getCurrentPlayerId();
 
       if (!playerId) {
         return { status: 'not_in_game' };
@@ -242,22 +211,8 @@ class MatchmakingService {
         return { success: true, message: 'Not in any matchmaking room' };
       }
 
-      // Get current user (authenticated or guest)
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      let playerId: string | null = null;
-
-      if (user) {
-        playerId = user.id;
-      } else {
-        const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-        if (guestPlayer) {
-          playerId = guestPlayer.id;
-        }
-      }
+      // Get current player ID (works with both auth systems)
+      const playerId = await getCurrentPlayerId();
 
       if (!playerId) {
         return { success: false, message: 'Authentication required' };

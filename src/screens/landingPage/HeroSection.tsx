@@ -51,10 +51,10 @@ const HeroSection: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState(0);
   const navigate = useNavigate();
 
-  // Mock user data - in real app this would come from auth context
+  // Check if user is authenticated (SimpleAuth, Supabase Auth, or has playerData)
   const { user, setGuestPlayer } = useAuth();
   const { playerData } = useCurrentUser();
-  const isLoggedIn = !!user; // Change this to test logged in state
+  const isLoggedIn = !!user || !!playerData; // Consider logged in if we have playerData
   const userData = playerData
     ? {
         gold: playerData.gold_balance,

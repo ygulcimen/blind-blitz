@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { useSimpleAuth } from '../../context/SimpleAuthContext';
 import { LanguageDropdown } from '../LanguageDropdown';
 
 interface NavItem {
@@ -18,9 +19,14 @@ const ModernNavigation: React.FC = () => {
   const [isGameMode, setIsGameMode] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user } = useAuth(); // ✅ Get auth functions
+  const { signOut: oldSignOut, user } = useAuth();
+  const { sessionData, isAuthenticated, signOut: newSignOut } = useSimpleAuth();
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
+
+  // Check if user is authenticated with either old or new auth
+  const isUserAuthenticated = user || sessionData || isAuthenticated;
+  const currentUsername = sessionData?.username || user?.user_metadata?.username || user?.email;
 
   // Check if we're in actual game mode (playing) or auth pages
   useEffect(() => {
@@ -32,10 +38,16 @@ const ModernNavigation: React.FC = () => {
     setIsGameMode(isInGame);
   }, [location.pathname]);
 
-  // ✅ Handle logout
+  // ✅ Handle logout - supports both auth systems
   const handleLogout = async () => {
     try {
-      await signOut();
+      // Sign out from both auth systems
+      if (sessionData || isAuthenticated) {
+        await newSignOut();
+      }
+      if (user) {
+        await oldSignOut();
+      }
       navigate('/');
       setIsExpanded(false);
     } catch (error) {
@@ -45,7 +57,7 @@ const ModernNavigation: React.FC = () => {
 
   const navItems: NavItem[] = [
     // Only show these nav items to authenticated users
-    ...(user
+    ...(isUserAuthenticated
       ? [
           {
             id: 'games',
@@ -255,13 +267,12 @@ const ModernNavigation: React.FC = () => {
           </div>
 
           {/* User Info Section (when logged in) */}
-          {user && (
+          {isUserAuthenticated && (
             <div className="px-3 py-4 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-sm">
-                    {user.user_metadata?.username?.[0]?.toUpperCase() ||
-                      user.email?.[0]?.toUpperCase()}
+                    {currentUsername?.[0]?.toUpperCase() || 'P'}
                   </span>
                 </div>
                 <div
@@ -272,7 +283,7 @@ const ModernNavigation: React.FC = () => {
                   }`}
                 >
                   <div className="text-white text-sm font-medium truncate">
-                    {user.user_metadata?.username || t('common.player')}
+                    {currentUsername || t('common.player')}
                   </div>
                   <div className="text-green-400 text-xs">{t('common.online')}</div>
                 </div>

@@ -66,20 +66,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         ) : (
           // Game Ended Buttons
           <>
-            {/* Play Again Button */}
-            {onRematch && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRematch}
-                disabled={disabled}
-                className="flex-1 border-emerald-500/50 hover:border-emerald-400 hover:bg-emerald-500/10 hover:shadow-emerald-400/20 hover:shadow-lg text-emerald-400 hover:text-emerald-300 transition-all duration-200"
-                title="Play Again"
-              >
-                <span className="text-lg">⚔️</span>
-              </Button>
-            )}
-
             {/* Back to Games Button */}
             <Button
               variant="outline"

@@ -29,7 +29,8 @@
       "Bash(npm uninstall @sentry/react)",
       "Read(//c/Users/Deniz Nuran/OneDrive/Masaüstü/BlindChess/Project/logo/**)",
       "Bash(copy:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

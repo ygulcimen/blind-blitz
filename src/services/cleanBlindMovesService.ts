@@ -36,15 +36,23 @@ class CleanBlindMovesService {
    */
   async initializeBlindGame(roomId: string): Promise<BlindGameState | null> {
     try {
-      // Get players (first joiner = white, second = black)
+      // Get players with their ACTUAL assigned colors from database
       const { data: players, error } = await supabase
         .from('game_room_players')
-        .select('player_id, created_at')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
+        .select('player_id, color')
+        .eq('room_id', roomId);
 
       if (error || !players || players.length !== 2) {
         console.error('Failed to get players:', error);
+        return null;
+      }
+
+      // Use actual assigned colors from database (randomized)
+      const whitePlayer = players.find(p => p.color === 'white');
+      const blackPlayer = players.find(p => p.color === 'black');
+
+      if (!whitePlayer || !blackPlayer) {
+        console.error('❌ Could not find players with white/black colors');
         return null;
       }
 
@@ -60,8 +68,8 @@ class CleanBlindMovesService {
 
       return {
         gameId: roomId,
-        whitePlayerId: players[0].player_id,
-        blackPlayerId: players[1].player_id,
+        whitePlayerId: whitePlayer.player_id,
+        blackPlayerId: blackPlayer.player_id,
         whiteMoves: [],
         blackMoves: [],
         whiteSubmitted: false,
@@ -224,17 +232,25 @@ class CleanBlindMovesService {
         .eq('id', gameId)
         .single();
 
-      // Get players
+      // Get players with their ACTUAL assigned colors from database
       const { data: players } = await supabase
         .from('game_room_players')
-        .select('player_id, created_at')
-        .eq('room_id', gameId)
-        .order('created_at', { ascending: true });
+        .select('player_id, color')
+        .eq('room_id', gameId);
 
       if (!players || players.length !== 2) return null;
 
-      const whitePlayerId = players[0].player_id;
-      const blackPlayerId = players[1].player_id;
+      // Use actual assigned colors from database (randomized)
+      const whitePlayer = players.find(p => p.color === 'white');
+      const blackPlayer = players.find(p => p.color === 'black');
+
+      if (!whitePlayer || !blackPlayer) {
+        console.error('❌ Could not find players with white/black colors');
+        return null;
+      }
+
+      const whitePlayerId = whitePlayer.player_id;
+      const blackPlayerId = blackPlayer.player_id;
 
       // Get all moves
       const { data: moves } = await supabase
@@ -470,15 +486,17 @@ class CleanBlindMovesService {
       const userId = await getCurrentPlayerId();
       if (!userId) return null;
 
-      const { data: players } = await supabase
+      // Get my actual assigned color from database
+      const { data: myPlayer } = await supabase
         .from('game_room_players')
-        .select('player_id, created_at')
+        .select('color')
         .eq('room_id', gameId)
-        .order('created_at', { ascending: true });
+        .eq('player_id', userId)
+        .single();
 
-      if (!players || players.length !== 2) return null;
+      if (!myPlayer) return null;
 
-      return userId === players[0].player_id ? 'white' : 'black';
+      return myPlayer.color as 'white' | 'black';
     } catch (error) {
       console.error('Failed to get player color:', error);
       return null;

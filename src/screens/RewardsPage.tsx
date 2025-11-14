@@ -1,34 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dailyRewardService } from '../services/dailyRewardService';
-import { useAuth } from '../context/AuthContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Gift, Clock, Play, Lock, CheckCircle, Sparkles, Trophy, Target, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const RewardsPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { playerData, loading: userLoading } = useCurrentUser();
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claiming, setClaiming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (playerData) {
       checkDailyStatus();
     }
-  }, [user]);
+  }, [playerData]);
 
   const checkDailyStatus = async () => {
-    if (!user) return;
-    const status = await dailyRewardService.canClaimDaily(user.id);
+    if (!playerData) return;
+    const status = await dailyRewardService.canClaimDaily(playerData.id);
     setDailyStatus(status);
   };
 
   const handleClaimDaily = async () => {
-    if (!user || claiming) return;
+    if (!playerData || claiming) return;
 
     setClaiming(true);
-    const result = await dailyRewardService.claimDailyReward(user.id);
+    const result = await dailyRewardService.claimDailyReward(playerData.id);
 
     if (result?.success) {
       setShowSuccess(true);

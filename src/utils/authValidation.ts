@@ -31,76 +31,39 @@ export const validateEmail = (email: string): ValidationResult => {
   return { isValid: true };
 };
 
-// Password validation with strong requirements
+// Password validation - SIMPLIFIED (just length requirement)
 export const validatePassword = (password: string): ValidationResult => {
   if (!password) {
     return { isValid: false, message: 'Password is required' };
   }
 
-  if (password.length < 8) {
-    return { isValid: false, message: 'Password must be at least 8 characters long' };
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    return { isValid: false, message: 'Password must contain at least one uppercase letter' };
-  }
-
-  if (!/[a-z]/.test(password)) {
-    return { isValid: false, message: 'Password must contain at least one lowercase letter' };
-  }
-
-  if (!/\d/.test(password)) {
-    return { isValid: false, message: 'Password must contain at least one number' };
+  if (password.length < 6) {
+    return { isValid: false, message: 'Password must be at least 6 characters long' };
   }
 
   return { isValid: true };
 };
 
-// Get password strength with detailed feedback
+// Get password strength - SIMPLIFIED (just based on length)
 export const getPasswordStrength = (password: string): PasswordStrength => {
   if (!password) {
     return { strength: 'weak', score: 0, feedback: ['Password is required'] };
   }
 
   let score = 0;
-  const feedback: string[] = [];
+  let strength: 'weak' | 'medium' | 'strong';
 
-  // Length scoring
-  if (password.length >= 8) score += 20;
-  else feedback.push('Use at least 8 characters');
-
-  if (password.length >= 12) score += 10;
-  else if (password.length >= 8) feedback.push('Consider using 12+ characters for better security');
-
-  // Character variety scoring
-  if (/[A-Z]/.test(password)) score += 20;
-  else feedback.push('Add uppercase letters');
-
-  if (/[a-z]/.test(password)) score += 20;
-  else feedback.push('Add lowercase letters');
-
-  if (/\d/.test(password)) score += 15;
-  else feedback.push('Add numbers');
-
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 15;
-  else feedback.push('Add special characters (!@#$%^&* etc.)');
-
-  // Bonus for no common patterns
-  if (!/(.)\1{2,}/.test(password)) score += 10; // No repeated characters
-  if (!/123|abc|password|qwerty/i.test(password)) score += 10; // No common patterns
+  // Simple length-based scoring
+  if (password.length >= 6) score += 40;
+  if (password.length >= 8) score += 30;
+  if (password.length >= 12) score += 30;
 
   // Determine strength
-  let strength: 'weak' | 'medium' | 'strong';
   if (score < 50) strength = 'weak';
   else if (score < 80) strength = 'medium';
   else strength = 'strong';
 
-  // Provide positive feedback for good passwords
-  if (feedback.length === 0) {
-    feedback.push('Strong password!');
-  }
-
-  return { strength, score: Math.min(100, score), feedback };
+  return { strength, score: Math.min(100, score), feedback: [] };
 };
 
 // Username validation

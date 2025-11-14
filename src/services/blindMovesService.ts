@@ -1,5 +1,6 @@
 // src/services/blindMovesService.ts - FIXED: Aligned with actual database schema
 import { supabase } from '../lib/supabase';
+import { getCurrentPlayerId } from './authHelpers';
 import type { BlindSequence } from '../types/BlindTypes';
 
 export interface BlindMove {
@@ -37,23 +38,27 @@ class BlindMovesService {
     try {
       console.log('🎯 Initializing blind game for room:', roomId);
 
-      // Get players from room (deterministic color assignment)
+      // Get players from room with their ACTUAL assigned colors
       const { data: players, error: playersError } = await supabase
         .from('game_room_players')
-        .select('player_id, player_username, created_at')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
+        .select('player_id, player_username, color')
+        .eq('room_id', roomId);
 
       if (playersError || !players || players.length !== 2) {
         console.error('❌ Error getting players for blind game:', playersError);
         return null;
       }
 
-      // Assign colors deterministically (first joiner = white)
-      const whitePlayer = players[0];
-      const blackPlayer = players[1];
+      // Use actual assigned colors from database (randomized)
+      const whitePlayer = players.find(p => p.color === 'white');
+      const blackPlayer = players.find(p => p.color === 'black');
 
-      console.log('🎨 Color assignment:', {
+      if (!whitePlayer || !blackPlayer) {
+        console.error('❌ Could not find players with white/black colors');
+        return null;
+      }
+
+      console.log('🎨 Color assignment from database:', {
         white: whitePlayer.player_username,
         black: blackPlayer.player_username,
       });
@@ -102,12 +107,9 @@ class BlindMovesService {
     san: string
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
+      if (!playerId) {
         console.error('❌ Not authenticated for saveBlindMove');
         return false;
       }
@@ -121,7 +123,7 @@ class BlindMovesService {
 
       const { error } = await supabase.from('game_blind_moves').insert({
         game_id: gameId,
-        player_id: user.id,
+        player_id: playerId,
         player_color: playerColor,
         move_number: moveNumber,
         move_from: from,
@@ -153,12 +155,9 @@ class BlindMovesService {
     moveNumber: number
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
+      if (!playerId) {
         console.error('❌ Not authenticated for deleteBlindMove');
         return false;
       }
@@ -173,7 +172,7 @@ class BlindMovesService {
         .from('game_blind_moves')
         .delete()
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', playerId)
         .eq('player_color', playerColor)
         .eq('move_number', moveNumber);
 
@@ -197,12 +196,9 @@ class BlindMovesService {
     playerColor: 'white' | 'black'
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
+      if (!playerId) {
         console.error('❌ Not authenticated for submitBlindMoves');
         return false;
       }
@@ -215,7 +211,7 @@ class BlindMovesService {
           phase_completed_at: new Date().toISOString(),
         })
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', playerId)
         .eq('player_color', playerColor)
         .eq('is_submitted', false);
 
@@ -263,20 +259,28 @@ class BlindMovesService {
         return null;
       }
 
-      // Get players with deterministic color assignment
+      // Get players with their ACTUAL assigned colors from database
       const { data: players, error: playersError } = await supabase
         .from('game_room_players')
-        .select('player_id, created_at')
-        .eq('room_id', gameId)
-        .order('created_at', { ascending: true });
+        .select('player_id, color')
+        .eq('room_id', gameId);
 
       if (playersError || !players || players.length !== 2) {
         console.error('❌ Error getting players for game state:', playersError);
         return null;
       }
 
-      const whitePlayerId = players[0].player_id;
-      const blackPlayerId = players[1].player_id;
+      // Use actual assigned colors from database (randomized)
+      const whitePlayer = players.find(p => p.color === 'white');
+      const blackPlayer = players.find(p => p.color === 'black');
+
+      if (!whitePlayer || !blackPlayer) {
+        console.error('❌ Could not find players with white/black colors');
+        return null;
+      }
+
+      const whitePlayerId = whitePlayer.player_id;
+      const blackPlayerId = blackPlayer.player_id;
 
       // Process moves by color
       const whiteMoves: BlindSequence = [];
@@ -357,19 +361,16 @@ class BlindMovesService {
    */
   async getPlayerColor(gameId: string): Promise<'white' | 'black' | null> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
+      if (!playerId) {
         console.error('❌ Not authenticated for getPlayerColor');
         return null;
       }
 
       console.log(
         '🎨 Getting player color for user:',
-        user.id,
+        playerId,
         'in game:',
         gameId
       );
@@ -379,7 +380,7 @@ class BlindMovesService {
         .from('game_blind_moves')
         .select('player_color')
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', playerId)
         .limit(1);
 
       if (existingMoves && existingMoves.length > 0) {
@@ -387,32 +388,25 @@ class BlindMovesService {
         return existingMoves[0].player_color;
       }
 
-      // Determine from room players (first joiner = white)
-      const { data: players, error: playersError } = await supabase
+      // Determine from room players - use ACTUAL assigned color from database
+      const { data: myPlayer, error: playersError } = await supabase
         .from('game_room_players')
-        .select('player_id, created_at')
+        .select('color')
         .eq('room_id', gameId)
-        .order('created_at', { ascending: true });
+        .eq('player_id', playerId)
+        .single();
 
-      if (playersError || !players || players.length !== 2) {
+      if (playersError || !myPlayer) {
         console.error(
-          '❌ Error getting players for color assignment:',
+          '❌ Error getting player color from room:',
           playersError
         );
         return null;
       }
 
-      // First to join = white, second = black
-      if (user.id === players[0].player_id) {
-        console.log('🟡 Assigned WHITE (first to join)');
-        return 'white';
-      } else if (user.id === players[1].player_id) {
-        console.log('⚫ Assigned BLACK (second to join)');
-        return 'black';
-      }
-
-      console.error('❌ User not found in room players!');
-      return null;
+      // Return the actual assigned color from database (randomized or bot-assigned)
+      console.log('✅ Player color from database:', myPlayer.color);
+      return myPlayer.color as 'white' | 'black';
     } catch (error) {
       console.error('💥 Failed to get player color:', error);
       return null;
@@ -487,12 +481,9 @@ class BlindMovesService {
     playerColor: 'white' | 'black'
   ): Promise<boolean> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
+      if (!playerId) {
         console.error('❌ Not authenticated for clearBlindMoves');
         return false;
       }
@@ -503,7 +494,7 @@ class BlindMovesService {
         .from('game_blind_moves')
         .delete()
         .eq('game_id', gameId)
-        .eq('player_id', user.id)
+        .eq('player_id', playerId)
         .eq('player_color', playerColor);
 
       if (error) {
@@ -533,7 +524,7 @@ class BlindMovesService {
   }
 
   /**
-   * Get blind moves in MoveLog format for display
+   * Get blind moves in MoveLog format for display WITH validation (isInvalid flags)
    */
   async getBlindMovesForMoveLog(gameId: string): Promise<Array<{
     player: 'P1' | 'P2';
@@ -546,7 +537,7 @@ class BlindMovesService {
     try {
       console.log('📝 Getting blind moves for move log:', gameId);
 
-      // Get all blind moves for this game
+      // Get all blind moves from database
       const { data: moves, error: movesError } = await supabase
         .from('game_blind_moves')
         .select('*')
@@ -563,17 +554,54 @@ class BlindMovesService {
         return [];
       }
 
-      // Convert to MoveLog format
-      const moveLogItems = moves.map(move => ({
-        player: (move.player_color === 'white' ? 'P1' : 'P2') as 'P1' | 'P2',
-        san: move.move_san,
-        isInvalid: false, // We'll assume all moves are valid for now
-        from: move.move_from,
-        to: move.move_to,
-        moveNumber: move.move_number,
+      // Get room entry fee for simulation
+      const { data: room } = await supabase
+        .from('game_rooms')
+        .select('entry_fee, game_mode')
+        .eq('id', gameId)
+        .single();
+
+      const entryFee = room?.entry_fee || 100;
+
+      // Separate white and black moves
+      const whiteMoves = moves
+        .filter(m => m.player_color === 'white' && m.move_number > 0)
+        .sort((a, b) => a.move_number - b.move_number)
+        .map(m => ({ from: m.move_from, to: m.move_to, san: m.move_san }));
+
+      const blackMoves = moves
+        .filter(m => m.player_color === 'black' && m.move_number > 0)
+        .sort((a, b) => a.move_number - b.move_number)
+        .map(m => ({ from: m.move_from, to: m.move_to, san: m.move_san }));
+
+      console.log('🎮 Simulating blind moves to get validation data:', {
+        whiteMoves: whiteMoves.length,
+        blackMoves: blackMoves.length,
+      });
+
+      // Import and use the simulation function
+      const { simulateBlindMovesWithRewards } = await import('../utils/simulateBlindMoves');
+
+      const { log } = simulateBlindMovesWithRewards(
+        whiteMoves,
+        blackMoves,
+        entryFee,
+        room?.game_mode
+      );
+
+      console.log('✅ Simulation complete, move log with validation:', log.length);
+
+      // Map to expected format with move numbers
+      const moveLogItems = log.map((move, index) => ({
+        player: move.player as 'P1' | 'P2',
+        san: move.san,
+        isInvalid: move.isInvalid || false,
+        from: move.from,
+        to: move.to,
+        moveNumber: Math.ceil((index + 1) / 2),
       }));
 
-      console.log('📝 Converted blind moves for move log:', moveLogItems.length);
+      console.log('📝 Returning move log with validation data:', moveLogItems.length);
       return moveLogItems;
     } catch (error) {
       console.error('💥 Failed to get blind moves for move log:', error);
@@ -588,20 +616,17 @@ class BlindMovesService {
     try {
       console.log('🏳️ Resigning from blind phase:', gameId);
 
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const playerId = await getCurrentPlayerId();
 
-      if (authError || !user) {
-        console.error('❌ Not authenticated:', authError);
+      if (!playerId) {
+        console.error('❌ Not authenticated');
         return false;
       }
 
       // Call the SQL function to resign
       const { data, error } = await supabase.rpc('resign_from_blind_phase', {
         p_game_id: gameId,
-        p_resigning_player_id: user.id,
+        p_resigning_player_id: playerId,
       });
 
       if (error) {

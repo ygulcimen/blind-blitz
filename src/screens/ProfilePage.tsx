@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/AuthContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { supabase } from '../lib/supabase';
 
 interface PlayerStats {
@@ -27,30 +27,26 @@ interface RecentGame {
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { playerData: currentUser, loading: userLoading } = useCurrentUser();
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       fetchPlayerData();
+    } else if (!userLoading) {
+      // User loading finished but no user found
+      setLoading(false);
     }
-  }, [user]);
+  }, [currentUser, userLoading]);
 
   const fetchPlayerData = async () => {
-    if (!user) return;
+    if (!currentUser) return;
 
     try {
-      // Fetch player stats
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (playerError) throw playerError;
-      setStats(playerData);
+      // We already have player data from useCurrentUser
+      setStats(currentUser as PlayerStats);
 
       // Fetch recent games (mock data for now - you can implement actual query)
       // This would need a proper games history table

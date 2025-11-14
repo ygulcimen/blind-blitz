@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { celestialBotMatchmaking } from '../services/celestialBotMatchmaking';
-import { guestAuthService } from '../services/guestAuthService';
+import { getCurrentPlayerId } from '../services/authHelpers';
 import type { CelestialBot } from '../services/celestialBotMatchmaking';
 
 export interface BotGameInfo {
@@ -46,21 +46,8 @@ export function useCelestialBot(gameId?: string): BotGameInfo {
     const detectBotGame = async () => {
       console.log('🔍 Starting bot detection for game:', gameId);
       try {
-        // Get current user (authenticated or guest)
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        let playerId: string | null = null;
-
-        if (user) {
-          playerId = user.id;
-        } else {
-          const guestPlayer = guestAuthService.getCurrentGuestPlayer();
-          if (guestPlayer) {
-            playerId = guestPlayer.id;
-          }
-        }
+        // Get current user from any auth system (SimpleAuth, Supabase Auth, or Guest)
+        const playerId = await getCurrentPlayerId();
 
         if (!playerId) {
           setBotInfo({
