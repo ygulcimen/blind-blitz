@@ -312,26 +312,17 @@ export async function calculateLivePhaseMove(
     //   }
     // }
 
-    // Use minimax algorithm with depth based on difficulty
+    // Use minimax algorithm
     const { aggression } = config.live_phase;
 
-    // Stronger bots use deeper search - but kept conservative to avoid freezing
-    // Depth scales exponentially in complexity, so even depth 4 is quite strong!
-    const depthMap: Record<string, number> = {
-      'medium': 2,        // ~1200 ELO - beginner
-      'medium-hard': 3,   // ~1500 ELO - intermediate
-      'hard': 3,          // ~1600 ELO - advanced (safe, won't freeze)
-      'expert': 4,        // ~1900 ELO - expert (tested, stable)
-      'god': 4,           // ~2000 ELO - very strong (max safe depth)
-    };
-    const maxDepth = depthMap[config.difficulty] || 2;
-
-    console.log(`🤖 ${config.name} using minimax depth ${maxDepth} (${config.difficulty})`);
+    // ALWAYS use depth 2 to prevent freezing
+    // TODO: Need alternative approach for stronger bots (e.g., better evaluation, opening book)
+    const maxDepth = 2;
 
     const legalMoves = chess.moves({ verbose: true });
     if (legalMoves.length === 0) return null;
 
-    // Evaluate all moves with difficulty-based depth
+    // Evaluate all moves with limited depth
     const isWhite = chess.turn() === 'w';
     const evaluatedMoves = legalMoves.map((move) => {
       chess.move(move);
