@@ -280,6 +280,13 @@ export async function calculateLivePhaseMove(
       return null;
     }
 
+    // Try opening book first - this makes bots MUCH stronger in opening!
+    const openingMove = getOpeningMove(fen, config.difficulty);
+    if (openingMove) {
+      console.log(`📖 ${config.name} using opening book move: ${openingMove}`);
+      return openingMove;
+    }
+
     const { randomness, think_time_ms } = config.live_phase;
 
     // TODO: Stockfish integration disabled temporarily due to Web Worker compatibility issues
@@ -360,23 +367,90 @@ export async function calculateLivePhaseMove(
 }
 
 /**
- * Quick opening book moves for variety
+ * Comprehensive opening book - makes bots play like masters in opening!
+ * This is the key to strong bot play without increasing depth
  */
-export function getOpeningMove(fen: string): string | null {
+export function getOpeningMove(fen: string, difficulty: string = 'medium'): string | null {
   const chess = new Chess(fen);
   const moveCount = chess.history().length;
 
-  if (moveCount > 6) return null;
+  // Use opening book for first 10 moves (harder bots use it longer)
+  const bookDepth = difficulty === 'god' || difficulty === 'expert' ? 12 : difficulty === 'hard' ? 10 : 8;
+  if (moveCount > bookDepth) return null;
 
+  // Comprehensive opening book with master-level moves
   const openingBook: Record<string, string[]> = {
+    // Move 1 - White's first move
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1': ['e4', 'd4', 'Nf3', 'c4'],
-    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1': ['e5', 'c5', 'e6', 'c6'],
-    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1': ['d5', 'Nf6', 'e6', 'c6'],
+
+    // Black responses to 1.e4
+    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1': ['e5', 'c5', 'e6', 'c6', 'd6', 'Nf6'],
+
+    // Black responses to 1.d4
+    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1': ['d5', 'Nf6', 'e6', 'c5', 'g6'],
+
+    // Italian Game: 1.e4 e5 2.Nf3
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2': ['Nf3', 'Nc3', 'Bc4'],
+
+    // Italian Game: 1.e4 e5 2.Nf3 Nc6
+    'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3': ['Bc4', 'Bb5', 'Nc3', 'd4'],
+
+    // Italian Game: 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 (Giuoco Piano)
+    'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4': ['c3', 'd3', 'Nc3', 'O-O'],
+
+    // Ruy Lopez: 1.e4 e5 2.Nf3 Nc6 3.Bb5
+    'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3': ['a6', 'Nf6', 'Bc5', 'd6'],
+
+    // Sicilian Defense: 1.e4 c5 2.Nf3
+    'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2': ['Nf3', 'd4', 'Nc3'],
+
+    // Sicilian Defense: 1.e4 c5 2.Nf3 d6
+    'rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3': ['d4', 'Bb5+', 'c3'],
+
+    // Sicilian Dragon: 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6
+    'rnbqkb1r/pp2pp1p/3p1np1/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6': ['Be3', 'Be2', 'f3', 'Bc4'],
+
+    // French Defense: 1.e4 e6 2.d4
+    'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2': ['d4', 'd3', 'Nf3'],
+
+    // French Defense: 1.e4 e6 2.d4 d5
+    'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq d6 0 3': ['Nc3', 'Nd2', 'e5', 'exd5'],
+
+    // Caro-Kann: 1.e4 c6 2.d4
+    'rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2': ['d4', 'Nc3', 'd3'],
+
+    // Caro-Kann: 1.e4 c6 2.d4 d5
+    'rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq d6 0 3': ['Nc3', 'Nd2', 'e5', 'exd5'],
+
+    // Queen's Gambit: 1.d4 d5 2.c4
+    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2': ['c4', 'Nf3', 'Bf4'],
+
+    // Queen's Gambit Accepted: 1.d4 d5 2.c4 dxc4
+    'rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3': ['Nf3', 'e3', 'e4'],
+
+    // Queen's Gambit Declined: 1.d4 d5 2.c4 e6
+    'rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3': ['Nc3', 'Nf3', 'cxd5'],
+
+    // King's Indian Defense: 1.d4 Nf6 2.c4 g6
+    'rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3': ['Nc3', 'Nf3', 'g3'],
+
+    // King's Indian Defense: 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4
+    'rnbqk2r/ppppppbp/5np1/8/2PPP3/2N5/PP3PPP/R1BQKBNR b KQkq e3 0 4': ['d6', 'O-O', 'c5'],
+
+    // Nimzo-Indian: 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4
+    'rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4': ['Qc2', 'e3', 'Nf3', 'a3'],
   };
 
   const possibleMoves = openingBook[fen];
   if (possibleMoves && possibleMoves.length > 0) {
-    return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    // God/Expert bots always pick best moves, lower difficulty adds randomness
+    if (difficulty === 'god' || difficulty === 'expert') {
+      return possibleMoves[0]; // First move is typically strongest
+    } else if (difficulty === 'hard') {
+      return possibleMoves[Math.floor(Math.random() * Math.min(2, possibleMoves.length))]; // Top 2 moves
+    } else {
+      return possibleMoves[Math.floor(Math.random() * possibleMoves.length)]; // Any move
+    }
   }
 
   return null;
