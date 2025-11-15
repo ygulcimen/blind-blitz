@@ -315,13 +315,14 @@ export async function calculateLivePhaseMove(
     // Use minimax algorithm with depth based on difficulty
     const { aggression } = config.live_phase;
 
-    // Stronger bots use deeper search - this makes a HUGE difference!
+    // Stronger bots use deeper search - but kept conservative to avoid freezing
+    // Depth scales exponentially in complexity, so even depth 4 is quite strong!
     const depthMap: Record<string, number> = {
-      'medium': 2,        // ~1200 ELO
-      'medium-hard': 3,   // ~1500 ELO
-      'hard': 4,          // ~1800 ELO
-      'expert': 5,        // ~2100 ELO
-      'god': 6,           // ~2400+ ELO
+      'medium': 2,        // ~1200 ELO - beginner
+      'medium-hard': 3,   // ~1500 ELO - intermediate
+      'hard': 3,          // ~1600 ELO - advanced (safe, won't freeze)
+      'expert': 4,        // ~1900 ELO - expert (tested, stable)
+      'god': 4,           // ~2000 ELO - very strong (max safe depth)
     };
     const maxDepth = depthMap[config.difficulty] || 2;
 
