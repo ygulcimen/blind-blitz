@@ -4,6 +4,7 @@
 import { Chess } from 'chess.js';
 import { BlindChessRuleEngine } from './chess/BlindChessRuleEngine';
 import { EnhancedPieceTracker } from './chess/EnhancedPieceTracker';
+import { getStockfishBot } from './stockfishBot';
 
 // Bot configuration from database
 export interface BotConfig {
@@ -265,7 +266,7 @@ export async function generateBlindPhaseMoves(
 }
 
 /**
- * Calculate best move for live phase using minimax
+ * Calculate best move for live phase using Stockfish or minimax
  */
 export async function calculateLivePhaseMove(
   fen: string,
@@ -279,9 +280,51 @@ export async function calculateLivePhaseMove(
       return null;
     }
 
-    const { randomness, aggression } = config.live_phase;
+    const { randomness, think_time_ms } = config.live_phase;
 
-    // ALWAYS use depth 2 to prevent freezing (depth 10 is way too deep!)
+    // Use Stockfish for hard, expert, and god difficulty levels
+    if (config.difficulty === 'hard' || config.difficulty === 'expert' || config.difficulty === 'god') {
+      try {
+        console.log(`🧠 Using Stockfish for ${config.difficulty} bot...`);
+        const stockfish = getStockfishBot();
+
+        // Initialize if needed
+        await stockfish.initialize();
+
+        // Map difficulty to skill level
+        const skillLevelMap = {
+          hard: 12,
+          expert: 16,
+          god: 20,
+        };
+        const skillLevel = skillLevelMap[config.difficulty];
+
+        // Get best move from Stockfish
+        const stockfishMove = await stockfish.getBestMove(fen, skillLevel, think_time_ms);
+
+        if (stockfishMove) {
+          // Convert Stockfish move to SAN notation
+          const move = chess.move({
+            from: stockfishMove.from,
+            to: stockfishMove.to,
+            promotion: stockfishMove.promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+          });
+
+          if (move) {
+            console.log(`✅ Stockfish selected move: ${move.san}`);
+            return move.san;
+          }
+        }
+
+        console.warn('⚠️ Stockfish failed, falling back to minimax');
+      } catch (error) {
+        console.error('❌ Stockfish error:', error);
+        console.log('🔄 Falling back to minimax algorithm');
+      }
+    }
+
+    // Fallback: Use original minimax algorithm
+    const { aggression } = config.live_phase;
     const maxDepth = 2;
 
     const legalMoves = chess.moves({ verbose: true });

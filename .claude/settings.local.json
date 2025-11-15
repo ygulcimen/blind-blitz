@@ -30,7 +30,8 @@
       "Read(//c/Users/Deniz Nuran/OneDrive/Masaüstü/BlindChess/Project/logo/**)",
       "Bash(copy:*)",
       "Bash(git checkout:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []
