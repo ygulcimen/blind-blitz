@@ -31,7 +31,8 @@
       "Bash(copy:*)",
       "Bash(git checkout:*)",
       "Bash(nul)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm search:*)"
     ],
     "deny": [],
     "ask": []
