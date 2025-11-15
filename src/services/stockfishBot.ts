@@ -23,9 +23,21 @@ class StockfishBot {
 
       // Use dynamic import to avoid bundling issues
       const StockfishModule = await import('stockfish.js');
-      const Stockfish = StockfishModule.default || StockfishModule;
 
-      this.engine = new Stockfish();
+      // Try different ways to access the constructor
+      let Stockfish;
+      if (typeof StockfishModule.default === 'function') {
+        Stockfish = StockfishModule.default;
+      } else if (typeof (StockfishModule as any).Stockfish === 'function') {
+        Stockfish = (StockfishModule as any).Stockfish;
+      } else if (typeof StockfishModule === 'function') {
+        Stockfish = StockfishModule;
+      } else {
+        console.error('❌ Stockfish module format:', StockfishModule);
+        throw new Error('Could not find Stockfish constructor');
+      }
+
+      this.engine = Stockfish();
 
       // Set up message handler
       this.engine.onmessage = (event: MessageEvent) => {

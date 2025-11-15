@@ -4,7 +4,7 @@
 import { Chess } from 'chess.js';
 import { BlindChessRuleEngine } from './chess/BlindChessRuleEngine';
 import { EnhancedPieceTracker } from './chess/EnhancedPieceTracker';
-import { getStockfishBot } from './stockfishBot';
+// import { getStockfishBot } from './stockfishBot'; // Disabled temporarily
 
 // Bot configuration from database
 export interface BotConfig {
@@ -282,46 +282,35 @@ export async function calculateLivePhaseMove(
 
     const { randomness, think_time_ms } = config.live_phase;
 
-    // Use Stockfish for hard, expert, and god difficulty levels
-    if (config.difficulty === 'hard' || config.difficulty === 'expert' || config.difficulty === 'god') {
-      try {
-        console.log(`🧠 Using Stockfish for ${config.difficulty} bot...`);
-        const stockfish = getStockfishBot();
+    // TODO: Stockfish integration disabled temporarily due to Web Worker compatibility issues
+    // The stockfish.js package requires a different integration approach for Vite
+    // For now, all bots use the minimax algorithm with different depths based on difficulty
 
-        // Initialize if needed
-        await stockfish.initialize();
-
-        // Map difficulty to skill level
-        const skillLevelMap = {
-          hard: 12,
-          expert: 16,
-          god: 20,
-        };
-        const skillLevel = skillLevelMap[config.difficulty];
-
-        // Get best move from Stockfish
-        const stockfishMove = await stockfish.getBestMove(fen, skillLevel, think_time_ms);
-
-        if (stockfishMove) {
-          // Convert Stockfish move to SAN notation
-          const move = chess.move({
-            from: stockfishMove.from,
-            to: stockfishMove.to,
-            promotion: stockfishMove.promotion as 'q' | 'r' | 'b' | 'n' | undefined,
-          });
-
-          if (move) {
-            console.log(`✅ Stockfish selected move: ${move.san}`);
-            return move.san;
-          }
-        }
-
-        console.warn('⚠️ Stockfish failed, falling back to minimax');
-      } catch (error) {
-        console.error('❌ Stockfish error:', error);
-        console.log('🔄 Falling back to minimax algorithm');
-      }
-    }
+    // if (config.difficulty === 'hard' || config.difficulty === 'expert' || config.difficulty === 'god') {
+    //   try {
+    //     console.log(`🧠 Using Stockfish for ${config.difficulty} bot...`);
+    //     const stockfish = getStockfishBot();
+    //     await stockfish.initialize();
+    //     const skillLevelMap = { hard: 12, expert: 16, god: 20 };
+    //     const skillLevel = skillLevelMap[config.difficulty];
+    //     const stockfishMove = await stockfish.getBestMove(fen, skillLevel, think_time_ms);
+    //     if (stockfishMove) {
+    //       const move = chess.move({
+    //         from: stockfishMove.from,
+    //         to: stockfishMove.to,
+    //         promotion: stockfishMove.promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+    //       });
+    //       if (move) {
+    //         console.log(`✅ Stockfish selected move: ${move.san}`);
+    //         return move.san;
+    //       }
+    //     }
+    //     console.warn('⚠️ Stockfish failed, falling back to minimax');
+    //   } catch (error) {
+    //     console.error('❌ Stockfish error:', error);
+    //     console.log('🔄 Falling back to minimax algorithm');
+    //   }
+    // }
 
     // Fallback: Use original minimax algorithm
     const { aggression } = config.live_phase;
