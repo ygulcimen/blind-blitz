@@ -158,9 +158,6 @@ export async function generateBlindPhaseMoves(
   fen[1] = color === 'white' ? 'w' : 'b';
   chess.load(fen.join(' '));
 
-  // Simulate thinking time
-  await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
-
   for (let i = 0; i < 5; i++) {
     // Ensure it's the bot's turn before generating moves
     const currentFen = chess.fen().split(' ');

@@ -94,14 +94,15 @@ BEGIN
     ELSE 0
   END;
 
-  v_time_increment := v_game_state.time_increment_seconds * 1000;
-
+  -- Bot moves are instant, so we don't add time increment (otherwise bot gains time)
+  -- We just keep the bot's current time as-is
   v_current_player_time := CASE
     WHEN v_player_color = 'white' THEN v_game_state.white_time_ms
     ELSE v_game_state.black_time_ms
   END;
 
-  v_new_time_remaining := GREATEST(0, v_current_player_time - v_time_taken + v_time_increment);
+  -- Bot doesn't lose OR gain time - keep it exactly as it was
+  v_new_time_remaining := v_current_player_time;
 
   -- Determine if game has ended
   v_game_ended := p_is_checkmate OR p_is_draw;
