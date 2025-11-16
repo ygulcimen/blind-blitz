@@ -161,40 +161,11 @@ export async function generateBlindPhaseMoves(
   // Simulate thinking time
   await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
 
-  // 🎯 For stronger bots: Try to use opening book moves in blind phase!
-  // This makes blind moves follow master-level opening theory
-  const useOpeningBook = config.difficulty === 'god' || config.difficulty === 'expert' || config.difficulty === 'hard';
-
   for (let i = 0; i < 5; i++) {
     // Ensure it's the bot's turn before generating moves
     const currentFen = chess.fen().split(' ');
     currentFen[1] = color === 'white' ? 'w' : 'b';
     chess.load(currentFen.join(' '));
-
-    // 🎯 TRY OPENING BOOK FIRST for stronger bots
-    if (useOpeningBook && i < 5) {
-      const bookMove = getOpeningMove(chess.fen(), config.difficulty);
-      if (bookMove) {
-        // Check if this book move is legal with our piece tracker
-        const bookMoveObj = chess.moves({ verbose: true }).find(m => m.san === bookMove);
-        if (bookMoveObj) {
-          const piece = chess.get(bookMoveObj.from as any);
-          if (piece && pieceTracker.canPieceMove(piece, bookMoveObj.from)) {
-            const moveResult = chess.move(bookMoveObj);
-            if (moveResult) {
-              ruleEngine.processMove(chess, {
-                from: bookMoveObj.from,
-                to: bookMoveObj.to,
-                san: moveResult.san,
-              }, i + 1);
-              moves.push(bookMoveObj.san);
-              console.log(`  Move ${i + 1}: 📖 Opening book: ${bookMoveObj.san}`);
-              continue; // Skip normal move selection
-            }
-          }
-        }
-      }
-    }
 
     // 🔥 FILTER LEGAL MOVES: Only moves from pieces that haven't exhausted their move limit
     const allLegalMoves = chess.moves({ verbose: true });
