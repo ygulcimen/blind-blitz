@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Card } from '../../ui/card';
+import { XCircle } from 'lucide-react';
 import type { LiveMove } from '../../../services/liveMovesService';
 
 interface MoveLogItem {
@@ -161,30 +162,40 @@ export const MoveLog: React.FC<MoveLogProps> = ({
                         </span>
                         <div className="flex-1">
                           {move.white ? (
-                            <span
-                              className={`font-mono text-xs ${
-                                move.whiteInvalid
-                                  ? 'text-red-300 line-through'
-                                  : 'text-purple-200'
-                              }`}
-                            >
-                              {move.white}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`font-mono text-xs ${
+                                  move.whiteInvalid
+                                    ? 'text-red-400 line-through'
+                                    : 'text-purple-200'
+                                }`}
+                              >
+                                {move.white}
+                              </span>
+                              {move.whiteInvalid && (
+                                <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                              )}
+                            </div>
                           ) : (
                             <span className="text-purple-500 text-xs">—</span>
                           )}
                         </div>
                         <div className="flex-1">
                           {move.black ? (
-                            <span
-                              className={`font-mono text-xs ${
-                                move.blackInvalid
-                                  ? 'text-red-300 line-through'
-                                  : 'text-purple-200'
-                              }`}
-                            >
-                              {move.black}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`font-mono text-xs ${
+                                  move.blackInvalid
+                                    ? 'text-red-400 line-through'
+                                    : 'text-purple-200'
+                                }`}
+                              >
+                                {move.black}
+                              </span>
+                              {move.blackInvalid && (
+                                <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                              )}
+                            </div>
                           ) : (
                             <span className="text-purple-500 text-xs">—</span>
                           )}

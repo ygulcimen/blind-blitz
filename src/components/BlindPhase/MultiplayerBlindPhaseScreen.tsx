@@ -1,6 +1,7 @@
 // components/BlindPhase/MultiplayerBlindPhaseScreen.tsx - OPTIMIZED
 import React, { memo } from 'react';
 import { useBlindPhaseState } from '../../hooks/useBlindPhaseState';
+import { Clock } from 'lucide-react';
 
 // Component imports
 import { LoadingBlindPhase } from './components/LoadingBlindPhase';
@@ -33,6 +34,7 @@ const MultiplayerBlindPhaseScreen: React.FC<
     // Move data
     myMoves,
     mySubmitted,
+    opponentSubmitted,
 
     // UI state
     isSubmitting,
@@ -103,6 +105,59 @@ const MultiplayerBlindPhaseScreen: React.FC<
         squareStyles={squareStyles}
         onPieceDrop={handleDrop}
       />
+
+      {/* Waiting for Opponent Overlay */}
+      {mySubmitted && !opponentSubmitted && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 flex items-center justify-center">
+          <div className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 border-2 border-purple-400/60 rounded-3xl p-10 shadow-2xl max-w-lg mx-4 animate-in fade-in zoom-in duration-500">
+            <div className="text-center space-y-6">
+              {/* Animated Clock Icon with Rotating Ring */}
+              <div className="relative inline-block">
+                {/* Outer rotating ring */}
+                <div className="absolute inset-0 w-28 h-28 -m-6">
+                  <div className="absolute inset-0 border-4 border-transparent border-t-purple-400/40 border-r-blue-400/40 rounded-full animate-spin" style={{ animationDuration: '3s' }} />
+                </div>
+
+                {/* Glowing background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-blue-500/30 rounded-full blur-2xl animate-pulse" />
+
+                {/* Clock icon */}
+                <Clock className="relative w-16 h-16 text-purple-300 animate-pulse" strokeWidth={2.5} />
+              </div>
+
+              {/* Main Message with Gradient Text */}
+              <div>
+                <h3 className="text-3xl font-black mb-2 bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300 bg-clip-text text-transparent animate-pulse">
+                  Moves Submitted!
+                </h3>
+                <p className="text-purple-100 text-xl font-semibold">
+                  Waiting for opponent...
+                </p>
+              </div>
+
+              {/* Move Summary */}
+              <div className="bg-black/30 rounded-xl p-4 border border-purple-400/30">
+                <div className="text-sm text-purple-300 mb-2">Your moves submitted:</div>
+                <div className="text-2xl font-black text-white">
+                  {moveSummary.totalMoves} / {MAX_MOVES}
+                </div>
+              </div>
+
+              {/* Animated Progress Dots */}
+              <div className="flex justify-center gap-2 pt-2">
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce shadow-lg shadow-purple-400/50" style={{ animationDelay: '0ms', animationDuration: '1s' }} />
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce shadow-lg shadow-blue-400/50" style={{ animationDelay: '150ms', animationDuration: '1s' }} />
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce shadow-lg shadow-purple-400/50" style={{ animationDelay: '300ms', animationDuration: '1s' }} />
+              </div>
+
+              {/* Hint Text */}
+              <p className="text-purple-300/70 text-sm italic">
+                Hang tight! The reveal will begin shortly...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Right: Controls - Hidden on mobile */}
       <div className="hidden lg:block">

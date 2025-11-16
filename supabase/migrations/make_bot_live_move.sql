@@ -87,22 +87,21 @@ BEGIN
   FROM game_live_moves
   WHERE game_id = p_game_id;
 
-  -- Calculate time taken
+  -- Calculate time taken (for recording in move history)
   v_time_taken := CASE
     WHEN v_game_state.last_move_time IS NOT NULL THEN
       GREATEST(0, EXTRACT(EPOCH FROM (NOW() - v_game_state.last_move_time)) * 1000)::BIGINT
     ELSE 0
   END;
 
-  -- Bot moves are instant, so we don't add time increment (otherwise bot gains time)
-  -- We just keep the bot's current time as-is
+  -- Get current time (trigger will handle the deduction automatically)
   v_current_player_time := CASE
     WHEN v_player_color = 'white' THEN v_game_state.white_time_ms
     ELSE v_game_state.black_time_ms
   END;
 
-  -- Bot doesn't lose OR gain time - keep it exactly as it was
-  v_new_time_remaining := v_current_player_time;
+  -- Time remaining will be set by trigger - we just record current value
+  v_new_time_remaining := v_current_player_time - v_time_taken;
 
   -- Determine if game has ended
   v_game_ended := p_is_checkmate OR p_is_draw;
@@ -152,16 +151,13 @@ BEGIN
   ) RETURNING * INTO v_move_record;
 
   -- Update game state with the new FEN
-  -- We DO update last_move_time to start the human player's timer
-  -- The bot "thinking" delay happens in the frontend, so by the time we get here
-  -- the appropriate time has already elapsed
+  -- NOTE: We do NOT manually set white_time_ms/black_time_ms here
+  -- The trigger update_player_time_on_move() handles time deduction automatically
   UPDATE game_live_state
   SET
     current_fen = p_new_fen,
     current_turn = CASE WHEN v_player_color = 'white' THEN 'black' ELSE 'white' END,
     move_count = move_count + 1,
-    white_time_ms = CASE WHEN v_player_color = 'white' THEN v_new_time_remaining ELSE white_time_ms END,
-    black_time_ms = CASE WHEN v_player_color = 'black' THEN v_new_time_remaining ELSE black_time_ms END,
     last_move_time = NOW(),
     game_ended = v_game_ended,
     game_result = v_game_result,
