@@ -152,6 +152,9 @@ BEGIN
   ) RETURNING * INTO v_move_record;
 
   -- Update game state with the new FEN
+  -- We DO update last_move_time to start the human player's timer
+  -- The bot "thinking" delay happens in the frontend, so by the time we get here
+  -- the appropriate time has already elapsed
   UPDATE game_live_state
   SET
     current_fen = p_new_fen,

@@ -308,7 +308,7 @@ const MultiplayerLivePhaseScreen: React.FC<MultiplayerLivePhaseScreenProps> = ({
         console.error('❌ Error making bot move:', error);
         setIsProcessingMove(false);
       }
-    }, 800); // 0.8 second delay
+    }, 1500); // 1.5 second delay - feels more natural and keeps timer consistent
 
     return () => clearTimeout(botMoveTimeout);
   }, [
